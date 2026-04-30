@@ -1,7 +1,10 @@
 package kostin.ak.actionstriggers.core.defaults.actions;
 
+import kostin.ak.actionstriggers.api.action.AbstractActionFactory;
 import kostin.ak.actionstriggers.api.action.Action;
 import kostin.ak.actionstriggers.api.action.ActionFactory;
+import kostin.ak.actionstriggers.api.action.ActionParameters;
+import kostin.ak.actionstriggers.api.context.ExecutionContext;
 import kostin.ak.actionstriggers.core.CoreActionKeys;
 import kostin.ak.actionstriggers.core.CoreKeys;
 import kostin.ak.actionstriggers.core.CoreActionParams;
@@ -13,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
-public class MessageActionFactory implements ActionFactory {
+public class MessageActionFactory extends AbstractActionFactory {
 
     private static final NamespacedKey KEY = CoreActionKeys.MESSAGE;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
@@ -24,32 +27,29 @@ public class MessageActionFactory implements ActionFactory {
     }
 
     @Override
-    public @NotNull Action create(@NotNull Map<String, Object> params) {
-        String rawMessage = (String) params.getOrDefault(CoreActionParams.TEXT, "<red>Текст не задан</red>");
-        String rawSubtitle = (String) params.getOrDefault(CoreActionParams.SUBTITLE, "");
-        String type = ((String) params.getOrDefault(CoreActionParams.TYPE, "chat")).toLowerCase();
+    protected boolean execute(@NotNull ExecutionContext context, @NotNull ActionParameters params) {
+        Player player = context.get(CoreKeys.PLAYER);
+        if (player == null || !player.isOnline()) return false;
 
-        return context -> {
-            Player player = context.get(CoreKeys.PLAYER);
-            if (player != null && player.isOnline()) {
-                var component = miniMessage.deserialize(rawMessage);
+        String text = params.getString(CoreActionParams.TEXT, "<red>Текст не задан</red>");
+        String subtitle = params.getString(CoreActionParams.SUBTITLE, "");
+        String type = params.getString(CoreActionParams.TYPE, "chat").toLowerCase();
 
-                switch (type) {
-                    case CoreActionParams.MessageTypes.ACTIONBAR:
-                        player.sendActionBar(component);
-                        break;
-                    case CoreActionParams.MessageTypes.TITLE:
-                        var subComponent = miniMessage.deserialize(rawSubtitle);
-                        player.showTitle(Title.title(component, subComponent));
-                        break;
-                    case CoreActionParams.MessageTypes.CHAT:
-                    default:
-                        player.sendMessage(component);
-                        break;
-                }
-                return true;
-            }
-            return false;
-        };
+        var component = miniMessage.deserialize(text);
+
+        switch (type) {
+            case CoreActionParams.MessageTypes.ACTIONBAR:
+                player.sendActionBar(component);
+                break;
+            case CoreActionParams.MessageTypes.TITLE:
+                var subComponent = miniMessage.deserialize(subtitle);
+                player.showTitle(Title.title(component, subComponent));
+                break;
+            case CoreActionParams.MessageTypes.CHAT:
+            default:
+                player.sendMessage(component);
+                break;
+        }
+        return true;
     }
 }

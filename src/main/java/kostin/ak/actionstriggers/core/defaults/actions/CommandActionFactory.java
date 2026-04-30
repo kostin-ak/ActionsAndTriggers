@@ -1,7 +1,10 @@
 package kostin.ak.actionstriggers.core.defaults.actions;
 
+import kostin.ak.actionstriggers.api.action.AbstractActionFactory;
 import kostin.ak.actionstriggers.api.action.Action;
 import kostin.ak.actionstriggers.api.action.ActionFactory;
+import kostin.ak.actionstriggers.api.action.ActionParameters;
+import kostin.ak.actionstriggers.api.context.ExecutionContext;
 import kostin.ak.actionstriggers.core.CoreActionKeys;
 import kostin.ak.actionstriggers.core.CoreKeys;
 import kostin.ak.actionstriggers.core.CoreActionParams;
@@ -11,7 +14,7 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import java.util.Map;
 
-public class CommandActionFactory implements ActionFactory {
+public class CommandActionFactory extends AbstractActionFactory {
 
     private static final NamespacedKey KEY = CoreActionKeys.COMMAND;
 
@@ -19,27 +22,20 @@ public class CommandActionFactory implements ActionFactory {
     public @NotNull NamespacedKey getKey() { return KEY; }
 
     @Override
-    public @NotNull Action create(@NotNull Map<String, Object> params) {
-        String commandTpl = (String) params.getOrDefault(CoreActionParams.COMMAND, "say Привет");
-        boolean asConsole = Boolean.parseBoolean(params.getOrDefault(CoreActionParams.AS_CONSOLE, "true").toString());
+    protected boolean execute(@NotNull ExecutionContext context, @NotNull ActionParameters params) {
+        String finalCmd = params.getString(CoreActionParams.COMMAND, "say Привет");
+        boolean asConsole = params.getBoolean(CoreActionParams.AS_CONSOLE, true);
 
-        return context -> {
-            Player player = context.get(CoreKeys.PLAYER);
+        Player player = context.get(CoreKeys.PLAYER);
 
-            // Простая встроенная замена (чтобы не тянуть тяжелый PlaceholderAPI для базовых нужд)
-            String finalCmd = commandTpl;
-            if (player != null) {
-                finalCmd = finalCmd.replace("%player%", player.getName());
-            }
-
-            if (asConsole) {
-                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), finalCmd);
-            } else if (player != null && player.isOnline()) {
-                player.performCommand(finalCmd);
-            } else {
-                return false;
-            }
+        if (asConsole) {
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), finalCmd);
             return true;
-        };
+        } else if (player != null && player.isOnline()) {
+            player.performCommand(finalCmd);
+            return true;
+        }
+
+        return false;
     }
 }

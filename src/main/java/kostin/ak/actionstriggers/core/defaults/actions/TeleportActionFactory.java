@@ -1,7 +1,10 @@
 package kostin.ak.actionstriggers.core.defaults.actions;
 
+import kostin.ak.actionstriggers.api.action.AbstractActionFactory;
 import kostin.ak.actionstriggers.api.action.Action;
 import kostin.ak.actionstriggers.api.action.ActionFactory;
+import kostin.ak.actionstriggers.api.action.ActionParameters;
+import kostin.ak.actionstriggers.api.context.ExecutionContext;
 import kostin.ak.actionstriggers.core.CoreActionParams;
 import kostin.ak.actionstriggers.core.CoreActionKeys;
 import kostin.ak.actionstriggers.core.CoreKeys;
@@ -12,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
-public class TeleportActionFactory implements ActionFactory {
+public class TeleportActionFactory extends AbstractActionFactory {
 
     private static final NamespacedKey KEY = CoreActionKeys.TELEPORT;
 
@@ -22,23 +25,21 @@ public class TeleportActionFactory implements ActionFactory {
     }
 
     @Override
-    public @NotNull Action create(@NotNull Map<String, Object> params) {
-        return context -> {
-            Player player = context.get(CoreKeys.PLAYER);
-            if (player != null && player.isOnline()) {
-                try {
-                    double x = Double.parseDouble(params.get(CoreActionParams.X).toString());
-                    double y = Double.parseDouble(params.get(CoreActionParams.Y).toString());
-                    double z = Double.parseDouble(params.get(CoreActionParams.Z).toString());
+    protected boolean execute(@NotNull ExecutionContext context, @NotNull ActionParameters params) {
+        Player player = context.get(CoreKeys.PLAYER);
+        if (player != null && player.isOnline()) {
+            try {
+                double x = params.getDouble(CoreActionParams.X, 0.0);
+                double y = params.getDouble(CoreActionParams.Y, 0.0);
+                double z = params.getDouble(CoreActionParams.Z, 0.0);
 
-                    Location targetLoc = new Location(player.getWorld(), x, y, z);
-                    player.teleportAsync(targetLoc);
-                    return true;
-                } catch (Exception e) {
-                    return false;
-                }
+                Location targetLoc = new Location(player.getWorld(), x, y, z);
+                player.teleportAsync(targetLoc);
+                return true;
+            } catch (Exception e) {
+                return false;
             }
-            return false;
-        };
+        }
+        return false;
     }
 }

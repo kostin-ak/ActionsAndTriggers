@@ -1,7 +1,10 @@
 package kostin.ak.actionstriggers.core.defaults.actions;
 
+import kostin.ak.actionstriggers.api.action.AbstractActionFactory;
 import kostin.ak.actionstriggers.api.action.Action;
 import kostin.ak.actionstriggers.api.action.ActionFactory;
+import kostin.ak.actionstriggers.api.action.ActionParameters;
+import kostin.ak.actionstriggers.api.context.ExecutionContext;
 import kostin.ak.actionstriggers.core.CoreActionKeys;
 import kostin.ak.actionstriggers.core.CoreKeys;
 import kostin.ak.actionstriggers.core.CoreActionParams;
@@ -15,7 +18,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
-public class GiveItemActionFactory implements ActionFactory {
+public class GiveItemActionFactory extends AbstractActionFactory {
 
     private static final NamespacedKey KEY = CoreActionKeys.GIVE_ITEM;
 
@@ -25,11 +28,10 @@ public class GiveItemActionFactory implements ActionFactory {
     }
 
     @Override
-    public @NotNull Action create(@NotNull Map<String, Object> params) {
-        String materialName = ((String) params.getOrDefault(CoreActionParams.MATERIAL, "stone")).toLowerCase();
-        int amount = Integer.parseInt(params.getOrDefault(CoreActionParams.AMOUNT, "1").toString());
+    protected boolean execute(@NotNull ExecutionContext context, @NotNull ActionParameters params) {
+        String materialName = ((String) params.getString(CoreActionParams.MATERIAL, "stone")).toLowerCase();
+        int amount = Integer.parseInt(params.getString(CoreActionParams.AMOUNT, "1"));
 
-        return context -> {
             Player player = context.get(CoreKeys.PLAYER);
             if (player == null || !player.isOnline()) return false;
 
@@ -60,7 +62,6 @@ public class GiveItemActionFactory implements ActionFactory {
             }
 
             return false;
-        };
     }
 
     /**

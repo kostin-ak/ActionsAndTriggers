@@ -124,6 +124,7 @@ public class ExecutionContext implements Cloneable {
                         break;
                     case Action action:
                         valueStr = "Action(" + action.name() + ")";
+                        break;
                     default:
                         valueStr = value.toString();
                         break;
@@ -134,5 +135,13 @@ public class ExecutionContext implements Cloneable {
         });
         sb.append("]");
         return sb.toString();
+    }
+
+    /**
+     * Получает сырое значение из контекста по строковому ID ключа (для плейсхолдеров).
+     */
+    @Nullable
+    public Object getRaw(@NotNull String keyId) {
+        return data.get(keyId);
     }
 }

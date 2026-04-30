@@ -1,7 +1,10 @@
 package kostin.ak.actionstriggers.core.defaults.actions;
 
+import kostin.ak.actionstriggers.api.action.AbstractActionFactory;
 import kostin.ak.actionstriggers.api.action.Action;
 import kostin.ak.actionstriggers.api.action.ActionFactory;
+import kostin.ak.actionstriggers.api.action.ActionParameters;
+import kostin.ak.actionstriggers.api.context.ExecutionContext;
 import kostin.ak.actionstriggers.core.CoreActionParams;
 import kostin.ak.actionstriggers.core.CoreActionKeys;
 import kostin.ak.actionstriggers.core.CoreKeys;
@@ -11,7 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
-public class SoundActionFactory implements ActionFactory {
+public class SoundActionFactory extends AbstractActionFactory {
 
     private static final NamespacedKey KEY = CoreActionKeys.SOUND;
 
@@ -19,26 +22,21 @@ public class SoundActionFactory implements ActionFactory {
     public @NotNull NamespacedKey getKey() { return KEY; }
 
     @Override
-    public @NotNull Action create(@NotNull Map<String, Object> params) {
-        String rawSound = (String) params.getOrDefault(CoreActionParams.SOUND, "minecraft:entity.player.levelup");
+    protected boolean execute(@NotNull ExecutionContext context, @NotNull ActionParameters params) {
+        Player player = context.get(CoreKeys.PLAYER);
+        if (player == null || !player.isOnline()) return false;
 
-        // Автоматически чиним старый формат (ENTITY_PLAYER_LEVELUP -> minecraft:entity.player.levelup)
-        if (!rawSound.contains(":") && rawSound.contains("_") && rawSound.toUpperCase().equals(rawSound)) {
-            rawSound = "minecraft:" + rawSound.toLowerCase().replace("_", ".");
+        // Смотри, как просто! Плейсхолдеры в строках и числах раскроются сами!
+        String sound = params.getString(CoreActionParams.SOUND, "minecraft:entity.player.levelup");
+        float volume = params.getFloat(CoreActionParams.VOLUME, 1.0f);
+        float pitch = params.getFloat(CoreActionParams.PITCH, 1.0f);
+
+        // Чиним старый Bukkit формат
+        if (!sound.contains(":") && sound.contains("_") && sound.toUpperCase().equals(sound)) {
+            sound = "minecraft:" + sound.toLowerCase().replace("_", ".");
         }
 
-        String finalSound = rawSound;
-        float volume = Float.parseFloat(params.getOrDefault(CoreActionParams.VOLUME, "1.0").toString());
-        float pitch = Float.parseFloat(params.getOrDefault(CoreActionParams.PITCH, "1.0").toString());
-
-        return context -> {
-            Player player = context.get(CoreKeys.PLAYER);
-            if (player != null && player.isOnline()) {
-                // Идеальный метод для кастомных звуков! Никаких проверок на стороне сервера.
-                player.playSound(player.getLocation(), finalSound, volume, pitch);
-                return true;
-            }
-            return false;
-        };
+        player.playSound(player.getLocation(), sound, volume, pitch);
+        return true;
     }
 }

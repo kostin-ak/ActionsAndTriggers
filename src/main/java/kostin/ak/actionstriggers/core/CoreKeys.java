@@ -38,6 +38,8 @@ public final class CoreKeys {
     public static final ContextKey<EntityDamageEvent.DamageCause> DAMAGE_CAUSE = ContextKey.of("damage_cause", EntityDamageEvent.DamageCause.class);
     public static final ContextKey<Entity> DAMAGER = ContextKey.of("damager", Entity.class);
     public static final ContextKey<Player> KILLER = ContextKey.of("killer", Player.class);
+    public static final ContextKey<Integer> LEVEL = ContextKey.of("level", Integer.class);
+    public static final ContextKey<String> WORLD_NAME = ContextKey.of("world_name", String.class);
 
 
     public static enum ButtonType{

@@ -56,7 +56,7 @@ public class ActionCommand {
                             actor.reply("§e[Внимание] Игрок " + value + " не найден на сервере.");
                         }
                     } else if (key.equals("text") || key.equals("subtitle") || key.equals("command")) {
-                        params.put(key, value.replace("_", " "));
+                        params.put(key, smartDecode(value));
                     } else {
                         params.put(key, value);
                     }
@@ -69,6 +69,10 @@ public class ActionCommand {
             context.set(CoreKeys.PLAYER, actor.requirePlayer());
         }
 
+        if (context.has(CoreKeys.PLAYER)) {
+            Player p = context.get(CoreKeys.PLAYER);
+            context.set(CoreKeys.LOCATION, p.getLocation());
+        }
         // Выполняем экшен!
         boolean success = ActionAPI.getActions().execute(actionKey, context, params);
 
@@ -150,5 +154,23 @@ public class ActionCommand {
             ActionAPI.getTriggers().subscribeGlobal(debugListener);
             actor.reply("§a[Actions&Triggers] Режим дебага ВКЛЮЧЕН. Теперь все триггеры логируются.");
         }
+    }
+    /**
+     * Заменяет '_' на пробел, но ИГНОРИРУЕТ всё, что находится внутри { }
+     */
+    private String smartDecode(String input) {
+        StringBuilder sb = new StringBuilder();
+        boolean insideBrackets = false;
+        for (char c : input.toCharArray()) {
+            if (c == '{') insideBrackets = true;
+            if (c == '}') insideBrackets = false;
+
+            if (c == '_' && !insideBrackets) {
+                sb.append(' ');
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
     }
 }

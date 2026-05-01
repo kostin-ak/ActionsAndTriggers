@@ -1,20 +1,28 @@
 package kostin.ak.actionstriggers.core.command;
 
-import kostin.ak.actionstriggers.api.ActionAPI;
+import kostin.ak.actionstriggers.api.ActionTriggerAPI;
+import kostin.ak.actionstriggers.api.action.ActionRegistry;
 import kostin.ak.actionstriggers.api.context.ContextKey;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
+import kostin.ak.actionstriggers.api.trigger.TriggerRegistry;
 import kostin.ak.actionstriggers.core.CoreKeys;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
+import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
+
 import revxrsal.commands.annotation.Command;
 import revxrsal.commands.annotation.Optional;
 import revxrsal.commands.bukkit.BukkitCommandActor;
 import revxrsal.commands.bukkit.annotation.CommandPermission;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
+import java.util.stream.Collectors;
 
 /**
  * Парсер консольных команд с использованием Revxrsal Commands.
@@ -22,6 +30,13 @@ import java.util.function.BiConsumer;
 public class ActionCommand {
 
     private BiConsumer<NamespacedKey, ExecutionContext> debugListener = null;
+    private final ActionRegistry actionRegistry;
+    private final TriggerRegistry triggerRegistry;
+
+    public ActionCommand(ActionRegistry actionRegistry, TriggerRegistry triggerRegistry) {
+        this.actionRegistry = actionRegistry;
+        this.triggerRegistry = triggerRegistry;
+    }
 
     @Command("actionapi run")
     @CommandPermission("actionstriggers.admin")
@@ -74,7 +89,7 @@ public class ActionCommand {
             context.set(CoreKeys.LOCATION, p.getLocation());
         }
         // Выполняем экшен!
-        boolean success = ActionAPI.getActions().execute(actionKey, context, params);
+        boolean success = ActionTriggerAPI.getActions().execute(actionKey, context, params);
 
         if (success) {
             actor.reply("§aЭкшен " + actionKey + " успешно выполнен!");
@@ -123,7 +138,7 @@ public class ActionCommand {
         }
 
         // Вызываем триггер (бросаем его в Event Bus)
-        ActionAPI.getTriggers().dispatch(triggerKey, context);
+        ActionTriggerAPI.getTriggers().dispatch(triggerKey, context);
         actor.reply("§aТриггер " + triggerKey + " успешно вызван!");
     }
 
@@ -132,7 +147,7 @@ public class ActionCommand {
     public void toggleDebug(BukkitCommandActor actor) {
         if (debugListener != null) {
             // Если включен — выключаем
-            ActionAPI.getTriggers().unsubscribeGlobal(debugListener);
+            ActionTriggerAPI.getTriggers().unsubscribeGlobal(debugListener);
             debugListener = null;
             actor.reply("§c[Actions&Triggers] Режим дебага ВЫКЛЮЧЕН.");
         } else {
@@ -151,7 +166,7 @@ public class ActionCommand {
                 }
             };
 
-            ActionAPI.getTriggers().subscribeGlobal(debugListener);
+            ActionTriggerAPI.getTriggers().subscribeGlobal(debugListener);
             actor.reply("§a[Actions&Triggers] Режим дебага ВКЛЮЧЕН. Теперь все триггеры логируются.");
         }
     }
@@ -172,5 +187,58 @@ public class ActionCommand {
             }
         }
         return sb.toString();
+    }
+    @Command("actionapi list")
+    @CommandPermission("actionstriggers.admin")
+    public void asList(BukkitCommandActor actor) {
+        MiniMessage mm = MiniMessage.miniMessage();
+
+        // 1. Красивый заголовок с градиентом
+        Component header = mm.deserialize("\n<gradient:#FF5555:#FFAA00><strikethrough>--------</strikethrough> [ Actions & Triggers ] <strikethrough>--------</strikethrough></gradient>\n");
+
+        // 2. Формируем списки с помощью вспомогательного метода (см. ниже)
+        Component actions = buildSection("Действия", actionRegistry.asList(), "#55FF55", "#55FFFF");
+        Component triggers = buildSection("Триггеры", triggerRegistry.asList(), "#FF55FF", "#FFFF55");
+
+        // 3. Подвал для визуального завершения "таблицы"
+        Component footer = mm.deserialize("\n<dark_gray><strikethrough>                                        </strikethrough></dark_gray>");
+
+        // 4. Собираем всё в единое сообщение
+        Component finalMessage = Component.empty()
+                .append(header)
+                .append(actions).append(Component.newline()).append(Component.newline())
+                .append(triggers)
+                .append(footer);
+
+        // Отправка в консоль
+        Bukkit.getConsoleSender().sendMessage(finalMessage);
+
+        // Отправка игроку
+        if (actor.isPlayer()) {
+            actor.requirePlayer().sendMessage(finalMessage);
+        }
+    }
+    private Component buildSection(String title, List<String> items, String titleColor, String itemColor) {
+        MiniMessage mm = MiniMessage.miniMessage();
+
+        // Заголовок секции (например, "Действия:")
+        Component titleComp = mm.deserialize("<color:" + titleColor + "><b>" + title + ":</b></color>\n");
+
+        if (items == null || items.isEmpty()) {
+            return titleComp.append(mm.deserialize("<gray><i>Список пуст</i></gray>"));
+        }
+
+        // Превращаем обычные строки в компоненты с цветом и эффектом при наведении (HoverEvent)
+        List<Component> itemComponents = items.stream()
+                .map(item -> mm.deserialize("<hover:show_text:'<gray>Элемент:</gray> <white>" + item + "</white>'><color:" + itemColor + ">" + item + "</color></hover>"))
+                .collect(Collectors.toList());
+
+        // Создаем красивый разделитель для визуальной "таблицы"
+        Component separator = mm.deserialize(" <dark_gray><b>|</b></dark_gray> ");
+
+        // Используем встроенный в Adventure инструмент Component.join() для соединения
+        Component joinedItems = Component.join(JoinConfiguration.separator(separator), itemComponents);
+
+        return titleComp.append(joinedItems);
     }
 }

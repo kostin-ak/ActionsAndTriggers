@@ -7,27 +7,20 @@ import kostin.ak.actionstriggers.core.CoreKeys;
 import kostin.ak.actionstriggers.core.CoreTriggerKeys;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
-import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 
-public class BlockPlaceTriggerListener extends Trigger {
+public class PlayerQuitTriggerListener extends Trigger {
 
-    private static final NamespacedKey KEY = CoreTriggerKeys.BLOCK_PLACE;
+    private static final NamespacedKey KEY = CoreTriggerKeys.PLAYER_QUIT;
 
-    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    public void onBlockPlace(BlockPlaceEvent event) {
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
         ExecutionContext context = new ExecutionContext();
         context.set(CoreKeys.PLAYER, event.getPlayer());
-        context.set(CoreKeys.BLOCK, event.getBlockPlaced());
-        context.set(CoreKeys.BLOCK_MATERIAL, event.getBlockPlaced().getType());
-        context.set(CoreKeys.LOCATION, event.getBlockPlaced().getLocation());
-
+        context.set(CoreKeys.LOCATION, event.getPlayer().getLocation());
         ActionTriggerAPI.getTriggers().dispatch(KEY, context);
-
-        if (context.isCancelled()) {
-            event.setCancelled(true);
-        }
     }
+
     @Override
     public NamespacedKey getKey() {
         return KEY;

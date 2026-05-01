@@ -1,17 +1,17 @@
 package kostin.ak.actionstriggers.core.defaults.triggers;
 
 import io.papermc.paper.event.player.AsyncChatEvent;
-import kostin.ak.actionstriggers.api.ActionAPI;
+import kostin.ak.actionstriggers.api.ActionTriggerAPI;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
+import kostin.ak.actionstriggers.api.trigger.Trigger;
 import kostin.ak.actionstriggers.core.CoreKeys;
 import kostin.ak.actionstriggers.core.CoreTriggerKeys;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
 
-public class AsyncChatTriggerListener implements Listener {
+public class AsyncChatTriggerListener extends Trigger {
 
     private static final NamespacedKey KEY = CoreTriggerKeys.PLAYER_CHAT;
 
@@ -25,11 +25,16 @@ public class AsyncChatTriggerListener implements Listener {
         String plainMessage = PlainTextComponentSerializer.plainText().serialize(event.message());
         context.set(CoreKeys.MESSAGE, plainMessage);
 
-        ActionAPI.getTriggers().dispatch(KEY, context);
+        ActionTriggerAPI.getTriggers().dispatch(KEY, context);
 
         // Позволяем отменить отправку сообщения в чат (например, если это был тайный пароль)
         if (context.isCancelled()) {
             event.setCancelled(true);
         }
+    }
+
+    @Override
+    public NamespacedKey getKey() {
+        return KEY;
     }
 }

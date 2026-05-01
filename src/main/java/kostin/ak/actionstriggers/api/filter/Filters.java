@@ -2,10 +2,12 @@ package kostin.ak.actionstriggers.api.filter;
 
 import kostin.ak.actionstriggers.api.context.ContextKey;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * Фабрика для создания и комбинирования фильтров (Conditions).
@@ -91,5 +93,58 @@ public final class Filters {
     @NotNull
     public static Filter alwaysTrue() {
         return context -> true;
+    }
+
+    /**
+     * Фильтр по правам игрока (Permission).
+     */
+    @NotNull
+    public static Filter permission(@NotNull String perm) {
+        return context -> {
+            Player p = context.get(kostin.ak.actionstriggers.core.CoreKeys.PLAYER);
+            return p != null && p.hasPermission(perm);
+        };
+    }
+
+    /**
+     * Вероятностный фильтр (Шанс срабатывания от 0.0 до 1.0).
+     */
+    @NotNull
+    public static Filter chance(double chance) {
+        return context -> ThreadLocalRandom.current().nextDouble() <= chance;
+    }
+
+    /**
+     * Математическое сравнение: Больше чем (для Double).
+     */
+    @NotNull
+    public static Filter gt(@NotNull ContextKey<Double> key, double min) {
+        return context -> {
+            Double val = context.get(key);
+            return val != null && val > min;
+        };
+    }
+
+    /**
+     * Математическое сравнение: Меньше чем (для Double).
+     */
+    @NotNull
+    public static Filter lt(@NotNull ContextKey<Double> key, double max) {
+        return context -> {
+            Double val = context.get(key);
+            return val != null && val < max;
+        };
+    }
+
+    /**
+     * Сравнение строк через регулярное выражение (Regex).
+     * Идеально для проверки сообщений в чате.
+     */
+    @NotNull
+    public static Filter regex(@NotNull ContextKey<String> key, @NotNull String pattern) {
+        return context -> {
+            String val = context.get(key);
+            return val != null && val.matches(pattern);
+        };
     }
 }

@@ -5,17 +5,19 @@ import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Реестр всех доступных Экшенов. Управляет их регистрацией и безопасным выполнением.
  */
 public class ActionRegistry {
 
-    private final Map<NamespacedKey, ActionFactory> factories = new ConcurrentHashMap<>();
+    private final Map<NamespacedKey, IActionFactory> factories = new ConcurrentHashMap<>();
     private final Logger logger;
 
     public ActionRegistry(@NotNull Logger logger) {
@@ -25,7 +27,7 @@ public class ActionRegistry {
     /**
      * Регистрирует новый тип экшена (может быть вызвано любым сторонним плагином).
      */
-    public void register(@NotNull ActionFactory factory) {
+    public void register(@NotNull IActionFactory factory) {
         factories.put(factory.getKey(), factory);
         logger.info("Зарегистрирован экшен: " + factory.getKey());
     }
@@ -35,7 +37,7 @@ public class ActionRegistry {
      * Безопасно собирает его через фабрику и вызывает, перехватывая любые ошибки.
      */
     public boolean execute(@NotNull NamespacedKey key, @NotNull ExecutionContext context, @NotNull Map<String, Object> params) {
-        ActionFactory factory = factories.get(key);
+        IActionFactory factory = factories.get(key);
 
         if (factory == null) {
             logger.warning("Попытка выполнить неизвестный экшен: " + key);
@@ -56,5 +58,9 @@ public class ActionRegistry {
      */
     public boolean execute(@NotNull NamespacedKey key, @NotNull ExecutionContext context) {
         return execute(key, context, Collections.emptyMap());
+    }
+
+    public List<String> asList() {
+        return factories.keySet().stream().map(NamespacedKey::toString).collect(Collectors.toList());
     }
 }

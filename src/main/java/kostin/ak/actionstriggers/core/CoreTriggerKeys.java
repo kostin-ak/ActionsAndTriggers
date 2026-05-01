@@ -18,4 +18,7 @@ public final class CoreTriggerKeys {
     public static final NamespacedKey PLAYER_CONSUME = NamespacedKey.fromString("core:player_consume");
     public static final NamespacedKey PLAYER_CHAT = NamespacedKey.fromString("core:player_chat");
     public static final NamespacedKey PLAYER_DEATH = NamespacedKey.fromString("core:player_death");
+    public static final NamespacedKey PLAYER_QUIT = NamespacedKey.fromString("core:player_quit");
+    public static final NamespacedKey PLAYER_LEVEL_CHANGE = NamespacedKey.fromString("core:player_level_change");
+    public static final NamespacedKey PLAYER_WORLD_CHANGE = NamespacedKey.fromString("core:player_world_change");
 }

@@ -1,17 +1,17 @@
 package kostin.ak.actionstriggers.core.defaults.triggers;
 
-import kostin.ak.actionstriggers.api.ActionAPI;
+import kostin.ak.actionstriggers.api.ActionTriggerAPI;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
+import kostin.ak.actionstriggers.api.trigger.Trigger;
 import kostin.ak.actionstriggers.core.CoreKeys;
 import kostin.ak.actionstriggers.core.CoreTriggerKeys;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 
-public class EntityDeathTriggerListener implements Listener {
+public class EntityDeathTriggerListener extends Trigger {
 
     private static final NamespacedKey KEY = CoreTriggerKeys.ENTITY_DEATH;
 
@@ -30,6 +30,10 @@ public class EntityDeathTriggerListener implements Listener {
             context.set(CoreKeys.ITEM_IN_HAND, killer.getInventory().getItemInMainHand());
         }
 
-        ActionAPI.getTriggers().dispatch(KEY, context);
+        ActionTriggerAPI.getTriggers().dispatch(KEY, context);
+    }
+    @Override
+    public NamespacedKey getKey() {
+        return KEY;
     }
 }

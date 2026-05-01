@@ -4,9 +4,11 @@ import kostin.ak.actionstriggers.api.context.ExecutionContext;
 import kostin.ak.actionstriggers.api.filter.Filter;
 import kostin.ak.actionstriggers.api.filter.Filters;
 import org.bukkit.NamespacedKey;
+import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -15,6 +17,7 @@ import java.util.function.BiConsumer; // Важно: BiConsumer для пере�
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Реестр Триггеров (Event Bus). Управляет подписками и рассылкой событий.
@@ -27,6 +30,8 @@ public class TriggerRegistry {
     private final List<BiConsumer<NamespacedKey, ExecutionContext>> globalListeners = new CopyOnWriteArrayList<>();
 
     private final Logger logger;
+
+    private List<String> triggers = new ArrayList<>();
 
     public TriggerRegistry(@NotNull Logger logger) {
         this.logger = logger;
@@ -82,5 +87,13 @@ public class TriggerRegistry {
                 logger.log(Level.SEVERE, "Ошибка в подписчике " + sub.plugin().getName() + " на триггере " + key, e);
             }
         }
+    }
+
+    public List<String> asList() {
+        return triggers;
+    }
+
+    public void register(Trigger trigger) {
+        triggers.add(trigger.getKey().toString());
     }
 }

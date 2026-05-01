@@ -1,18 +1,18 @@
 package kostin.ak.actionstriggers.core.defaults.triggers;
 
-import kostin.ak.actionstriggers.api.ActionAPI;
+import kostin.ak.actionstriggers.api.ActionTriggerAPI;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
+import kostin.ak.actionstriggers.api.trigger.Trigger;
 import kostin.ak.actionstriggers.core.CoreKeys;
 import kostin.ak.actionstriggers.core.CoreTriggerKeys;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 
-public class PlayerDamageTriggerListener implements Listener {
+public class PlayerDamageTriggerListener extends Trigger {
 
     private static final NamespacedKey KEY = CoreTriggerKeys.PLAYER_DAMAGE;
 
@@ -34,12 +34,16 @@ public class PlayerDamageTriggerListener implements Listener {
 
 
             // Вызываем триггер!
-            ActionAPI.getTriggers().dispatch(KEY, context);
+            ActionTriggerAPI.getTriggers().dispatch(KEY, context);
 
             // Если кто-то из подписчиков отменил урон — применяем это к ивенту
             if (context.isCancelled()) {
                 event.setCancelled(true);
             }
         }
+    }
+    @Override
+    public NamespacedKey getKey() {
+        return KEY;
     }
 }

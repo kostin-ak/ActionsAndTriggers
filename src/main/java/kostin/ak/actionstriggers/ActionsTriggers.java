@@ -1,6 +1,6 @@
 package kostin.ak.actionstriggers;
 
-import kostin.ak.actionstriggers.api.ActionAPI;
+import kostin.ak.actionstriggers.api.ActionTriggerAPI;
 import kostin.ak.actionstriggers.api.action.ActionRegistry;
 import kostin.ak.actionstriggers.api.action.ActionScheduler;
 import kostin.ak.actionstriggers.api.trigger.TriggerRegistry;
@@ -20,34 +20,24 @@ public final class ActionsTriggers extends JavaPlugin {
         ActionScheduler actionScheduler = new ActionScheduler(this);
 
         // 2. Инжектим их в публичный фасад API
-        ActionAPI.init(actionRegistry, triggerRegistry, actionScheduler);
+        ActionTriggerAPI.init(actionRegistry, triggerRegistry, actionScheduler);
 
         // 3. Регистрируем базовые экшены и триггеры
-        ActionAPI.getActions().register(new MessageActionFactory());
-        ActionAPI.getActions().register(new SoundActionFactory());
-        ActionAPI.getActions().register(new TeleportActionFactory());
-        ActionAPI.getActions().register(new GiveItemActionFactory());
-        ActionAPI.getActions().register(new PotionEffectActionFactory());
-        ActionAPI.getActions().register(new DamageActionFactory());
-        ActionAPI.getActions().register(new KillActionFactory());
-        ActionAPI.getActions().register(new CommandActionFactory());
-        ActionAPI.getActions().register(new ParticleActionFactory());
-        ActionAPI.getActions().register(new FireworkActionFactory());
 
-        getServer().getPluginManager().registerEvents(new BlockBreakTriggerListener(), this);
-        getServer().getPluginManager().registerEvents(new PlayerDamageTriggerListener(), this);
-        getServer().getPluginManager().registerEvents(new PlayerJoinTriggerListener(), this);
-        getServer().getPluginManager().registerEvents(new PlayerInteractTriggerListener(), this);
-        getServer().getPluginManager().registerEvents(new EntityDeathTriggerListener(), this);
-        getServer().getPluginManager().registerEvents(new PlayerToggleSneakTriggerListener(), this);
-        getServer().getPluginManager().registerEvents(new BlockPlaceTriggerListener(), this);
-        getServer().getPluginManager().registerEvents(new PlayerConsumeTriggerListener(), this);
-        getServer().getPluginManager().registerEvents(new AsyncChatTriggerListener(), this);
-        getServer().getPluginManager().registerEvents(new PlayerDeathTriggerListener(), this);
+        ActionTriggerAPI.getRegistrar().registerActions(new MessageActionFactory(), new SoundActionFactory(), new TeleportActionFactory(),
+                     new GiveItemActionFactory(), new PotionEffectActionFactory(), new DamageActionFactory(), new KillActionFactory(),
+                    new CommandActionFactory(), new ParticleActionFactory(), new FireworkActionFactory());
+
+        ActionTriggerAPI.getRegistrar().registerTriggers(this, triggerRegistry,
+                new BlockBreakTriggerListener(), new PlayerDamageTriggerListener(), new PlayerJoinTriggerListener(),
+                new PlayerInteractTriggerListener(), new EntityDeathTriggerListener(), new PlayerToggleSneakTriggerListener(),
+                new BlockPlaceTriggerListener(), new  PlayerConsumeTriggerListener(), new AsyncChatTriggerListener(),
+                new PlayerDeathTriggerListener(), new PlayerLevelChangeTriggerListener(), new PlayerQuitTriggerListener());
+
 
         // 4. Инициализация Revxrsal Commands
         BukkitCommandHandler handler = BukkitCommandHandler.create(this);
-        handler.register(new ActionCommand());
+        handler.register(new ActionCommand(actionRegistry, triggerRegistry));
 
 
         getLogger().info("Actions&Triggers API успешно загружен!");

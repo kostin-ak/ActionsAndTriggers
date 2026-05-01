@@ -1,27 +1,29 @@
 package kostin.ak.actionstriggers.api.action;
 
-import org.bukkit.NamespacedKey;
+import kostin.ak.actionstriggers.api.context.ExecutionContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
 /**
- * Фабрика, отвечающая за сборку конкретного Экшена из сырых параметров (из конфига/кода).
+ * Базовый класс для всех Экшенов.
+ * Берет на себя рутину по созданию лямбд и умных параметров.
  */
-public interface ActionFactory {
+public abstract class ActionFactory implements IActionFactory {
+
+    @Override
+    public @NotNull Action create(@NotNull Map<String, Object> params) {
+        return context -> {
+            ActionParameters smartParams = new ActionParameters(params, context);
+            return execute(context, smartParams);
+        };
+    }
 
     /**
-     * @return Уникальный ключ этого экшена (например, core:teleport).
+     * Основной метод логики Экшена.
+     * @param context Живой контекст события (игрок, блок и т.д.)
+     * @param params Умные параметры (уже с работающими плейсхолдерами)
+     * @return Успешно ли выполнился экшен
      */
-    @NotNull
-    NamespacedKey getKey();
-
-    /**
-     * Создает готовый к выполнению Экшен на основе параметров.
-     *
-     * @param parameters Параметры (например, volume: 1.0, sound: LEVELUP).
-     * @return Инстанс Action.
-     */
-    @NotNull
-    Action create(@NotNull Map<String, Object> parameters);
+    protected abstract boolean execute(@NotNull ExecutionContext context, @NotNull ActionParameters params);
 }

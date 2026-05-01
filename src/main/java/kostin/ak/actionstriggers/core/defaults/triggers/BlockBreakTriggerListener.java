@@ -1,16 +1,16 @@
 package kostin.ak.actionstriggers.core.defaults.triggers;
 
-import kostin.ak.actionstriggers.api.ActionAPI;
+import kostin.ak.actionstriggers.api.ActionTriggerAPI;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
+import kostin.ak.actionstriggers.api.trigger.Trigger;
 import kostin.ak.actionstriggers.core.CoreKeys;
 import kostin.ak.actionstriggers.core.CoreTriggerKeys;
 import org.bukkit.NamespacedKey;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
-import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 
-public class BlockBreakTriggerListener implements Listener {
+public class BlockBreakTriggerListener extends Trigger {
 
     private static final NamespacedKey KEY = CoreTriggerKeys.BLOCK_BREAK;
 
@@ -25,11 +25,15 @@ public class BlockBreakTriggerListener implements Listener {
         context.set(CoreKeys.ITEM_IN_HAND, event.getPlayer().getInventory().getItemInMainHand());
 
         // 2. Рассылаем по шине
-        ActionAPI.getTriggers().dispatch(KEY, context);
+        ActionTriggerAPI.getTriggers().dispatch(KEY, context);
 
         // 3. Обрабатываем возможную отмену от сторонних плагинов
         if (context.isCancelled()) {
             event.setCancelled(true);
         }
+    }
+    @Override
+    public NamespacedKey getKey() {
+        return KEY;
     }
 }

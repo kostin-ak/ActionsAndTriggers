@@ -1,7 +1,5 @@
 package kostin.ak.actionstriggers.core.defaults.actions;
 
-import kostin.ak.actionstriggers.api.action.AbstractActionFactory;
-import kostin.ak.actionstriggers.api.action.Action;
 import kostin.ak.actionstriggers.api.action.ActionFactory;
 import kostin.ak.actionstriggers.api.action.ActionParameters;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
@@ -10,9 +8,8 @@ import kostin.ak.actionstriggers.core.CoreKeys;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
-import java.util.Map;
 
-public class KillActionFactory extends AbstractActionFactory {
+public class KillActionFactory extends ActionFactory {
 
     private static final NamespacedKey KEY = CoreActionKeys.KILL;
 

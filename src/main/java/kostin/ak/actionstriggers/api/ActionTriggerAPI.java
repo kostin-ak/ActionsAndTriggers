@@ -9,13 +9,14 @@ import org.jetbrains.annotations.NotNull;
  * Единая точка доступа ко всему функционалу библиотеки (Фасад).
  * Сторонние плагины используют этот класс для взаимодействия с ядром.
  */
-public final class ActionAPI {
+public final class ActionTriggerAPI {
 
     private static ActionRegistry actionRegistry;
     private static TriggerRegistry triggerRegistry;
     private static ActionScheduler actionScheduler;
+    private static Registrar registrar;
 
-    private ActionAPI() {
+    private ActionTriggerAPI() {
         throw new UnsupportedOperationException("Utility class");
     }
 
@@ -26,6 +27,7 @@ public final class ActionAPI {
         actionRegistry = actions;
         triggerRegistry = triggers;
         actionScheduler = scheduler;
+        registrar = Registrar.getInstance();
     }
 
     @NotNull
@@ -44,5 +46,11 @@ public final class ActionAPI {
     public static ActionScheduler getScheduler() {
         if (actionScheduler == null) throw new IllegalStateException("ActionAPI еще не инициализирован!");
         return actionScheduler;
+    }
+
+    @NotNull
+    public static Registrar getRegistrar() {
+        if (registrar == null) throw new IllegalStateException("ActionAPI еще не инициализирован!");
+        return registrar;
     }
 }

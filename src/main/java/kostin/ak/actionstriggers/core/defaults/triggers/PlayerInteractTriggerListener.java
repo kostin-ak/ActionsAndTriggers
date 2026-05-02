@@ -14,18 +14,24 @@ public class PlayerInteractTriggerListener extends Trigger {
 
     private static final NamespacedKey KEY = CoreTriggerKeys.PLAYER_INTERACT;
 
-    @EventHandler(priority = EventPriority.NORMAL)
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = false )
     public void onInteract(PlayerInteractEvent event) {
         ExecutionContext context = new ExecutionContext();
         context.set(CoreKeys.PLAYER, event.getPlayer());
 
-        // Если кликнули по блоку — добавляем блок в контекст
-        if (event.getClickedBlock() != null) {
+        // Регистрируем действие и кнопку ВСЕГДА
+        context.set(CoreKeys.ACTION, event.getAction());
+        context.set(CoreKeys.BUTTON_TYPE, event.getAction().isLeftClick() ?
+                CoreKeys.ButtonType.LEFT : CoreKeys.ButtonType.RIGHT);
+
+        // Устанавливаем наш новый флаг
+        boolean hasBlock = event.getClickedBlock() != null;
+        context.set(CoreKeys.HAS_BLOCK, hasBlock);
+
+        if (hasBlock) {
             context.set(CoreKeys.BLOCK, event.getClickedBlock());
             context.set(CoreKeys.BLOCK_MATERIAL, event.getClickedBlock().getType());
             context.set(CoreKeys.LOCATION, event.getClickedBlock().getLocation());
-            context.set(CoreKeys.ACTION, event.getAction());
-            context.set(CoreKeys.BUTTON_TYPE, event.getAction().isLeftClick() ? CoreKeys.ButtonType.LEFT : CoreKeys.ButtonType.RIGHT);
         } else {
             context.set(CoreKeys.LOCATION, event.getPlayer().getLocation());
         }

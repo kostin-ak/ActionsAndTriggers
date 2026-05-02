@@ -29,14 +29,15 @@ public final class ActionsTriggers extends JavaPlugin {
         // 3. Регистрируем базовые экшены и триггеры
 
         ActionTriggerAPI.getRegistrar().registerActions(DefaultActionParsers.class);
-        ActionTriggerAPI.getActions().scanAndRegister(TestActions.class);
 
         ActionTriggerAPI.getRegistrar().registerTriggers(this,
                 new BlockBreakTriggerListener(), new PlayerDamageTriggerListener(), new PlayerJoinTriggerListener(),
                 new PlayerInteractTriggerListener(), new EntityDeathTriggerListener(), new PlayerToggleSneakTriggerListener(),
                 new BlockPlaceTriggerListener(), new  PlayerConsumeTriggerListener(), new AsyncChatTriggerListener(),
                 new PlayerDeathTriggerListener(), new PlayerLevelChangeTriggerListener(), new PlayerQuitTriggerListener(),
-                new CraftItemTriggerListener());
+                new CraftItemTriggerListener(),new PlayerJumpTriggerListener(), new PlayerSwapHandItemsTriggerListener(),
+                new PlayerDropItemTriggerListener(), new BlockDamageTriggerListener(), new PlayerAdvancementDoneTriggerListener(),
+                new PlayerToggleFlightTriggerListener());
 
         ActionTriggerAPI.getRegistrar().registerFilters(DefaultFilterParsers.class);
 
@@ -44,6 +45,8 @@ public final class ActionsTriggers extends JavaPlugin {
         // 4. Инициализация Revxrsal Commands
         BukkitCommandHandler handler = BukkitCommandHandler.create(this);
         handler.register(new ActionCommand(actionRegistry, triggerRegistry, filterRegistry));
+
+       //ThirdPartyShowcase.loadShowcase(this);
 
 
         getLogger().info("Actions&Triggers API успешно загружен!");

@@ -37,6 +37,13 @@ public class CoreActionParams {
     public static final String Y ="y";
     public static final String Z ="z";
 
+    public static final String ADD = "add";
+    public static final String ENTITY = "entity";
+    public static final String ADVANCEMENT = "advancement";
+    public static final String YAW = "yaw";
+    public static final String PITCH_CAM = "pitch";
+    public static final String WORLD = "world";
+
 
     public static class MessageTypes{
         public static final String ACTIONBAR ="actionbar";

@@ -110,6 +110,14 @@ public final class DefaultFilterParsers implements IFilterParsers {
         return Filters.regex(ContextKey.of(keyName, String.class), pattern);
     }
 
+    @ConfigFilter("core:match")
+    public static Filter parseMatch(Map<String, Object> params) {
+        String template = String.valueOf(params.getOrDefault("template", ""));
+        String expected = String.valueOf(params.getOrDefault("value", ""));
+        boolean ignoreCase = Boolean.parseBoolean(String.valueOf(params.getOrDefault("ignore_case", "true")));
+        return Filters.match(template, expected, ignoreCase);
+    }
+
     // ========================================================================
     // ЛОГИЧЕСКИЕ ОПЕРАТОРЫ
     // ========================================================================

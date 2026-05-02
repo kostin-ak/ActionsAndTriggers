@@ -284,16 +284,110 @@ public final class DefaultActionParsers implements IActionParsers {
 
             ActionParameters actionParams = new ActionParameters(params, context);
             try {
-                double x = actionParams.getDouble(CoreActionParams.X, 0.0);
-                double y = actionParams.getDouble(CoreActionParams.Y, 0.0);
-                double z = actionParams.getDouble(CoreActionParams.Z, 0.0);
+                // Если координаты не указаны, берем текущие координаты игрока
+                double x = actionParams.getDouble(CoreActionParams.X, player.getLocation().getX());
+                double y = actionParams.getDouble(CoreActionParams.Y, player.getLocation().getY());
+                double z = actionParams.getDouble(CoreActionParams.Z, player.getLocation().getZ());
 
-                Location targetLoc = new Location(player.getWorld(), x, y, z);
+                float yaw = actionParams.getFloat("yaw", player.getLocation().getYaw());
+                float pitch = actionParams.getFloat("pitch", player.getLocation().getPitch());
+
+                // Парсим мир (если не указан, берем текущий мир игрока)
+                String worldName = actionParams.getString("world", player.getWorld().getName());
+                org.bukkit.World targetWorld = Bukkit.getWorld(worldName);
+
+                if (targetWorld == null) {
+                    targetWorld = player.getWorld(); // Фолбэк, если мир не найден
+                }
+
+                Location targetLoc = new Location(targetWorld, x, y, z, yaw, pitch);
                 player.teleportAsync(targetLoc);
                 return true;
             } catch (Exception e) {
                 return false;
             }
+        };
+    }
+    @ConfigAction("core:cancel_event")
+    public static Action parseCancelEvent(Map<String, Object> params) {
+        return context -> {
+            context.cancel();
+            return true;
+        };
+    }
+    @ConfigAction("core:push")
+    public static Action parsePush(Map<String, Object> params) {
+        return context -> {
+            Player player = context.get(CoreKeys.PLAYER);
+            if (player == null || !player.isOnline()) return false;
+
+            ActionParameters actionParams = new ActionParameters(params, context);
+            double x = actionParams.getDouble(CoreActionParams.X, 0.0);
+            double y = actionParams.getDouble(CoreActionParams.Y, 0.5);
+            double z = actionParams.getDouble(CoreActionParams.Z, 0.0);
+            boolean add = actionParams.getBoolean(CoreActionParams.ADD, false);
+
+            org.bukkit.util.Vector velocity = new org.bukkit.util.Vector(x, y, z);
+            if (add) {
+                player.setVelocity(player.getVelocity().add(velocity));
+            } else {
+                player.setVelocity(velocity);
+            }
+            return true;
+        };
+    }
+    @ConfigAction("core:spawn_entity")
+    public static Action parseSpawnEntity(Map<String, Object> params) {
+        String defaultEntity = String.valueOf(params.getOrDefault(CoreActionParams.ENTITY, "ZOMBIE")).toUpperCase();
+
+        return context -> {
+            Player player = context.get(CoreKeys.PLAYER);
+            if (player == null || !player.isOnline()) return false;
+
+            ActionParameters actionParams = new ActionParameters(params, context);
+            String entityName = actionParams.getString(CoreActionParams.ENTITY, defaultEntity).toUpperCase();
+
+            double x = actionParams.getDouble(CoreActionParams.X, player.getLocation().getX());
+            double y = actionParams.getDouble(CoreActionParams.Y, player.getLocation().getY());
+            double z = actionParams.getDouble(CoreActionParams.Z, player.getLocation().getZ());
+
+            try {
+                EntityType type = EntityType.valueOf(entityName);
+                Location spawnLoc = new Location(player.getWorld(), x, y, z);
+
+                if (type == EntityType.LIGHTNING_BOLT) {
+                    player.getWorld().strikeLightning(spawnLoc);
+                } else {
+                    player.getWorld().spawnEntity(spawnLoc, type);
+                }
+                return true;
+            } catch (IllegalArgumentException ignored) {
+                return false;
+            }
+        };
+    }
+    @ConfigAction("core:grant_advancement")
+    public static Action parseGrantAdvancement(Map<String, Object> params) {
+        return context -> {
+            Player player = context.get(CoreKeys.PLAYER);
+            if (player == null || !player.isOnline()) return false;
+
+            ActionParameters actionParams = new ActionParameters(params, context);
+            String advancementKeyStr = actionParams.getString(CoreActionParams.ADVANCEMENT, "");
+            if (advancementKeyStr.isEmpty()) return false;
+
+            NamespacedKey advKey = NamespacedKey.fromString(advancementKeyStr);
+            if (advKey == null) return false;
+
+            org.bukkit.advancement.Advancement adv = Bukkit.getAdvancement(advKey);
+            if (adv != null) {
+                org.bukkit.advancement.AdvancementProgress progress = player.getAdvancementProgress(adv);
+                for (String criteria : progress.getRemainingCriteria()) {
+                    progress.awardCriteria(criteria);
+                }
+                return true;
+            }
+            return false;
         };
     }
 }

@@ -2,12 +2,14 @@ package kostin.ak.actionstriggers.api.filter;
 
 import kostin.ak.actionstriggers.api.context.ContextKey;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
+import kostin.ak.actionstriggers.core.ContextPlaceholderParser;
 import kostin.ak.actionstriggers.core.CoreKeys;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
@@ -162,4 +164,21 @@ public final class Filters {
             return targetBlock != null && targetBlock.getType() == targetMaterial;
         };
     }
+    @NotNull
+    public static Filter match(String template, String expected, boolean ignoreCase) {
+        return context -> {
+            String resolved = ContextPlaceholderParser.resolve(template, context);
+
+            if (ignoreCase) {
+                return resolved.equalsIgnoreCase(expected);
+            }
+            return resolved.equals(expected);
+        };
+    }
+
+    @NotNull
+    public static Filter match(String template, String expected) {
+        return match(template, expected, false);
+    }
+
 }

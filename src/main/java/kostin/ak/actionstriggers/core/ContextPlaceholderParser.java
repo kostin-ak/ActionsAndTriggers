@@ -110,18 +110,18 @@ public class ContextPlaceholderParser {
         StringBuilder result = new StringBuilder();
 
         while (matcher.find()) {
-            String keyStr = matcher.group(1); // Например "player" или "location"
-            String propStr = matcher.group(2); // Например "name" или "x" (может быть null)
+            String keyStr = matcher.group(1);
+            String propStr = matcher.group(2);
 
             Object rawValue = context.getRaw(keyStr);
 
             if (rawValue != null) {
-                // Если объект найден в контексте - форматируем его
                 String replacement = formatValue(rawValue, propStr);
+                // Matcher.quoteReplacement защищает от ошибок, если в строке есть знаки $ или \
                 matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
             } else {
-                // Если такого ключа нет в контексте, оставляем плейсхолдер как текст
-                matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group(0)));
+                // ИЗМЕНЕНИЕ: Заменяем отсутствующие ключи на пустую строку, чтобы не ломать логику фильтров и чат
+                matcher.appendReplacement(result, "");
             }
         }
         matcher.appendTail(result);

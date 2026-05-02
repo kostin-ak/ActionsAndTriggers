@@ -23,4 +23,10 @@ public final class CoreTriggerKeys {
     public static final NamespacedKey PLAYER_LEVEL_CHANGE = NamespacedKey.fromString("core:player_level_change");
     public static final NamespacedKey PLAYER_WORLD_CHANGE = NamespacedKey.fromString("core:player_world_change");
     public static final NamespacedKey ITEM_CRAFT = NamespacedKey.fromString("core:item_craft");
+    public static final NamespacedKey PLAYER_JUMP = NamespacedKey.fromString("core:player_jump");
+    public static final NamespacedKey PLAYER_FLIGHT = NamespacedKey.fromString("core:player_flight");
+    public static final NamespacedKey ADVANCEMENT_DONE = NamespacedKey.fromString("core:advancement_done");
+    public static final NamespacedKey BLOCK_DAMAGE = NamespacedKey.fromString("core:block_damage");
+    public static final NamespacedKey SWAP_ITEMS = NamespacedKey.fromString("core:swap_items");
+    public static final NamespacedKey DROP_ITEM = NamespacedKey.fromString("core:drop_item");
 }

@@ -40,6 +40,9 @@ public final class CoreKeys {
     public static final ContextKey<Player> KILLER = ContextKey.of("killer", Player.class);
     public static final ContextKey<Integer> LEVEL = ContextKey.of("level", Integer.class);
     public static final ContextKey<String> WORLD_NAME = ContextKey.of("world_name", String.class);
+    public static final ContextKey<Boolean> HAS_BLOCK = ContextKey.of("has_block", Boolean.class);
+    public static final ContextKey<String> ADVANCEMENT_KEY = ContextKey.of("advancement_key", String.class);
+    public static final ContextKey<Boolean> IS_FLYING = ContextKey.of("is_flying", Boolean.class);
 
 
     public static enum ButtonType{

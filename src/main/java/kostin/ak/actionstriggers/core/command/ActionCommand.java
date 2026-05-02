@@ -16,6 +16,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 
+import revxrsal.commands.annotation.AutoComplete;
 import revxrsal.commands.annotation.Command;
 import revxrsal.commands.annotation.Optional;
 import revxrsal.commands.bukkit.BukkitCommandActor;
@@ -43,6 +44,7 @@ public class ActionCommand {
 
     @Command("actionapi run")
     @CommandPermission("actionstriggers.admin")
+    @AutoComplete("@actions *")
     public void runAction(
             BukkitCommandActor actor, // Универсальный отправитель (Консоль или Игрок)
             String actionKeyStr,      // Ключ (например, core:message)
@@ -118,6 +120,7 @@ public class ActionCommand {
 
     @Command("actionapi trigger")
     @CommandPermission("actionstriggers.admin")
+    @AutoComplete("@actions *")
     public void dispatchTrigger(
             BukkitCommandActor actor,
             String triggerKeyStr,

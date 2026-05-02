@@ -44,9 +44,18 @@ public final class ActionsTriggers extends JavaPlugin {
 
         // 4. Инициализация Revxrsal Commands
         BukkitCommandHandler handler = BukkitCommandHandler.create(this);
+
+        handler.getAutoCompleter().registerSuggestion("actions", (args, sender, command) -> {
+            return actionRegistry.asList();
+        });
+
+        handler.getAutoCompleter().registerSuggestion("triggers", (args, sender, command) -> {
+            return triggerRegistry.asList();
+        });
+
         handler.register(new ActionCommand(actionRegistry, triggerRegistry, filterRegistry));
 
-       ThirdPartyShowcase.loadShowcase(this);
+       //ThirdPartyShowcase.loadShowcase(this);
 
 
         getLogger().info("Actions&Triggers API успешно загружен!");

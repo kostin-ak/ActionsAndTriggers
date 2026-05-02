@@ -32,7 +32,8 @@ public final class ActionsTriggers extends JavaPlugin {
                 new BlockBreakTriggerListener(), new PlayerDamageTriggerListener(), new PlayerJoinTriggerListener(),
                 new PlayerInteractTriggerListener(), new EntityDeathTriggerListener(), new PlayerToggleSneakTriggerListener(),
                 new BlockPlaceTriggerListener(), new  PlayerConsumeTriggerListener(), new AsyncChatTriggerListener(),
-                new PlayerDeathTriggerListener(), new PlayerLevelChangeTriggerListener(), new PlayerQuitTriggerListener());
+                new PlayerDeathTriggerListener(), new PlayerLevelChangeTriggerListener(), new PlayerQuitTriggerListener(),
+                new CraftItemTriggerListener());
 
 
         // 4. Инициализация Revxrsal Commands

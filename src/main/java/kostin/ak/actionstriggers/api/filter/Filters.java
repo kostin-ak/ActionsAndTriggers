@@ -2,6 +2,7 @@ package kostin.ak.actionstriggers.api.filter;
 
 import kostin.ak.actionstriggers.api.context.ContextKey;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
+import kostin.ak.actionstriggers.core.CoreKeys;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
@@ -101,7 +102,7 @@ public final class Filters {
     @NotNull
     public static Filter permission(@NotNull String perm) {
         return context -> {
-            Player p = context.get(kostin.ak.actionstriggers.core.CoreKeys.PLAYER);
+            Player p = context.get(CoreKeys.PLAYER);
             return p != null && p.hasPermission(perm);
         };
     }
@@ -145,6 +146,20 @@ public final class Filters {
         return context -> {
             String val = context.get(key);
             return val != null && val.matches(pattern);
+        };
+    }
+
+    /**
+     * Проверяет, смотрит ли игрок на блок определенного типа в пределах дистанции.
+     */
+    @NotNull
+    public static Filter lookingAt(@NotNull org.bukkit.Material targetMaterial, int maxDistance) {
+        return context -> {
+            Player p = context.get(CoreKeys.PLAYER);
+            if (p == null) return false;
+
+            org.bukkit.block.Block targetBlock = p.getTargetBlockExact(maxDistance);
+            return targetBlock != null && targetBlock.getType() == targetMaterial;
         };
     }
 }

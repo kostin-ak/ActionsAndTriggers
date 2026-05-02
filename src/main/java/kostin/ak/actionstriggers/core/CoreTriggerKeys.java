@@ -6,6 +6,7 @@ import org.bukkit.NamespacedKey;
  * Стандартные ключи триггеров.
  */
 public final class CoreTriggerKeys {
+
     private CoreTriggerKeys() { throw new UnsupportedOperationException(); }
 
     public static final NamespacedKey BLOCK_BREAK = NamespacedKey.fromString("core:block_break");
@@ -21,4 +22,5 @@ public final class CoreTriggerKeys {
     public static final NamespacedKey PLAYER_QUIT = NamespacedKey.fromString("core:player_quit");
     public static final NamespacedKey PLAYER_LEVEL_CHANGE = NamespacedKey.fromString("core:player_level_change");
     public static final NamespacedKey PLAYER_WORLD_CHANGE = NamespacedKey.fromString("core:player_world_change");
+    public static final NamespacedKey ITEM_CRAFT = NamespacedKey.fromString("core:item_craft");
 }

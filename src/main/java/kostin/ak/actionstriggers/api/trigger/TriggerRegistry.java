@@ -9,6 +9,7 @@ import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,7 +32,7 @@ public class TriggerRegistry {
 
     private final Logger logger;
 
-    private List<String> triggers = new ArrayList<>();
+    private Map<NamespacedKey, Trigger> triggers = new HashMap<>();
 
     public TriggerRegistry(@NotNull Logger logger) {
         this.logger = logger;
@@ -90,10 +91,11 @@ public class TriggerRegistry {
     }
 
     public List<String> asList() {
-        return triggers;
+        return triggers.keySet().stream().map(NamespacedKey::toString).collect(Collectors.toList());
     }
 
     public void register(Trigger trigger) {
-        triggers.add(trigger.getKey().toString());
+        triggers.put(trigger.getKey(), trigger);
+        logger.info("Триггер был зарегистрирован: " + trigger.getKey());
     }
 }

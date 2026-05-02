@@ -8,6 +8,7 @@ import kostin.ak.actionstriggers.api.filter.IFilterParsers;
 import kostin.ak.actionstriggers.api.trigger.Trigger;
 import kostin.ak.actionstriggers.api.trigger.TriggerRegistry;
 import lombok.Getter;
+import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
@@ -22,10 +23,12 @@ public class Registrar {
         }*/
         ActionTriggerAPI.getActions().scanAndRegister(clazz);
     }
-    public void registerTriggers(Plugin plugin, Trigger... triggers){
+    public void registerTriggers(Plugin plugin, Trigger ... triggers){
         PluginManager pluginManager = plugin.getServer().getPluginManager();
         for(Trigger trigger : triggers){
-            pluginManager.registerEvents(trigger, plugin);
+            if (trigger instanceof Listener) {
+                pluginManager.registerEvents((Listener) trigger, plugin);
+            };
             ActionTriggerAPI.getTriggers().register(trigger);
         }
     }

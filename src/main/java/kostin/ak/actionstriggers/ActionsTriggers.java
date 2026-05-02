@@ -31,13 +31,13 @@ public final class ActionsTriggers extends JavaPlugin {
         ActionTriggerAPI.getRegistrar().registerActions(DefaultActionParsers.class);
 
         ActionTriggerAPI.getRegistrar().registerTriggers(this,
-                new BlockBreakTriggerListener(), new PlayerDamageTriggerListener(), new PlayerJoinTriggerListener(),
-                new PlayerInteractTriggerListener(), new EntityDeathTriggerListener(), new PlayerToggleSneakTriggerListener(),
-                new BlockPlaceTriggerListener(), new  PlayerConsumeTriggerListener(), new AsyncChatTriggerListener(),
-                new PlayerDeathTriggerListener(), new PlayerLevelChangeTriggerListener(), new PlayerQuitTriggerListener(),
-                new CraftItemTriggerListener(),new PlayerJumpTriggerListener(), new PlayerSwapHandItemsTriggerListener(),
-                new PlayerDropItemTriggerListener(), new BlockDamageTriggerListener(), new PlayerAdvancementDoneTriggerListener(),
-                new PlayerToggleFlightTriggerListener());
+                new BlockBreakTrigger(), new PlayerDamageTrigger(), new PlayerJoinTrigger(),
+                new PlayerInteractTrigger(), new EntityDeathTrigger(), new PlayerToggleSneakTrigger(),
+                new BlockPlaceTrigger(), new PlayerConsumeTrigger(), new AsyncChatTrigger(),
+                new PlayerDeathTrigger(), new PlayerLevelChangeTrigger(), new PlayerQuitTrigger(),
+                new CraftItemTrigger(),new PlayerJumpTrigger(), new PlayerSwapHandItemsTrigger(),
+                new PlayerDropItemTrigger(), new BlockDamageTrigger(), new PlayerAdvancementDoneTrigger(),
+                new PlayerToggleFlightTrigger());
 
         ActionTriggerAPI.getRegistrar().registerFilters(DefaultFilterParsers.class);
 
@@ -46,7 +46,7 @@ public final class ActionsTriggers extends JavaPlugin {
         BukkitCommandHandler handler = BukkitCommandHandler.create(this);
         handler.register(new ActionCommand(actionRegistry, triggerRegistry, filterRegistry));
 
-       //ThirdPartyShowcase.loadShowcase(this);
+       ThirdPartyShowcase.loadShowcase(this);
 
 
         getLogger().info("Actions&Triggers API успешно загружен!");

@@ -1,63 +1,63 @@
 package kostin.ak.actionstriggers.api.action;
 
-import kostin.ak.actionstriggers.api.context.ExecutionContext;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Collections;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Level;
+import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-/**
- * Реестр всех доступных Экшенов. Управляет их регистрацией и безопасным выполнением.
- */
 public class ActionRegistry {
-
-    private final Map<NamespacedKey, IActionFactory> factories = new ConcurrentHashMap<>();
+    private final Map<NamespacedKey, Function<Map<String, Object>, Action>> factories = new ConcurrentHashMap<>();
     private final Logger logger;
 
     public ActionRegistry(@NotNull Logger logger) {
         this.logger = logger;
     }
 
-    /**
-     * Регистрирует новый тип экшена (может быть вызвано любым сторонним плагином).
-     */
-    public void register(@NotNull IActionFactory factory) {
-        factories.put(factory.getKey(), factory);
-        logger.info("Зарегистрирован экшен: " + factory.getKey());
+    public void register(@NotNull NamespacedKey key, @NotNull Function<Map<String, Object>, Action> factory) {
+        factories.put(key, factory);
+        logger.info("Зарегистрирован экшен: " + key);
     }
 
-    /**
-     * Главный метод выполнения Экшена.
-     * Безопасно собирает его через фабрику и вызывает, перехватывая любые ошибки.
-     */
-    public boolean execute(@NotNull NamespacedKey key, @NotNull ExecutionContext context, @NotNull Map<String, Object> params) {
-        IActionFactory factory = factories.get(key);
+    @SuppressWarnings("unchecked")
+    public <T extends IActionParsers> void scanAndRegister(@NotNull Class<T> clazz) {
+        for (Method method : clazz.getDeclaredMethods()) {
+            if (method.isAnnotationPresent(ConfigAction.class)) {
+                if (!Modifier.isStatic(method.getModifiers()) ||
+                        !Action.class.isAssignableFrom(method.getReturnType())) {
+                    logger.warning("Неверная сигнатура метода " + method.getName());
+                    continue;
+                }
 
+                ConfigAction annotation = method.getAnnotation(ConfigAction.class);
+                NamespacedKey key = NamespacedKey.fromString(annotation.value());
+                method.setAccessible(true);
+
+                Function<Map<String, Object>, Action> factory = (map) -> {
+                    try {
+                        return (Action) method.invoke(null, map);
+                    } catch (Exception e) {
+                        throw new IllegalArgumentException("Ошибка при парсинге экшена '" + key + "'", e);
+                    }
+                };
+                register(key, factory);
+            }
+        }
+    }
+
+    @NotNull
+    public Action create(@NotNull NamespacedKey key, @NotNull Map<String, Object> params) {
+        Function<Map<String, Object>, Action> factory = factories.get(key);
         if (factory == null) {
-            logger.warning("Попытка выполнить неизвестный экшен: " + key);
-            return false;
+            throw new IllegalArgumentException("Фабрика экшена не найдена для ключа: " + key);
         }
-
-        try {
-            Action action = factory.create(params);
-            return action.execute(context);
-        } catch (Exception e) {
-            logger.log(Level.SEVERE, "Критическая ошибка при выполнении экшена " + key, e);
-            return false;
-        }
-    }
-
-    /**
-     * Перегрузка для выполнения экшена без параметров.
-     */
-    public boolean execute(@NotNull NamespacedKey key, @NotNull ExecutionContext context) {
-        return execute(key, context, Collections.emptyMap());
+        return factory.apply(params);
     }
 
     public List<String> asList() {

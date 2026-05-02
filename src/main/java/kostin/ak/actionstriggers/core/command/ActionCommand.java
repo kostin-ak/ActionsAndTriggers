@@ -1,9 +1,12 @@
 package kostin.ak.actionstriggers.core.command;
 
 import kostin.ak.actionstriggers.api.ActionTriggerAPI;
+import kostin.ak.actionstriggers.api.action.Action;
 import kostin.ak.actionstriggers.api.action.ActionRegistry;
 import kostin.ak.actionstriggers.api.context.ContextKey;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
+import kostin.ak.actionstriggers.api.filter.FilterRegistry;
+import kostin.ak.actionstriggers.api.parser.AATParser;
 import kostin.ak.actionstriggers.api.trigger.TriggerRegistry;
 import kostin.ak.actionstriggers.core.CoreKeys;
 import net.kyori.adventure.text.Component;
@@ -18,9 +21,7 @@ import revxrsal.commands.annotation.Optional;
 import revxrsal.commands.bukkit.BukkitCommandActor;
 import revxrsal.commands.bukkit.annotation.CommandPermission;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
@@ -32,10 +33,12 @@ public class ActionCommand {
     private BiConsumer<NamespacedKey, ExecutionContext> debugListener = null;
     private final ActionRegistry actionRegistry;
     private final TriggerRegistry triggerRegistry;
+    private final FilterRegistry filterRegistry;
 
-    public ActionCommand(ActionRegistry actionRegistry, TriggerRegistry triggerRegistry) {
+    public ActionCommand(ActionRegistry actionRegistry, TriggerRegistry triggerRegistry, FilterRegistry filterRegistry) {
         this.actionRegistry = actionRegistry;
         this.triggerRegistry = triggerRegistry;
+        this.filterRegistry = filterRegistry;
     }
 
     @Command("actionapi run")
@@ -89,7 +92,22 @@ public class ActionCommand {
             context.set(CoreKeys.LOCATION, p.getLocation());
         }
         // Выполняем экшен!
-        boolean success = ActionTriggerAPI.getActions().execute(actionKey, context, params);
+        // Получаем и выполняем экшен!
+        boolean success = false;
+        try {
+            // 1. Просим реестр создать экшен на основе параметров
+            Action action = ActionTriggerAPI.getActions().create(actionKey, params);
+            // 2. Выполняем полученный экшен, передавая ему контекст
+            success = action.execute(context);
+        } catch (IllegalArgumentException e) {
+            // Сработает, если мы ввели несуществующий ключ экшена
+            actor.error("Экшен с ключом " + actionKey + " не найден!");
+            return;
+        } catch (Exception e) {
+            actor.error("Произошла ошибка при выполнении: " + e.getMessage());
+            e.printStackTrace();
+            return;
+        }
 
         if (success) {
             actor.reply("§aЭкшен " + actionKey + " успешно выполнен!");
@@ -199,6 +217,7 @@ public class ActionCommand {
         // 2. Формируем списки с помощью вспомогательного метода (см. ниже)
         Component actions = buildSection("Действия", actionRegistry.asList(), "#55FF55", "#55FFFF");
         Component triggers = buildSection("Триггеры", triggerRegistry.asList(), "#FF55FF", "#FFFF55");
+        Component filters = buildSection("Фильтры", filterRegistry.asList(), "#55FFFF", "#FF55FF");
 
         // 3. Подвал для визуального завершения "таблицы"
         Component footer = mm.deserialize("\n<dark_gray><strikethrough>                                        </strikethrough></dark_gray>");
@@ -207,7 +226,8 @@ public class ActionCommand {
         Component finalMessage = Component.empty()
                 .append(header)
                 .append(actions).append(Component.newline()).append(Component.newline())
-                .append(triggers)
+                .append(triggers).append(Component.newline()).append(Component.newline())
+                .append(filters)
                 .append(footer);
 
         // Отправка в консоль

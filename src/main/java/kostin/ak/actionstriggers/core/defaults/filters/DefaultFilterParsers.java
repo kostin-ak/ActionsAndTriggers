@@ -6,11 +6,15 @@ import kostin.ak.actionstriggers.api.filter.ConfigFilter;
 import kostin.ak.actionstriggers.api.filter.Filter;
 import kostin.ak.actionstriggers.api.filter.Filters;
 import kostin.ak.actionstriggers.api.filter.IFilterParsers;
+import kostin.ak.actionstriggers.core.CoreActionParams;
+import kostin.ak.actionstriggers.core.CoreFilterKeys;
 import org.bukkit.Material;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import kostin.ak.actionstriggers.api.parser.AATParser;
 import org.bukkit.inventory.ItemStack;
@@ -155,35 +159,52 @@ public final class DefaultFilterParsers implements IFilterParsers {
         return Filters.not(filter);
     }
 
-    // Допустим, это метод в вашем IFilterParsers
-    @ConfigFilter("core:check_item")
+    @ConfigFilter(CoreFilterKeys.CHECK_ITEM)
     public static Filter checkItem(Map<String, Object> map) {
-        // Обрати внимание: теперь мы по дефолту ищем строку item_in_hand_id, а не сам ItemStack
-        String contextKeyStr = (String) map.getOrDefault("context_key", "item_in_hand_id");
-        String targetMaterialStr = (String) map.get("material");
-
+        String contextKeyStr = (String) map.getOrDefault(CoreActionParams.CONTEXT_KEY, "item_in_hand_id");
         ContextKey<String> contextKey = ContextKey.of(contextKeyStr, String.class);
 
+        // Получаем список валидных ID
+        List<String> targetMaterials = extractStringList(map.get(CoreActionParams.MATERIAL));
+
         return context -> {
-            // Берем из контекста уже готовую строку (например, "oraxen:magic_wand")
             String currentId = context.get(contextKey);
             if (currentId == null) return false;
 
-            return currentId.equalsIgnoreCase(targetMaterialStr);
+            // Проверяем, есть ли наш предмет в списке (игнорируя регистр)
+            return targetMaterials.contains(currentId.toLowerCase());
         };
     }
 
-    @ConfigFilter("core:check_block")
+    @ConfigFilter(CoreFilterKeys.CHECK_BLOCK)
     public static Filter checkBlock(Map<String, Object> map) {
-        String contextKeyStr = (String) map.getOrDefault("context_key", "block_id");
-        String targetMaterialStr = (String) map.get("material");
-
+        String contextKeyStr = (String) map.getOrDefault(CoreActionParams.CONTEXT_KEY, "block_id");
         ContextKey<String> contextKey = ContextKey.of(contextKeyStr, String.class);
+
+        // Получаем список валидных ID
+        List<String> targetMaterials = extractStringList(map.get(CoreActionParams.MATERIAL));
 
         return context -> {
             String currentId = context.get(contextKey);
             if (currentId == null) return false;
-            return currentId.equalsIgnoreCase(targetMaterialStr);
+
+            return targetMaterials.contains(currentId.toLowerCase());
         };
+    }
+
+    /**
+     * Вспомогательный метод. Превращает и строку ("oraxen:ruby"),
+     * и список (["oraxen:ruby", "oraxen:sapphire"]) в List<String> в нижнем регистре.
+     */
+    private static List<String> extractStringList(Object obj) {
+        if (obj instanceof String) {
+            return Collections.singletonList(((String) obj).toLowerCase());
+        } else if (obj instanceof List) {
+            return ((List<?>) obj).stream()
+                    .map(Object::toString)
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toList());
+        }
+        return Collections.emptyList();
     }
 }

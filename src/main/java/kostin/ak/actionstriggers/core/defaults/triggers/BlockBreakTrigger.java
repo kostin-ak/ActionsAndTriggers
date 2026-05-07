@@ -11,6 +11,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockBreakEvent;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class BlockBreakTrigger extends BukkitEventTrigger<BlockBreakEvent> {
 
     private static final NamespacedKey KEY = CoreTriggerKeys.BLOCK_BREAK;
@@ -30,8 +33,8 @@ public class BlockBreakTrigger extends BukkitEventTrigger<BlockBreakEvent> {
         context.set(CoreKeys.ITEM_IN_HAND, event.getPlayer().getInventory().getItemInMainHand());
 
         // Новые строковые ID для кастомных блоков/предметов
-        context.set(ContextKey.of("block_id", String.class), ActionTriggerAPI.getBlocks().getFullId(event.getBlock()));
-        context.set(ContextKey.of("item_in_hand_id", String.class), ActionTriggerAPI.getItems().getFullId(event.getPlayer().getInventory().getItemInMainHand()));
+        context.set(CoreKeys.BLOCK_ID, ActionTriggerAPI.getBlocks().getFullId(event.getBlock()));
+        context.set(CoreKeys.ITEM_IN_HAND_ID, ActionTriggerAPI.getItems().getFullId(event.getPlayer().getInventory().getItemInMainHand()));
 
         return context;
     }
@@ -39,5 +42,19 @@ public class BlockBreakTrigger extends BukkitEventTrigger<BlockBreakEvent> {
     @Override
     public NamespacedKey getKey() {
         return KEY;
+    }
+
+    @Override
+    public List<ContextKey<?>> getProvidedContext() {
+        // Просто передаем те самые ключи из CoreKeys!
+        return Arrays.asList(
+                CoreKeys.PLAYER,
+                CoreKeys.BLOCK,
+                CoreKeys.BLOCK_MATERIAL,
+                CoreKeys.LOCATION,
+                CoreKeys.ITEM_IN_HAND,
+                CoreKeys.BLOCK_ID,
+                CoreKeys.ITEM_IN_HAND_ID
+        );
     }
 }

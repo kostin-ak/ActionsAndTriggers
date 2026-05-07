@@ -44,6 +44,8 @@ public class CoreActionParams {
     public static final String PITCH_CAM = "pitch";
     public static final String WORLD = "world";
 
+    public static final String CONTEXT_KEY = "context_key";
+
 
     public static class MessageTypes{
         public static final String ACTIONBAR ="actionbar";

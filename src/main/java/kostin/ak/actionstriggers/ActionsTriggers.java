@@ -3,7 +3,9 @@ package kostin.ak.actionstriggers;
 import kostin.ak.actionstriggers.api.ActionTriggerAPI;
 import kostin.ak.actionstriggers.api.action.ActionRegistry;
 import kostin.ak.actionstriggers.api.action.ActionScheduler;
+import kostin.ak.actionstriggers.api.context.ContextKey;
 import kostin.ak.actionstriggers.api.filter.FilterRegistry;
+import kostin.ak.actionstriggers.api.meta.ActionParameterMeta;
 import kostin.ak.actionstriggers.api.provider.impl.OraxenBlockProvider;
 import kostin.ak.actionstriggers.api.provider.impl.OraxenItemProvider;
 import kostin.ak.actionstriggers.api.provider.impl.VanillaItemProvider;
@@ -14,8 +16,14 @@ import kostin.ak.actionstriggers.core.defaults.triggers.*;
 import kostin.ak.actionstriggers.core.command.ActionCommand;
 import kostin.ak.actionstriggers.core.defaults.filters.DefaultFilterParsers;
 import org.bukkit.Bukkit;
+import org.bukkit.NamespacedKey;
 import org.bukkit.plugin.java.JavaPlugin;
+import revxrsal.commands.CommandHandler;
 import revxrsal.commands.bukkit.BukkitCommandHandler;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public final class ActionsTriggers extends JavaPlugin {
 
@@ -54,17 +62,57 @@ public final class ActionsTriggers extends JavaPlugin {
         }
 
         // 4. Инициализация Revxrsal Commands
-        BukkitCommandHandler handler = BukkitCommandHandler.create(this);
+        CommandHandler handler = BukkitCommandHandler.create(this);
 
-        handler.getAutoCompleter().registerSuggestion("actions", (args, sender, command) -> {
-            return actionRegistry.asList();
+// 1. Подсказки ID
+        handler.getAutoCompleter().registerSuggestion("actions", (args, sender, command) -> ActionTriggerAPI.getActions().asList());
+        handler.getAutoCompleter().registerSuggestion("triggers", (args, sender, command) -> ActionTriggerAPI.getTriggers().asList());
+
+// 2. Подсказки аргументов для Экшенов (/aat run ...)
+        handler.getAutoCompleter().registerSuggestion("action_args", (args, sender, command) -> {
+            if (args.size() < 3) return Collections.emptyList();
+            NamespacedKey actionKey = NamespacedKey.fromString(args.get(2));
+            if (actionKey == null) return Collections.emptyList();
+
+            List<ActionParameterMeta> metadata = ActionTriggerAPI.getActions().getMetadata(actionKey);
+            List<String> suggestions = new ArrayList<>();
+
+            if (args.size() == 3 || (args.size() == 4 && args.get(3).isEmpty())) {
+                suggestions.add("args={"); suggestions.add("context={");
+                return suggestions;
+            }
+            for (ActionParameterMeta meta : metadata) {
+                if (!String.join(" ", args).contains(meta.getKey() + "=")) {
+                    suggestions.add(meta.getKey() + "=");
+                }
+            }
+            return suggestions;
         });
 
-        handler.getAutoCompleter().registerSuggestion("triggers", (args, sender, command) -> {
-            return triggerRegistry.asList();
+// 3. НОВОЕ: Подсказки аргументов для Триггеров (/aat trigger ...)
+        handler.getAutoCompleter().registerSuggestion("trigger_args", (args, sender, command) -> {
+            if (args.size() < 3) return Collections.emptyList();
+            NamespacedKey triggerKey = NamespacedKey.fromString(args.get(2));
+            if (triggerKey == null) return Collections.emptyList();
+
+            // Достаем поставляемый контекст этого триггера
+            List<ContextKey<?>> ctxList = ActionTriggerAPI.getTriggers().getProvidedContext(triggerKey);
+            List<String> suggestions = new ArrayList<>();
+
+            if (args.size() == 3 || (args.size() == 4 && args.get(3).isEmpty())) {
+                suggestions.add("context={");
+                return suggestions;
+            }
+
+            for (ContextKey<?> ctxKey : ctxList) {
+                if (!String.join(" ", args).contains(ctxKey.getId() + "=")) {
+                    suggestions.add(ctxKey.getId() + "=");
+                }
+            }
+            return suggestions;
         });
 
-        handler.register(new ActionCommand(actionRegistry, triggerRegistry, filterRegistry));
+        handler.register(new ActionCommand(this));
 
        //ThirdPartyShowcase.loadShowcase(this);
 

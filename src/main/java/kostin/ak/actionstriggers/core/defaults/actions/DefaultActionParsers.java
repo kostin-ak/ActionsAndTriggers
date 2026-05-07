@@ -1,11 +1,8 @@
 package kostin.ak.actionstriggers.core.defaults.actions;
 
 import kostin.ak.actionstriggers.api.ActionTriggerAPI;
-import kostin.ak.actionstriggers.api.action.Action;
-import kostin.ak.actionstriggers.api.action.ActionParameters;
-import kostin.ak.actionstriggers.api.action.ConfigAction;
-import kostin.ak.actionstriggers.api.action.IActionParsers;
-import kostin.ak.actionstriggers.api.context.ExecutionContext;
+import kostin.ak.actionstriggers.api.action.*;
+import kostin.ak.actionstriggers.api.meta.ActionParam;
 import kostin.ak.actionstriggers.core.CoreActionParams;
 import kostin.ak.actionstriggers.core.CoreKeys;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -14,7 +11,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Registry;
 import org.bukkit.entity.EntityType;
@@ -67,6 +63,9 @@ public final class DefaultActionParsers implements IActionParsers {
     }
 
     @ConfigAction("core:message")
+    @ActionParam(key = CoreActionParams.TEXT, type = String.class, required = true, description = "Текст")
+    @ActionParam(key = CoreActionParams.TYPE, type = String.class, description = "Тип")
+    @ActionParam(key = CoreActionParams.SUBTITLE, type = String.class, description = "Подзаголовок")
     public static Action parseMessage(Map<String, Object> params) {
         String defaultText = String.valueOf(params.getOrDefault(CoreActionParams.TEXT, "<red>Текст не задан</red>"));
         String defaultSubtitle = String.valueOf(params.getOrDefault(CoreActionParams.SUBTITLE, ""));
@@ -174,6 +173,8 @@ public final class DefaultActionParsers implements IActionParsers {
     // ========================================================================
 
     @ConfigAction("core:give_item")
+    @ActionParam(key = CoreActionParams.MATERIAL, type = String.class, required = true, description = "Предмет для выдачи (namespace:id)")
+    @ActionParam(key = CoreActionParams.AMOUNT, type = Integer.class, description = "Количество предметов")
     public static Action parseGiveItem(Map<String, Object> params) {
         return context -> {
             Player player = context.get(CoreKeys.PLAYER);

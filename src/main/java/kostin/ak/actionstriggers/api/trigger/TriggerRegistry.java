@@ -1,20 +1,20 @@
 package kostin.ak.actionstriggers.api.trigger;
 
+import kostin.ak.actionstriggers.api.context.ContextKey;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
 import kostin.ak.actionstriggers.api.filter.Filter;
 import kostin.ak.actionstriggers.api.filter.Filters;
 import org.bukkit.NamespacedKey;
-import org.bukkit.event.Listener;
 import org.bukkit.plugin.Plugin;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.BiConsumer; // Важно: BiConsumer для передачи ключа триггера!
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,14 +25,17 @@ import java.util.stream.Collectors;
  */
 public class TriggerRegistry {
 
+    private final Map<NamespacedKey, Trigger> triggers = new ConcurrentHashMap<>();
     private final Map<NamespacedKey, List<TriggerSubscription>> subscriptions = new ConcurrentHashMap<>();
 
-    // НОВЫЙ СПИСОК ДЛЯ ГЛОБАЛЬНЫХ СЛУШАТЕЛЕЙ (Дебаг)
+    // ГЛОБАЛЬНЫЕ СЛУШАТЕЛИ (Дебаг)
     private final List<BiConsumer<NamespacedKey, ExecutionContext>> globalListeners = new CopyOnWriteArrayList<>();
+
+    // НОВОЕ ПОЛЕ: Кэш поставляемого контекста
+    private final Map<NamespacedKey, List<ContextKey<?>>> triggerContextCache = new ConcurrentHashMap<>();
 
     private final Logger logger;
 
-    private Map<NamespacedKey, Trigger> triggers = new HashMap<>();
 
     public TriggerRegistry(@NotNull Logger logger) {
         this.logger = logger;
@@ -53,7 +56,6 @@ public class TriggerRegistry {
         globalListeners.add(callback);
     }
 
-    // НОВЫЙ МЕТОД ДЛЯ ОТПИСКИ
     public void unsubscribeGlobal(@NotNull BiConsumer<NamespacedKey, ExecutionContext> callback) {
         globalListeners.remove(callback);
     }
@@ -94,8 +96,12 @@ public class TriggerRegistry {
         return triggers.keySet().stream().map(NamespacedKey::toString).collect(Collectors.toList());
     }
 
+    @NotNull
+    public List<ContextKey<?>> getProvidedContext(@NotNull NamespacedKey key) {
+        return triggerContextCache.getOrDefault(key, Collections.emptyList());
+    }
+
     public void register(Trigger trigger) {
         triggers.put(trigger.getKey(), trigger);
-        logger.info("Триггер был зарегистрирован: " + trigger.getKey());
     }
 }

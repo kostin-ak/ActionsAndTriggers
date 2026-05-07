@@ -1,10 +1,14 @@
 package kostin.ak.actionstriggers.api.action;
 
+import kostin.ak.actionstriggers.api.meta.ActionParam;
+import kostin.ak.actionstriggers.api.meta.ActionParameterMeta;
 import org.bukkit.NamespacedKey;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,6 +18,10 @@ import java.util.stream.Collectors;
 
 public class ActionRegistry {
     private final Map<NamespacedKey, Function<Map<String, Object>, Action>> factories = new ConcurrentHashMap<>();
+
+    // НОВОЕ ПОЛЕ: Кэш метаданных параметров для автодополнения и документации
+    private final Map<NamespacedKey, List<ActionParameterMeta>> actionMetadataCache = new ConcurrentHashMap<>();
+
     private final Logger logger;
 
     public ActionRegistry(@NotNull Logger logger) {
@@ -39,6 +47,21 @@ public class ActionRegistry {
                 NamespacedKey key = NamespacedKey.fromString(annotation.value());
                 method.setAccessible(true);
 
+                // --- СБОР МЕТАДАННЫХ ЧЕРЕЗ РЕФЛЕКСИЮ ---
+                List<ActionParameterMeta> metaList = new ArrayList<>();
+                ActionParam[] params = method.getAnnotationsByType(ActionParam.class);
+
+                for (ActionParam param : params) {
+                    metaList.add(new ActionParameterMeta(
+                            param.key(),
+                            param.type(),
+                            param.required(),
+                            param.description()
+                    ));
+                }
+                actionMetadataCache.put(key, metaList);
+                // ---------------------------------------
+
                 Function<Map<String, Object>, Action> factory = (map) -> {
                     try {
                         return (Action) method.invoke(null, map);
@@ -62,5 +85,10 @@ public class ActionRegistry {
 
     public List<String> asList() {
         return factories.keySet().stream().map(NamespacedKey::toString).collect(Collectors.toList());
+    }
+
+    @NotNull
+    public List<ActionParameterMeta> getMetadata(@NotNull NamespacedKey key) {
+        return actionMetadataCache.getOrDefault(key, Collections.emptyList());
     }
 }

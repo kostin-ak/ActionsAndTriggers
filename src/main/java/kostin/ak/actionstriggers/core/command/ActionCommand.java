@@ -2,276 +2,237 @@ package kostin.ak.actionstriggers.core.command;
 
 import kostin.ak.actionstriggers.api.ActionTriggerAPI;
 import kostin.ak.actionstriggers.api.action.Action;
-import kostin.ak.actionstriggers.api.action.ActionRegistry;
 import kostin.ak.actionstriggers.api.context.ContextKey;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
-import kostin.ak.actionstriggers.api.filter.FilterRegistry;
+import kostin.ak.actionstriggers.api.meta.ActionParameterMeta;
 import kostin.ak.actionstriggers.api.parser.AATParser;
-import kostin.ak.actionstriggers.api.trigger.TriggerRegistry;
 import kostin.ak.actionstriggers.core.CoreKeys;
+import kostin.ak.actionstriggers.core.config.YamlTriggerLoader;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
-
+import org.bukkit.plugin.Plugin;
 import revxrsal.commands.annotation.AutoComplete;
 import revxrsal.commands.annotation.Command;
+import revxrsal.commands.annotation.DefaultFor;
 import revxrsal.commands.annotation.Optional;
+import revxrsal.commands.annotation.Subcommand;
 import revxrsal.commands.bukkit.BukkitCommandActor;
 import revxrsal.commands.bukkit.annotation.CommandPermission;
 
 import java.util.*;
 import java.util.function.BiConsumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-/**
- * Парсер консольных команд с использованием Revxrsal Commands.
- */
+@Command({"actionapi", "aat"})
+@CommandPermission("actionstriggers.admin")
 public class ActionCommand {
 
+    private final Plugin plugin;
+    private final MiniMessage mm = MiniMessage.miniMessage();
     private BiConsumer<NamespacedKey, ExecutionContext> debugListener = null;
-    private final ActionRegistry actionRegistry;
-    private final TriggerRegistry triggerRegistry;
-    private final FilterRegistry filterRegistry;
 
-    public ActionCommand(ActionRegistry actionRegistry, TriggerRegistry triggerRegistry, FilterRegistry filterRegistry) {
-        this.actionRegistry = actionRegistry;
-        this.triggerRegistry = triggerRegistry;
-        this.filterRegistry = filterRegistry;
+    public ActionCommand(Plugin plugin) {
+        this.plugin = plugin;
     }
 
-    @Command("actionapi run")
-    @CommandPermission("actionstriggers.admin")
-    @AutoComplete("@actions *")
-    public void runAction(
-            BukkitCommandActor actor, // Универсальный отправитель (Консоль или Игрок)
-            String actionKeyStr,      // Ключ (например, core:message)
-            @Optional String argsString // Lamp автоматически поместит сюда ВЕСЬ оставшийся текст
-    ) {
-        NamespacedKey actionKey = NamespacedKey.fromString(actionKeyStr);
-        if (actionKey == null) {
-            actor.error("Неверный формат ключа экшена: " + actionKeyStr);
-            return;
-        }
+    // =================================================================================
+    // ВЫПОЛНЕНИЕ ЭКШЕНОВ
+    // =================================================================================
 
-        ExecutionContext context = new ExecutionContext();
-        Map<String, Object> params = new HashMap<>();
-
-        // Если есть доп. аргументы, разбиваем строку по пробелам и парсим
-        if (argsString != null && !argsString.trim().isEmpty()) {
-            String[] args = argsString.trim().split("\\s+");
-            for (String arg : args) {
-                String[] parts = arg.split("=", 2);
-                if (parts.length == 2) {
-                    String key = parts[0].toLowerCase();
-                    String value = parts[1]; // Больше не делаем replace для всех подряд!
-
-                    if (key.equals("player")) {
-                        Player target = Bukkit.getPlayer(value);
-                        if (target != null) {
-                            context.set(CoreKeys.PLAYER, target);
-                        } else {
-                            actor.reply("§e[Внимание] Игрок " + value + " не найден на сервере.");
-                        }
-                    } else if (key.equals("text") || key.equals("subtitle") || key.equals("command")) {
-                        params.put(key, smartDecode(value));
-                    } else {
-                        params.put(key, value);
-                    }
-                }
-            }
-        }
-
-        // Если команду вызвал игрок, кладем ЕГО в контекст как дефолтного (если player=... не указан)
-        if (actor.isPlayer() && !context.has(CoreKeys.PLAYER)) {
-            context.set(CoreKeys.PLAYER, actor.requirePlayer());
-        }
-
-        if (context.has(CoreKeys.PLAYER)) {
-            Player p = context.get(CoreKeys.PLAYER);
-            context.set(CoreKeys.LOCATION, p.getLocation());
-        }
-        // Выполняем экшен!
-        // Получаем и выполняем экшен!
-        boolean success = false;
-        try {
-            // 1. Просим реестр создать экшен на основе параметров
-            Action action = ActionTriggerAPI.getActions().create(actionKey, params);
-            // 2. Выполняем полученный экшен, передавая ему контекст
-            success = action.execute(context);
-        } catch (IllegalArgumentException e) {
-            // Сработает, если мы ввели несуществующий ключ экшена
-            actor.error("Экшен с ключом " + actionKey + " не найден!");
-            return;
-        } catch (Exception e) {
-            actor.error("Произошла ошибка при выполнении: " + e.getMessage());
-            e.printStackTrace();
-            return;
-        }
-
-        if (success) {
-            actor.reply("§aЭкшен " + actionKey + " успешно выполнен!");
-        } else {
-            actor.error("Не удалось выполнить экшен " + actionKey + ".");
-        }
-    }
-
-    @Command("actionapi trigger")
-    @CommandPermission("actionstriggers.admin")
-    @AutoComplete("@actions *")
-    public void dispatchTrigger(
+    @Subcommand("run")
+    @AutoComplete("@actions @action_args") // Исправленная аннотация на уровне метода
+    public void run(
             BukkitCommandActor actor,
-            String triggerKeyStr,
+            String actionId,
             @Optional String argsString
     ) {
-        NamespacedKey triggerKey = NamespacedKey.fromString(triggerKeyStr);
-        if (triggerKey == null) {
-            actor.error("Неверный формат ключа триггера.");
+        String fullInput = argsString == null ? "" : argsString;
+        Map<String, String> argsRaw = parseBlock(fullInput, "args");
+        ExecutionContext context = buildMergedContext(actor, fullInput);
+
+        try {
+            Map<String, Object> actionMap = new HashMap<>(argsRaw);
+            actionMap.put("id", actionId);
+
+            AATParser parser = new AATParser();
+            Action action = parser.parseAction(actionMap);
+
+            boolean result = action.execute(context);
+            if (result) {
+                actor.reply(mm.deserialize("<green>✔ Экшен успешно выполнен!</green>"));
+            } else {
+                actor.reply(mm.deserialize("<yellow>⚠ Экшен отработал, но вернул false.</yellow>"));
+            }
+        } catch (Exception e) {
+            actor.reply(mm.deserialize("<red>✖ Ошибка: " + e.getMessage() + "</red>"));
+        }
+    }
+
+    // =================================================================================
+    // ИМИТАЦИЯ ТРИГГЕРОВ
+    // =================================================================================
+
+    @Subcommand("trigger")
+    @AutoComplete("@triggers @trigger_args") // Исправленная аннотация на уровне метода
+    public void trigger(
+            BukkitCommandActor actor,
+            String triggerId,
+            @Optional String argsString
+    ) {
+        NamespacedKey key = NamespacedKey.fromString(triggerId);
+        if (key == null) {
+            actor.reply(mm.deserialize("<red>Неверный формат ключа триггера!</red>"));
             return;
         }
 
-        ExecutionContext context = new ExecutionContext();
+        String fullInput = argsString == null ? "" : argsString;
+        ExecutionContext context = buildMergedContext(actor, fullInput);
 
-        // Парсим параметры точно так же, как в runAction
-        if (argsString != null && !argsString.trim().isEmpty()) {
-            String[] args = argsString.trim().split("\\s+");
-            for (String arg : args) {
-                String[] parts = arg.split("=", 2);
-                if (parts.length == 2) {
-                    String key = parts[0].toLowerCase();
-                    String value = parts[1].replace("_", " ");
-
-                    if (key.equals("player")) {
-                        Player target = Bukkit.getPlayer(value);
-                        if (target != null) context.set(CoreKeys.PLAYER, target);
-                    } else {
-                        // В будущем здесь можно добавить парсинг блоков, сущностей и т.д.
-                        context.set(ContextKey.of(key, String.class), value);
-                    }
-                }
-            }
-        }
-
-        if (actor.isPlayer() && !context.has(CoreKeys.PLAYER)) {
-            context.set(CoreKeys.PLAYER, actor.requirePlayer());
-        }
-
-        // Вызываем триггер (бросаем его в Event Bus)
-        ActionTriggerAPI.getTriggers().dispatch(triggerKey, context);
-        actor.reply("§aТриггер " + triggerKey + " успешно вызван!");
+        ActionTriggerAPI.getTriggers().dispatch(key, context);
+        actor.reply(mm.deserialize("<green>✔ Триггер <white>" + triggerId + "</white> успешно запущен!</green>"));
     }
 
-    @Command("actionapi debug")
-    @CommandPermission("actionstriggers.admin")
-    public void toggleDebug(BukkitCommandActor actor) {
-        if (debugListener != null) {
-            // Если включен — выключаем
-            ActionTriggerAPI.getTriggers().unsubscribeGlobal(debugListener);
-            debugListener = null;
-            actor.reply("§c[Actions&Triggers] Режим дебага ВЫКЛЮЧЕН.");
-        } else {
-            // Если выключен — включаем
-            debugListener = (triggerKey, context) -> {
-                // Формируем красивое сообщение для консоли
-                String message = String.format("\n[A&T DEBUG] Сработал триггер: §e%s§r\nКонтекст: %s",
-                        triggerKey.toString(), context.dump());
+    // =================================================================================
+    // БАЗОВЫЕ КОМАНДЫ И ИНТЕРФЕЙС (/AAT LIST)
+    // =================================================================================
 
-                // Всегда пишем в консоль
-                Bukkit.getConsoleSender().sendMessage(message);
-
-                // Если команду ввел игрок, дублируем ему в чат
-                if (actor.isPlayer()) {
-                    actor.requirePlayer().sendMessage(message);
-                }
-            };
-
-            ActionTriggerAPI.getTriggers().subscribeGlobal(debugListener);
-            actor.reply("§a[Actions&Triggers] Режим дебага ВКЛЮЧЕН. Теперь все триггеры логируются.");
-        }
-    }
-    /**
-     * Заменяет '_' на пробел, но ИГНОРИРУЕТ всё, что находится внутри { }
-     */
-    private String smartDecode(String input) {
-        StringBuilder sb = new StringBuilder();
-        boolean insideBrackets = false;
-        for (char c : input.toCharArray()) {
-            if (c == '{') insideBrackets = true;
-            if (c == '}') insideBrackets = false;
-
-            if (c == '_' && !insideBrackets) {
-                sb.append(' ');
-            } else {
-                sb.append(c);
-            }
-        }
-        return sb.toString();
-    }
-    @Command("actionapi list")
-    @CommandPermission("actionstriggers.admin")
+    @Subcommand("list")
     public void asList(BukkitCommandActor actor) {
-        MiniMessage mm = MiniMessage.miniMessage();
+        // --- 1. Собираем Экшены с красивым Hover (Метаданные) ---
+        List<Component> actionComps = ActionTriggerAPI.getActions().asList().stream().sorted().map(id -> {
+            NamespacedKey key = NamespacedKey.fromString(id);
+            List<ActionParameterMeta> meta = ActionTriggerAPI.getActions().getMetadata(key);
 
-        // 1. Красивый заголовок с градиентом
+            StringBuilder hover = new StringBuilder("<color:#FFaaaa><b>" + id + "</b></color><br>");
+            if (meta.isEmpty()) hover.append("<gray>Нет параметров</gray>");
+            for (ActionParameterMeta m : meta) {
+                hover.append("<gray>▪</gray> <white>").append(m.getKey()).append("</white> <dark_gray>(").append(m.getType().getSimpleName()).append(")</dark_gray>");
+                if (m.isRequired()) hover.append(" <red>*</red>");
+                if (!m.getDescription().isEmpty()) hover.append("<br>  <gray><i>").append(m.getDescription()).append("</i></gray>");
+                hover.append("<br>");
+            }
+            return mm.deserialize("<hover:show_text:'" + hover.toString() + "'><color:#FFaaaa>" + id + "</color></hover>");
+        }).collect(Collectors.toList());
+
+        // --- 2. Собираем Триггеры с красивым Hover (Контекст) ---
+        List<Component> triggerComps = ActionTriggerAPI.getTriggers().asList().stream().sorted().map(id -> {
+            NamespacedKey key = NamespacedKey.fromString(id);
+            List<ContextKey<?>> ctxList = ActionTriggerAPI.getTriggers().getProvidedContext(key);
+
+            StringBuilder hover = new StringBuilder("<color:#aaFFaa><b>" + id + "</b></color><br>");
+            hover.append("<gray>Предоставляет контекст:</gray><br>");
+            if (ctxList.isEmpty()) hover.append("<gray><i>(пусто)</i></gray>");
+            for (ContextKey<?> c : ctxList) {
+                hover.append("<gray>▪</gray> <white>").append(c.getId()).append("</white> <dark_gray>(").append(c.getType().getSimpleName()).append(")</dark_gray><br>");
+            }
+            return mm.deserialize("<hover:show_text:'" + hover.toString() + "'><color:#aaFFaa>" + id + "</color></hover>");
+        }).collect(Collectors.toList());
+
+        // --- 3. Фильтры и Скрипты (оставляем просто строками) ---
+        List<Component> filterComps = ActionTriggerAPI.getFilters().asList().stream().sorted()
+                .map(id -> mm.deserialize("<color:#ffffaa>" + id + "</color>")).collect(Collectors.toList());
+        List<Component> scriptComps = ActionTriggerAPI.getScripts().getLoadedScripts().stream().sorted()
+                .map(id -> mm.deserialize("<color:#aaffff>" + id + "</color>")).collect(Collectors.toList());
+
+        // --- 4. Рендер ---
         Component header = mm.deserialize("\n<gradient:#FF5555:#FFAA00><strikethrough>--------</strikethrough> [ Actions & Triggers ] <strikethrough>--------</strikethrough></gradient>\n");
-
-        List<String> actions = ActionTriggerAPI.getActions().asList();
-        List<String> triggers = ActionTriggerAPI.getTriggers().asList();
-        List<String> filters = ActionTriggerAPI.getFilters().asList();
-
-        // Получаем скрипты из нашего нового реестра
-        List<String> scripts = ActionTriggerAPI.getScripts().getLoadedScripts();
-
-        // Сортируем для красоты
-        Collections.sort(actions);
-        Collections.sort(triggers);
-        Collections.sort(filters);
-        Collections.sort(scripts);
-
-        // 2. Формируем списки с помощью вспомогательного метода (см. ниже)
-        Component actionsSection = buildSection("Зарегистрированные Экшены", actions, "#FF5555", "#FFaaaa");
-        Component triggersSection = buildSection("Зарегистрированные Триггеры", triggers, "#55FF55", "#aaFFaa");
-        Component filtersSection = buildSection("Зарегистрированные Условия", filters, "#FFFF55", "#ffffaa");
-        Component scriptsSection = buildSection("Загруженные Скрипты", scripts, "#55FFFF", "#aaffff");
-
-        // 3. Подвал для визуального завершения "таблицы"
         Component footer = mm.deserialize("\n<dark_gray><strikethrough>                                        </strikethrough></dark_gray>");
 
-        // 4. Собираем всё в единое сообщение
         Component finalMessage = header
-                .append(actionsSection).append(mm.deserialize("<br><br>"))
-                .append(triggersSection).append(mm.deserialize("<br><br>"))
-                .append(filtersSection).append(mm.deserialize("<br><br>"))
-                .append(scriptsSection).append(mm.deserialize("<br>"));
+                .append(buildSection("Экшены", actionComps, "#FF5555")).append(mm.deserialize("<br><br>"))
+                .append(buildSection("Триггеры", triggerComps, "#55FF55")).append(mm.deserialize("<br><br>"))
+                .append(buildSection("Условия", filterComps, "#FFFF55")).append(mm.deserialize("<br><br>"))
+                .append(buildSection("Скрипты", scriptComps, "#55FFFF"))
+                .append(footer);
 
         Bukkit.getConsoleSender().sendMessage(finalMessage);
-        if (actor.isPlayer()) {
-            actor.requirePlayer().sendMessage(finalMessage);
+        if (actor.isPlayer()) actor.requirePlayer().sendMessage(finalMessage);
+    }
+
+    private Component buildSection(String title, List<Component> items, String titleColor) {
+        Component titleComp = mm.deserialize("<color:" + titleColor + "><b>" + title + ":</b></color>\n");
+        if (items == null || items.isEmpty()) return titleComp.append(mm.deserialize("<gray><i>Пусто</i></gray>"));
+        return titleComp.append(Component.join(JoinConfiguration.separator(mm.deserialize(" <dark_gray><b>|</b></dark_gray> ")), items));
+    }
+
+    @Subcommand("debug")
+    public void toggleDebug(BukkitCommandActor actor) {
+        if (debugListener != null) {
+            ActionTriggerAPI.getTriggers().unsubscribeGlobal(debugListener);
+            debugListener = null;
+            actor.reply(mm.deserialize("<red>[A&T] Дебаг ВЫКЛЮЧЕН.</red>"));
+        } else {
+            debugListener = (triggerKey, context) -> {
+                String msg = String.format("\n<yellow>[A&T DEBUG] Триггер: %s</yellow>\n<gray>Контекст: %s</gray>", triggerKey, context.dump());
+                Bukkit.getConsoleSender().sendMessage(mm.deserialize(msg));
+                if (actor.isPlayer()) actor.requirePlayer().sendMessage(mm.deserialize(msg));
+            };
+            ActionTriggerAPI.getTriggers().subscribeGlobal(debugListener);
+            actor.reply(mm.deserialize("<green>[A&T] Дебаг ВКЛЮЧЕН.</green>"));
         }
     }
-    private Component buildSection(String title, List<String> items, String titleColor, String itemColor) {
-        MiniMessage mm = MiniMessage.miniMessage();
 
-        // Заголовок секции (например, "Действия:")
-        Component titleComp = mm.deserialize("<color:" + titleColor + "><b>" + title + ":</b></color>\n");
+    @Subcommand("reload")
+    public void reload(BukkitCommandActor actor) {
+        ActionTriggerAPI.getScripts().clear();
+        YamlTriggerLoader.load(plugin, "triggers");
+        actor.reply(mm.deserialize("<green><b>✔ Скрипты перезагружены!</b></green>"));
+    }
 
-        if (items == null || items.isEmpty()) {
-            return titleComp.append(mm.deserialize("<gray><i>Список пуст</i></gray>"));
+    @DefaultFor({"actionapi", "aat"})
+    @Subcommand("help")
+    public void help(BukkitCommandActor actor) {
+        actor.reply(mm.deserialize("<blue><b>A&T Помощь:</b></blue><br>" +
+                "<gray>/aat run <action> context={k=v} args={k=v}</gray><br>" +
+                "<gray>/aat trigger <trigger> context={k=v}</gray><br>" +
+                "<gray>/aat list | debug | reload</gray>"));
+    }
+
+    // =================================================================================
+    // ПАРСЕРЫ
+    // =================================================================================
+
+    private ExecutionContext buildMergedContext(BukkitCommandActor actor, String fullInput) {
+        ExecutionContext context = new ExecutionContext();
+        if (actor.isPlayer()) {
+            Player player = actor.requirePlayer();
+            context.set(CoreKeys.PLAYER, player);
+            context.set(CoreKeys.LOCATION, player.getLocation());
+            context.set(ContextKey.of("item_in_hand_id", String.class), ActionTriggerAPI.getItems().getFullId(player.getInventory().getItemInMainHand()));
         }
 
-        // Превращаем обычные строки в компоненты с цветом и эффектом при наведении (HoverEvent)
-        List<Component> itemComponents = items.stream()
-                .map(item -> mm.deserialize("<hover:show_text:'<gray>Элемент:</gray> <white>" + item + "</white>'><color:" + itemColor + ">" + item + "</color></hover>"))
-                .collect(Collectors.toList());
+        Map<String, String> customContext = parseBlock(fullInput, "context");
+        customContext.forEach((k, v) -> {
+            if (k.equalsIgnoreCase("player")) {
+                Player target = Bukkit.getPlayer(v);
+                if (target != null) {
+                    context.set(CoreKeys.PLAYER, target);
+                    context.set(CoreKeys.LOCATION, target.getLocation());
+                }
+            } else {
+                context.set(ContextKey.of(k, String.class), v);
+            }
+        });
+        return context;
+    }
 
-        // Создаем красивый разделитель для визуальной "таблицы"
-        Component separator = mm.deserialize(" <dark_gray><b>|</b></dark_gray> ");
-
-        // Используем встроенный в Adventure инструмент Component.join() для соединения
-        Component joinedItems = Component.join(JoinConfiguration.separator(separator), itemComponents);
-
-        return titleComp.append(joinedItems);
+    private Map<String, String> parseBlock(String input, String blockName) {
+        Map<String, String> result = new HashMap<>();
+        Pattern pattern = Pattern.compile(blockName + "=\\{(.*?)\\}");
+        Matcher matcher = pattern.matcher(input);
+        if (matcher.find()) {
+            String[] pairs = matcher.group(1).split(",\\s*");
+            for (String pair : pairs) {
+                String[] kv = pair.split("[:=]", 2);
+                if (kv.length == 2) result.put(kv[0].trim(), kv[1].trim().replace("\"", "").replace("'", ""));
+            }
+        }
+        return result;
     }
 }

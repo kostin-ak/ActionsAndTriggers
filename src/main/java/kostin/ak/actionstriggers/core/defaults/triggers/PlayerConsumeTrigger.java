@@ -1,5 +1,7 @@
 package kostin.ak.actionstriggers.core.defaults.triggers;
 
+import kostin.ak.actionstriggers.api.ActionTriggerAPI;
+import kostin.ak.actionstriggers.api.context.ContextKey;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
 import kostin.ak.actionstriggers.api.trigger.BukkitEventTrigger;
 import kostin.ak.actionstriggers.core.CoreKeys;
@@ -24,6 +26,10 @@ public class PlayerConsumeTrigger extends BukkitEventTrigger<PlayerItemConsumeEv
         context.set(CoreKeys.PLAYER, event.getPlayer());
         context.set(CoreKeys.ITEM, event.getItem());
         context.set(CoreKeys.LOCATION, event.getPlayer().getLocation());
+
+        // Предмет, который съели/выпили
+        context.set(ContextKey.of("item_id", String.class), ActionTriggerAPI.getItems().getFullId(event.getItem()));
+
         return context;
     }
 

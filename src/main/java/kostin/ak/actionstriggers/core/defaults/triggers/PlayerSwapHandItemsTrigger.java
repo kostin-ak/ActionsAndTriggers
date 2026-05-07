@@ -1,5 +1,7 @@
 package kostin.ak.actionstriggers.core.defaults.triggers;
 
+import kostin.ak.actionstriggers.api.ActionTriggerAPI;
+import kostin.ak.actionstriggers.api.context.ContextKey;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
 import kostin.ak.actionstriggers.api.trigger.BukkitEventTrigger;
 import kostin.ak.actionstriggers.core.CoreKeys;
@@ -22,7 +24,12 @@ public class PlayerSwapHandItemsTrigger extends BukkitEventTrigger<PlayerSwapHan
         ExecutionContext context = new ExecutionContext();
         context.set(CoreKeys.PLAYER, event.getPlayer());
         context.set(CoreKeys.LOCATION, event.getPlayer().getLocation());
-        context.set(CoreKeys.ITEM_IN_HAND, event.getMainHandItem());
+        context.set(CoreKeys.ITEM_IN_HAND, event.getMainHandItem()); // Основная рука ПОСЛЕ смены
+
+        // Регистрируем предметы в обеих руках
+        context.set(ContextKey.of("main_hand_item_id", String.class), ActionTriggerAPI.getItems().getFullId(event.getMainHandItem()));
+        context.set(ContextKey.of("off_hand_item_id", String.class), ActionTriggerAPI.getItems().getFullId(event.getOffHandItem()));
+
         return context;
     }
 

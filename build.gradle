@@ -15,6 +15,9 @@ repositories {
         url = "https://repo.papermc.io/repository/maven-public/"
     }
     maven { url = "https://jitpack.io" }
+    maven {
+        url "https://repo.oraxen.com/releases"
+    }
 }
 
 dependencies {
@@ -28,6 +31,7 @@ dependencies {
     // Lombok (для Java 21 берем актуальную версию)
     compileOnly("org.projectlombok:lombok:1.18.36")
     annotationProcessor("org.projectlombok:lombok:1.18.36")
+    compileOnly 'io.th0rgal:oraxen:1.193.3'
 }
 
 tasks {

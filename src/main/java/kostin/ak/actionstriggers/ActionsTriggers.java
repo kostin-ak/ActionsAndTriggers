@@ -4,11 +4,16 @@ import kostin.ak.actionstriggers.api.ActionTriggerAPI;
 import kostin.ak.actionstriggers.api.action.ActionRegistry;
 import kostin.ak.actionstriggers.api.action.ActionScheduler;
 import kostin.ak.actionstriggers.api.filter.FilterRegistry;
+import kostin.ak.actionstriggers.api.provider.impl.OraxenBlockProvider;
+import kostin.ak.actionstriggers.api.provider.impl.OraxenItemProvider;
+import kostin.ak.actionstriggers.api.provider.impl.VanillaItemProvider;
 import kostin.ak.actionstriggers.api.trigger.TriggerRegistry;
+import kostin.ak.actionstriggers.core.config.YamlTriggerLoader;
 import kostin.ak.actionstriggers.core.defaults.actions.*;
 import kostin.ak.actionstriggers.core.defaults.triggers.*;
 import kostin.ak.actionstriggers.core.command.ActionCommand;
 import kostin.ak.actionstriggers.core.defaults.filters.DefaultFilterParsers;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import revxrsal.commands.bukkit.BukkitCommandHandler;
 
@@ -41,6 +46,12 @@ public final class ActionsTriggers extends JavaPlugin {
 
         ActionTriggerAPI.getRegistrar().registerFilters(DefaultFilterParsers.class);
 
+        ActionTriggerAPI.getRegistrar().registerItemProvider(new VanillaItemProvider());
+        if (Bukkit.getPluginManager().getPlugin("Oraxen") != null) {
+            ActionTriggerAPI.getItems().register(new OraxenItemProvider());
+            ActionTriggerAPI.getBlocks().register(new OraxenBlockProvider());
+            getLogger().info("Oraxen integration enabled!");
+        }
 
         // 4. Инициализация Revxrsal Commands
         BukkitCommandHandler handler = BukkitCommandHandler.create(this);
@@ -57,6 +68,9 @@ public final class ActionsTriggers extends JavaPlugin {
 
        //ThirdPartyShowcase.loadShowcase(this);
 
+
+        // Пытаемся загрузить триггеры из папки "triggers" (если она существует)
+        YamlTriggerLoader.load(this, "triggers");
 
         getLogger().info("Actions&Triggers API успешно загружен!");
     }

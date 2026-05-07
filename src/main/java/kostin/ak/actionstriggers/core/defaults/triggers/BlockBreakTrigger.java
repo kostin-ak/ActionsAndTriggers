@@ -1,5 +1,7 @@
 package kostin.ak.actionstriggers.core.defaults.triggers;
 
+import kostin.ak.actionstriggers.api.ActionTriggerAPI;
+import kostin.ak.actionstriggers.api.context.ContextKey;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
 import kostin.ak.actionstriggers.api.trigger.BukkitEventTrigger;
 import kostin.ak.actionstriggers.core.CoreKeys;
@@ -26,6 +28,11 @@ public class BlockBreakTrigger extends BukkitEventTrigger<BlockBreakEvent> {
         context.set(CoreKeys.BLOCK_MATERIAL, event.getBlock().getType());
         context.set(CoreKeys.LOCATION, event.getBlock().getLocation());
         context.set(CoreKeys.ITEM_IN_HAND, event.getPlayer().getInventory().getItemInMainHand());
+
+        // Новые строковые ID для кастомных блоков/предметов
+        context.set(ContextKey.of("block_id", String.class), ActionTriggerAPI.getBlocks().getFullId(event.getBlock()));
+        context.set(ContextKey.of("item_in_hand_id", String.class), ActionTriggerAPI.getItems().getFullId(event.getPlayer().getInventory().getItemInMainHand()));
+
         return context;
     }
 

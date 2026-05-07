@@ -1,5 +1,7 @@
 package kostin.ak.actionstriggers.core.defaults.triggers;
 
+import kostin.ak.actionstriggers.api.ActionTriggerAPI;
+import kostin.ak.actionstriggers.api.context.ContextKey;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
 import kostin.ak.actionstriggers.api.trigger.BukkitEventTrigger;
 import kostin.ak.actionstriggers.core.CoreKeys;
@@ -34,6 +36,9 @@ public class CraftItemTrigger extends BukkitEventTrigger<CraftItemEvent> {
         } else {
             context.set(CoreKeys.LOCATION, player.getLocation());
         }
+
+        // Скрафченный предмет
+        context.set(ContextKey.of("item_id", String.class), ActionTriggerAPI.getItems().getFullId(event.getRecipe().getResult()));
 
         return context;
     }

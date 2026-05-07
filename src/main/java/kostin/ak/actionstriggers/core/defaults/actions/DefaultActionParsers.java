@@ -1,5 +1,6 @@
 package kostin.ak.actionstriggers.core.defaults.actions;
 
+import kostin.ak.actionstriggers.api.ActionTriggerAPI;
 import kostin.ak.actionstriggers.api.action.Action;
 import kostin.ak.actionstriggers.api.action.ActionParameters;
 import kostin.ak.actionstriggers.api.action.ConfigAction;
@@ -174,49 +175,27 @@ public final class DefaultActionParsers implements IActionParsers {
 
     @ConfigAction("core:give_item")
     public static Action parseGiveItem(Map<String, Object> params) {
-        String defaultMaterial = String.valueOf(params.getOrDefault(CoreActionParams.MATERIAL, "stone")).toLowerCase();
-
         return context -> {
             Player player = context.get(CoreKeys.PLAYER);
             if (player == null || !player.isOnline()) return false;
 
             ActionParameters actionParams = new ActionParameters(params, context);
-            String materialName = actionParams.getString(CoreActionParams.MATERIAL, defaultMaterial).toLowerCase();
+            // Заметь: теперь дефолтное значение с неймспейсом
+            String materialStr = actionParams.getString(CoreActionParams.MATERIAL, "minecraft:stone");
             int amount = actionParams.getInt(CoreActionParams.AMOUNT, 1);
 
-            ItemStack itemToGive = null;
+            // Магия! Используем наш новый Реестр. Он сам разберется, какой плагин дергать.
+            ItemStack item = ActionTriggerAPI.getItems().resolveItem(materialStr);
 
-            // 1. Поддержка Oraxen
-            if (materialName.startsWith("oraxen:")) {
-                String oraxenId = materialName.substring(7);
-                if (Bukkit.getPluginManager().isPluginEnabled("Oraxen")) {
-                    try {
-                        Class<?> oraxenItemsClass = Class.forName("io.th0rgal.oraxen.api.OraxenItems");
-                        Object itemBuilder = oraxenItemsClass.getMethod("getItemById", String.class).invoke(null, oraxenId);
-                        if (itemBuilder != null) {
-                            itemToGive = (ItemStack) itemBuilder.getClass().getMethod("build").invoke(itemBuilder);
-                            itemToGive.setAmount(amount);
-                        }
-                    } catch (Exception ignored) {}
-                }
-            }
-            // 2. Ванильные предметы
-            else {
-                NamespacedKey matKey = materialName.contains(":") ?
-                        NamespacedKey.fromString(materialName) : NamespacedKey.minecraft(materialName);
-                if (matKey != null) {
-                    Material material = Registry.MATERIAL.get(matKey);
-                    if (material != null && material.isItem()) {
-                        itemToGive = new ItemStack(material, amount);
-                    }
-                }
-            }
-
-            if (itemToGive != null) {
-                player.getInventory().addItem(itemToGive);
+            if (item != null) {
+                item.setAmount(amount);
+                player.getInventory().addItem(item);
                 return true;
+            } else {
+                // Предмет не найден ни в одном провайдере
+                Bukkit.getLogger().warning("[A&T] Попытка выдать неизвестный предмет: " + materialStr);
+                return false;
             }
-            return false;
         };
     }
 

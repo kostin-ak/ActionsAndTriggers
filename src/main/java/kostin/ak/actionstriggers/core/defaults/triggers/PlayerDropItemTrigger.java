@@ -1,5 +1,7 @@
 package kostin.ak.actionstriggers.core.defaults.triggers;
 
+import kostin.ak.actionstriggers.api.ActionTriggerAPI;
+import kostin.ak.actionstriggers.api.context.ContextKey;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
 import kostin.ak.actionstriggers.api.trigger.BukkitEventTrigger;
 import kostin.ak.actionstriggers.core.CoreKeys;
@@ -23,6 +25,10 @@ public class PlayerDropItemTrigger extends BukkitEventTrigger<PlayerDropItemEven
         context.set(CoreKeys.PLAYER, event.getPlayer());
         context.set(CoreKeys.LOCATION, event.getPlayer().getLocation());
         context.set(CoreKeys.ITEM, event.getItemDrop().getItemStack());
+
+        // Выброшенный предмет
+        context.set(ContextKey.of("item_id", String.class), ActionTriggerAPI.getItems().getFullId(event.getItemDrop().getItemStack()));
+
         return context;
     }
 

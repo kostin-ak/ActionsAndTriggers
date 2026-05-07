@@ -217,26 +217,36 @@ public class ActionCommand {
         // 1. Красивый заголовок с градиентом
         Component header = mm.deserialize("\n<gradient:#FF5555:#FFAA00><strikethrough>--------</strikethrough> [ Actions & Triggers ] <strikethrough>--------</strikethrough></gradient>\n");
 
+        List<String> actions = ActionTriggerAPI.getActions().asList();
+        List<String> triggers = ActionTriggerAPI.getTriggers().asList();
+        List<String> filters = ActionTriggerAPI.getFilters().asList();
+
+        // Получаем скрипты из нашего нового реестра
+        List<String> scripts = ActionTriggerAPI.getScripts().getLoadedScripts();
+
+        // Сортируем для красоты
+        Collections.sort(actions);
+        Collections.sort(triggers);
+        Collections.sort(filters);
+        Collections.sort(scripts);
+
         // 2. Формируем списки с помощью вспомогательного метода (см. ниже)
-        Component actions = buildSection("Действия", actionRegistry.asList(), "#55FF55", "#55FFFF");
-        Component triggers = buildSection("Триггеры", triggerRegistry.asList(), "#FF55FF", "#FFFF55");
-        Component filters = buildSection("Фильтры", filterRegistry.asList(), "#55FFFF", "#FF55FF");
+        Component actionsSection = buildSection("Зарегистрированные Экшены", actions, "#FF5555", "#FFaaaa");
+        Component triggersSection = buildSection("Зарегистрированные Триггеры", triggers, "#55FF55", "#aaFFaa");
+        Component filtersSection = buildSection("Зарегистрированные Условия", filters, "#FFFF55", "#ffffaa");
+        Component scriptsSection = buildSection("Загруженные Скрипты", scripts, "#55FFFF", "#aaffff");
 
         // 3. Подвал для визуального завершения "таблицы"
         Component footer = mm.deserialize("\n<dark_gray><strikethrough>                                        </strikethrough></dark_gray>");
 
         // 4. Собираем всё в единое сообщение
-        Component finalMessage = Component.empty()
-                .append(header)
-                .append(actions).append(Component.newline()).append(Component.newline())
-                .append(triggers).append(Component.newline()).append(Component.newline())
-                .append(filters)
-                .append(footer);
+        Component finalMessage = header
+                .append(actionsSection).append(mm.deserialize("<br><br>"))
+                .append(triggersSection).append(mm.deserialize("<br><br>"))
+                .append(filtersSection).append(mm.deserialize("<br><br>"))
+                .append(scriptsSection).append(mm.deserialize("<br>"));
 
-        // Отправка в консоль
         Bukkit.getConsoleSender().sendMessage(finalMessage);
-
-        // Отправка игроку
         if (actor.isPlayer()) {
             actor.requirePlayer().sendMessage(finalMessage);
         }

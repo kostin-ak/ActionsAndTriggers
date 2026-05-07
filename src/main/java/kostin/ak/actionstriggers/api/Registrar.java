@@ -5,6 +5,8 @@ import kostin.ak.actionstriggers.api.action.ActionRegistry;
 import kostin.ak.actionstriggers.api.action.IActionParsers;
 import kostin.ak.actionstriggers.api.filter.FilterRegistry;
 import kostin.ak.actionstriggers.api.filter.IFilterParsers;
+import kostin.ak.actionstriggers.api.provider.BlockProvider;
+import kostin.ak.actionstriggers.api.provider.ItemProvider;
 import kostin.ak.actionstriggers.api.trigger.Trigger;
 import kostin.ak.actionstriggers.api.trigger.TriggerRegistry;
 import lombok.Getter;
@@ -35,6 +37,14 @@ public class Registrar {
 
     public <T extends IFilterParsers> void registerFilters(Class<T> clazz){
         ActionTriggerAPI.getFilters().scanAndRegister(clazz);
+    }
+
+    public void registerItemProvider(ItemProvider provider) {
+        ActionTriggerAPI.getItems().register(provider);
+    }
+
+    public void registerBlockProvider(BlockProvider provider) {
+        ActionTriggerAPI.getBlocks().register(provider);
     }
 
 }

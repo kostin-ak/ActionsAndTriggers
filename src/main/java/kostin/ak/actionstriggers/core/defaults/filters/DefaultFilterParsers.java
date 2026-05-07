@@ -1,5 +1,6 @@
 package kostin.ak.actionstriggers.core.defaults.filters;
 
+import kostin.ak.actionstriggers.api.ActionTriggerAPI;
 import kostin.ak.actionstriggers.api.context.ContextKey;
 import kostin.ak.actionstriggers.api.filter.ConfigFilter;
 import kostin.ak.actionstriggers.api.filter.Filter;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import kostin.ak.actionstriggers.api.parser.AATParser;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * Класс, содержащий методы-парсеры для стандартных фильтров.
@@ -151,5 +153,37 @@ public final class DefaultFilterParsers implements IFilterParsers {
         AATParser parser = new AATParser();
         Filter filter = parser.parseCondition(subCondition);
         return Filters.not(filter);
+    }
+
+    // Допустим, это метод в вашем IFilterParsers
+    @ConfigFilter("core:check_item")
+    public static Filter checkItem(Map<String, Object> map) {
+        // Обрати внимание: теперь мы по дефолту ищем строку item_in_hand_id, а не сам ItemStack
+        String contextKeyStr = (String) map.getOrDefault("context_key", "item_in_hand_id");
+        String targetMaterialStr = (String) map.get("material");
+
+        ContextKey<String> contextKey = ContextKey.of(contextKeyStr, String.class);
+
+        return context -> {
+            // Берем из контекста уже готовую строку (например, "oraxen:magic_wand")
+            String currentId = context.get(contextKey);
+            if (currentId == null) return false;
+
+            return currentId.equalsIgnoreCase(targetMaterialStr);
+        };
+    }
+
+    @ConfigFilter("core:check_block")
+    public static Filter checkBlock(Map<String, Object> map) {
+        String contextKeyStr = (String) map.getOrDefault("context_key", "block_id");
+        String targetMaterialStr = (String) map.get("material");
+
+        ContextKey<String> contextKey = ContextKey.of(contextKeyStr, String.class);
+
+        return context -> {
+            String currentId = context.get(contextKey);
+            if (currentId == null) return false;
+            return currentId.equalsIgnoreCase(targetMaterialStr);
+        };
     }
 }

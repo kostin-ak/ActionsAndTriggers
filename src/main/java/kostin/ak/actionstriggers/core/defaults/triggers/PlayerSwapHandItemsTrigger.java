@@ -12,27 +12,14 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 
 public class PlayerSwapHandItemsTrigger extends BukkitEventTrigger<PlayerSwapHandItemsEvent> {
-    private static final NamespacedKey KEY = CoreTriggerKeys.SWAP_ITEMS;
-
+    public PlayerSwapHandItemsTrigger() {
+        declare(CoreKeys.PLAYER, PlayerSwapHandItemsEvent::getPlayer);
+        declare(CoreKeys.LOCATION, e -> e.getPlayer().getLocation());
+        declare(CoreKeys.ITEM_IN_HAND, PlayerSwapHandItemsEvent::getMainHandItem);
+        declare(CoreKeys.MAIN_HAND_ITEM_ID, e -> ActionTriggerAPI.getItems().getFullId(e.getMainHandItem()));
+        declare(CoreKeys.OFF_HAND_ITEM_ID, e -> ActionTriggerAPI.getItems().getFullId(e.getOffHandItem()));
+    }
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    public void onSwap(PlayerSwapHandItemsEvent event) {
-        handleEvent(event);
-    }
-
-    @Override
-    protected ExecutionContext buildContext(PlayerSwapHandItemsEvent event) {
-        ExecutionContext context = new ExecutionContext();
-        context.set(CoreKeys.PLAYER, event.getPlayer());
-        context.set(CoreKeys.LOCATION, event.getPlayer().getLocation());
-        context.set(CoreKeys.ITEM_IN_HAND, event.getMainHandItem()); // Основная рука ПОСЛЕ смены
-
-        // Регистрируем предметы в обеих руках
-        context.set(ContextKey.of("main_hand_item_id", String.class), ActionTriggerAPI.getItems().getFullId(event.getMainHandItem()));
-        context.set(ContextKey.of("off_hand_item_id", String.class), ActionTriggerAPI.getItems().getFullId(event.getOffHandItem()));
-
-        return context;
-    }
-
-    @Override
-    public NamespacedKey getKey() { return KEY; }
+    public void onEvent(PlayerSwapHandItemsEvent e) { handleEvent(e); }
+    @Override public NamespacedKey getKey() { return CoreTriggerKeys.SWAP_ITEMS; }
 }

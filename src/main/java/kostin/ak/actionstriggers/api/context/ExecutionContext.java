@@ -1,5 +1,7 @@
 package kostin.ak.actionstriggers.api.context;
 
+import lombok.Builder;
+import lombok.Singular;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;

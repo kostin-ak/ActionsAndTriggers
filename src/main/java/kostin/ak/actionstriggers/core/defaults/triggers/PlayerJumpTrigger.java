@@ -10,21 +10,11 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 
 public class PlayerJumpTrigger extends BukkitEventTrigger<PlayerJumpEvent> {
-    private static final NamespacedKey KEY = CoreTriggerKeys.PLAYER_JUMP;
-
+    public PlayerJumpTrigger() {
+        declare(CoreKeys.PLAYER, PlayerJumpEvent::getPlayer);
+        declare(CoreKeys.LOCATION, PlayerJumpEvent::getFrom);
+    }
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    public void onJump(PlayerJumpEvent event) {
-        handleEvent(event);
-    }
-
-    @Override
-    protected ExecutionContext buildContext(PlayerJumpEvent event) {
-        ExecutionContext context = new ExecutionContext();
-        context.set(CoreKeys.PLAYER, event.getPlayer());
-        context.set(CoreKeys.LOCATION, event.getFrom());
-        return context;
-    }
-
-    @Override
-    public NamespacedKey getKey() { return KEY; }
+    public void onEvent(PlayerJumpEvent e) { handleEvent(e); }
+    @Override public NamespacedKey getKey() { return CoreTriggerKeys.PLAYER_JUMP; }
 }

@@ -2,4 +2,4 @@ name: ActionsAndTriggers
 version: '${version}'
 main: kostin.ak.actionstriggers.ActionsTriggers
 api-version: '1.21'
-softdepend: [Oraxen]
+softdepend: [Oraxen, ItemsAdder]

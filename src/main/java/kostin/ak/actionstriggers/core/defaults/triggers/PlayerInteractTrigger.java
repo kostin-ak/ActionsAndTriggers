@@ -12,50 +12,29 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerInteractEvent;
 
 public class PlayerInteractTrigger extends BukkitEventTrigger<PlayerInteractEvent> {
+    public PlayerInteractTrigger() {
+        declare(CoreKeys.PLAYER, PlayerInteractEvent::getPlayer);
+        declare(CoreKeys.ACTION, PlayerInteractEvent::getAction);
+        declare(CoreKeys.BUTTON_TYPE, e -> e.getAction().isLeftClick() ? CoreKeys.ButtonType.LEFT : CoreKeys.ButtonType.RIGHT);
 
-    private static final NamespacedKey KEY = CoreTriggerKeys.PLAYER_INTERACT;
+        // Предмет в руке
+        declare(CoreKeys.ITEM_IN_HAND_ID, e -> e.getItem() != null ?
+                ActionTriggerAPI.getItems().getFullId(e.getItem()) : "minecraft:air");
+
+        // Логика блока
+        declare(CoreKeys.HAS_BLOCK, e -> e.getClickedBlock() != null);
+        declare(CoreKeys.BLOCK, PlayerInteractEvent::getClickedBlock);
+        declare(CoreKeys.BLOCK_MATERIAL, e -> e.getClickedBlock() != null ? e.getClickedBlock().getType() : null);
+        declare(CoreKeys.CLICKED_BLOCK_ID, e -> e.getClickedBlock() != null ?
+                ActionTriggerAPI.getBlocks().getFullId(e.getClickedBlock()) : null);
+
+        // Динамическая локация: блок или игрок
+        declare(CoreKeys.LOCATION, e -> e.getClickedBlock() != null ?
+                e.getClickedBlock().getLocation() : e.getPlayer().getLocation());
+    }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = false)
-    public void onInteract(PlayerInteractEvent event) {
-        handleEvent(event);
-    }
+    public void onEvent(PlayerInteractEvent e) { handleEvent(e); }
 
-    @Override
-    protected ExecutionContext buildContext(PlayerInteractEvent event) {
-        ExecutionContext context = new ExecutionContext();
-        context.set(CoreKeys.PLAYER, event.getPlayer());
-
-        // Регистрируем действие и кнопку ВСЕГДА
-        context.set(CoreKeys.ACTION, event.getAction());
-        context.set(CoreKeys.BUTTON_TYPE, event.getAction().isLeftClick() ?
-                CoreKeys.ButtonType.LEFT : CoreKeys.ButtonType.RIGHT);
-
-        // Добавляем ID предмета в руке (может быть null/air)
-        if (event.getItem() != null) {
-            context.set(ContextKey.of("item_in_hand_id", String.class), ActionTriggerAPI.getItems().getFullId(event.getItem()));
-        } else {
-            context.set(ContextKey.of("item_in_hand_id", String.class), "minecraft:air");
-        }
-
-        // Устанавливаем наш новый флаг
-        boolean hasBlock = event.getClickedBlock() != null;
-        context.set(CoreKeys.HAS_BLOCK, hasBlock);
-
-        if (hasBlock) {
-            context.set(CoreKeys.BLOCK, event.getClickedBlock());
-            context.set(CoreKeys.BLOCK_MATERIAL, event.getClickedBlock().getType());
-            context.set(CoreKeys.LOCATION, event.getClickedBlock().getLocation());
-            // Строковый ID кликнутого блока
-            context.set(ContextKey.of("clicked_block_id", String.class), ActionTriggerAPI.getBlocks().getFullId(event.getClickedBlock()));
-        } else {
-            context.set(CoreKeys.LOCATION, event.getPlayer().getLocation());
-        }
-
-        return context;
-    }
-
-    @Override
-    public NamespacedKey getKey() {
-        return KEY;
-    }
+    @Override public NamespacedKey getKey() { return CoreTriggerKeys.PLAYER_INTERACT; }
 }

@@ -9,24 +9,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 public class PlayerQuitTrigger extends BukkitEventTrigger<PlayerQuitEvent> {
-
-    private static final NamespacedKey KEY = CoreTriggerKeys.PLAYER_QUIT;
-
-    @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        handleEvent(event);
+    public PlayerQuitTrigger() {
+        declare(CoreKeys.PLAYER, PlayerQuitEvent::getPlayer);
+        declare(CoreKeys.LOCATION, e -> e.getPlayer().getLocation());
     }
-
-    @Override
-    protected ExecutionContext buildContext(PlayerQuitEvent event) {
-        ExecutionContext context = new ExecutionContext();
-        context.set(CoreKeys.PLAYER, event.getPlayer());
-        context.set(CoreKeys.LOCATION, event.getPlayer().getLocation());
-        return context;
-    }
-
-    @Override
-    public NamespacedKey getKey() {
-        return KEY;
-    }
+    @EventHandler public void onEvent(PlayerQuitEvent e) { handleEvent(e); }
+    @Override public NamespacedKey getKey() { return CoreTriggerKeys.PLAYER_QUIT; }
 }

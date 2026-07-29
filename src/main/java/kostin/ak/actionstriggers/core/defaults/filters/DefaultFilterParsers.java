@@ -8,6 +8,8 @@ import kostin.ak.actionstriggers.api.filter.Filters;
 import kostin.ak.actionstriggers.api.filter.IFilterParsers;
 import kostin.ak.actionstriggers.core.CoreActionParams;
 import kostin.ak.actionstriggers.core.CoreFilterKeys;
+import kostin.ak.actionstriggers.core.CoreKeys;
+import org.bukkit.FluidCollisionMode;
 import org.bukkit.Material;
 
 import java.util.Collection;
@@ -17,6 +19,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import kostin.ak.actionstriggers.api.parser.AATParser;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -68,6 +72,18 @@ public final class DefaultFilterParsers implements IFilterParsers {
             } catch (NumberFormatException ignored) {}
         }
         return Filters.lookingAt(material, distance);
+    }
+
+    @ConfigFilter("core:looking_at_water")
+    public static Filter parseLookingAtWater(Map<String, Object> params) {
+        return context -> {
+            Player p = context.get(CoreKeys.PLAYER);
+            if (p == null) return false;
+
+            // FluidCollisionMode.ALWAYS позволяет "увидеть" воду
+            Block b = p.getTargetBlockExact(5, FluidCollisionMode.ALWAYS);
+            return b != null && b.getType() == Material.WATER;
+        };
     }
 
     // ========================================================================

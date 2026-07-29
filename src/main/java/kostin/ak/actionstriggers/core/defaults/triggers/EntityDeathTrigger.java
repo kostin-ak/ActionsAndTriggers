@@ -11,34 +11,14 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.entity.EntityDeathEvent;
 
 public class EntityDeathTrigger extends BukkitEventTrigger<EntityDeathEvent> {
-
-    private static final NamespacedKey KEY = CoreTriggerKeys.ENTITY_DEATH;
-
+    public EntityDeathTrigger() {
+        declare(CoreKeys.ENTITY, EntityDeathEvent::getEntity);
+        declare(CoreKeys.LOCATION, e -> e.getEntity().getLocation());
+        declare(CoreKeys.PLAYER, e -> e.getEntity().getKiller());
+        declare(CoreKeys.KILLER, e -> e.getEntity().getKiller());
+        declare(CoreKeys.ITEM_IN_HAND, e -> e.getEntity().getKiller() != null ? e.getEntity().getKiller().getInventory().getItemInMainHand() : null);
+    }
     @EventHandler(priority = EventPriority.NORMAL)
-    public void onEntityDeath(EntityDeathEvent event) {
-        handleEvent(event);
-    }
-
-    @Override
-    protected ExecutionContext buildContext(EntityDeathEvent event) {
-        ExecutionContext context = new ExecutionContext();
-
-        // Кладем саму умершую сущность
-        context.set(CoreKeys.ENTITY, event.getEntity());
-        context.set(CoreKeys.LOCATION, event.getEntity().getLocation());
-
-        Player killer = event.getEntity().getKiller();
-        if (killer != null) {
-            context.set(CoreKeys.PLAYER, killer); // Игрок как участник ивента
-            context.set(CoreKeys.KILLER, killer); // Он же как убийца явно
-            context.set(CoreKeys.ITEM_IN_HAND, killer.getInventory().getItemInMainHand());
-        }
-
-        return context;
-    }
-
-    @Override
-    public NamespacedKey getKey() {
-        return KEY;
-    }
+    public void onEvent(EntityDeathEvent e) { handleEvent(e); }
+    @Override public NamespacedKey getKey() { return CoreTriggerKeys.ENTITY_DEATH; }
 }

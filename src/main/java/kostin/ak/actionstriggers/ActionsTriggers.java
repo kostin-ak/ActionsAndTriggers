@@ -3,12 +3,9 @@ package kostin.ak.actionstriggers;
 import kostin.ak.actionstriggers.api.ActionTriggerAPI;
 import kostin.ak.actionstriggers.api.action.ActionRegistry;
 import kostin.ak.actionstriggers.api.action.ActionScheduler;
-import kostin.ak.actionstriggers.api.context.ContextKey;
 import kostin.ak.actionstriggers.api.filter.FilterRegistry;
 import kostin.ak.actionstriggers.api.meta.ActionParameterMeta;
-import kostin.ak.actionstriggers.api.provider.impl.OraxenBlockProvider;
-import kostin.ak.actionstriggers.api.provider.impl.OraxenItemProvider;
-import kostin.ak.actionstriggers.api.provider.impl.VanillaItemProvider;
+import kostin.ak.actionstriggers.api.provider.impl.*;
 import kostin.ak.actionstriggers.api.trigger.TriggerRegistry;
 import kostin.ak.actionstriggers.core.config.YamlTriggerLoader;
 import kostin.ak.actionstriggers.core.defaults.actions.*;
@@ -24,6 +21,7 @@ import revxrsal.commands.bukkit.BukkitCommandHandler;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public final class ActionsTriggers extends JavaPlugin {
 
@@ -61,63 +59,53 @@ public final class ActionsTriggers extends JavaPlugin {
             getLogger().info("Oraxen integration enabled!");
         }
 
+
+        // Интеграция с ItemsAdder
+        if (Bukkit.getPluginManager().getPlugin("ItemsAdder") != null) {
+            ActionTriggerAPI.getItems().register(new ItemsAdderItemProvider());
+            ActionTriggerAPI.getBlocks().register(new ItemsAdderBlockProvider());
+            getLogger().info("ItemsAdder integration enabled!");
+        }
+
         // 4. Инициализация Revxrsal Commands
         CommandHandler handler = BukkitCommandHandler.create(this);
+        handler.getAutoCompleter().registerSuggestion("actions", (args, sender, cmd) -> ActionTriggerAPI.getActions().asList());
+        handler.getAutoCompleter().registerSuggestion("triggers", (args, sender, cmd) -> ActionTriggerAPI.getTriggers().asList());
 
-// 1. Подсказки ID
-        handler.getAutoCompleter().registerSuggestion("actions", (args, sender, command) -> ActionTriggerAPI.getActions().asList());
-        handler.getAutoCompleter().registerSuggestion("triggers", (args, sender, command) -> ActionTriggerAPI.getTriggers().asList());
+        // Провайдер для аргументов экшена
+        handler.getAutoCompleter().registerSuggestion("get", (args, sender, cmd) -> List.of("params"));
+        handler.getAutoCompleter().registerSuggestion("action_args", (args, sender, cmd) -> {
+            if (args.size() < 3) return List.of("args={", "context={");
+            NamespacedKey key = NamespacedKey.fromString(args.get(0));
+            if (key == null) return Collections.emptyList();
 
-// 2. Подсказки аргументов для Экшенов (/aat run ...)
-        handler.getAutoCompleter().registerSuggestion("action_args", (args, sender, command) -> {
-            if (args.size() < 3) return Collections.emptyList();
-            NamespacedKey actionKey = NamespacedKey.fromString(args.get(2));
-            if (actionKey == null) return Collections.emptyList();
 
-            List<ActionParameterMeta> metadata = ActionTriggerAPI.getActions().getMetadata(actionKey);
+            List<ActionParameterMeta> metadata = ActionTriggerAPI.getActions().getMetadata(key);
             List<String> suggestions = new ArrayList<>();
 
-            if (args.size() == 3 || (args.size() == 4 && args.get(3).isEmpty())) {
-                suggestions.add("args={"); suggestions.add("context={");
-                return suggestions;
-            }
             for (ActionParameterMeta meta : metadata) {
-                if (!String.join(" ", args).contains(meta.getKey() + "=")) {
-                    suggestions.add(meta.getKey() + "=");
+                if (!String.join(" ", args).contains(meta.key() + "=")) {
+                    suggestions.add(meta.key() + "=");
                 }
             }
             return suggestions;
         });
 
-// 3. НОВОЕ: Подсказки аргументов для Триггеров (/aat trigger ...)
-        handler.getAutoCompleter().registerSuggestion("trigger_args", (args, sender, command) -> {
-            if (args.size() < 3) return Collections.emptyList();
-            NamespacedKey triggerKey = NamespacedKey.fromString(args.get(2));
-            if (triggerKey == null) return Collections.emptyList();
+        //TODO: Не работают автокомплиты для экшинов и триггеров (контекст и атрибуты)
 
-            // Достаем поставляемый контекст этого триггера
-            List<ContextKey<?>> ctxList = ActionTriggerAPI.getTriggers().getProvidedContext(triggerKey);
-            List<String> suggestions = new ArrayList<>();
+        handler.getAutoCompleter().registerSuggestion("trigger_args", (args, sender, cmd) -> {
+            if (args.size() < 3) return List.of("context={");
+            NamespacedKey key = NamespacedKey.fromString(args.get(2));
+            if (key == null) return Collections.emptyList();
 
-            if (args.size() == 3 || (args.size() == 4 && args.get(3).isEmpty())) {
-                suggestions.add("context={");
-                return suggestions;
-            }
-
-            for (ContextKey<?> ctxKey : ctxList) {
-                if (!String.join(" ", args).contains(ctxKey.getId() + "=")) {
-                    suggestions.add(ctxKey.getId() + "=");
-                }
-            }
-            return suggestions;
+            return ActionTriggerAPI.getTriggers().getProvidedContext(key).stream()
+                    .map(c -> c.getId() + "=")
+                    .filter(s -> !String.join(" ", args).contains(s))
+                    .collect(Collectors.toList());
         });
 
         handler.register(new ActionCommand(this));
 
-       //ThirdPartyShowcase.loadShowcase(this);
-
-
-        // Пытаемся загрузить триггеры из папки "triggers" (если она существует)
         YamlTriggerLoader.load(this, "triggers");
 
         getLogger().info("Actions&Triggers API успешно загружен!");

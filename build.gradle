@@ -31,7 +31,9 @@ dependencies {
     // Lombok (для Java 21 берем актуальную версию)
     compileOnly("org.projectlombok:lombok:1.18.36")
     annotationProcessor("org.projectlombok:lombok:1.18.36")
-    compileOnly 'io.th0rgal:oraxen:1.193.3'
+
+    compileOnly("io.th0rgal:oraxen:1.193.3")
+    compileOnly("com.github.LoneDev6:api-itemsadder:3.6.1")
 }
 
 tasks {

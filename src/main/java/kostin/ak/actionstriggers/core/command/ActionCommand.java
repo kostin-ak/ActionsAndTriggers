@@ -15,11 +15,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
-import revxrsal.commands.annotation.AutoComplete;
-import revxrsal.commands.annotation.Command;
-import revxrsal.commands.annotation.DefaultFor;
+import revxrsal.commands.annotation.*;
 import revxrsal.commands.annotation.Optional;
-import revxrsal.commands.annotation.Subcommand;
 import revxrsal.commands.bukkit.BukkitCommandActor;
 import revxrsal.commands.bukkit.annotation.CommandPermission;
 
@@ -41,17 +38,9 @@ public class ActionCommand {
         this.plugin = plugin;
     }
 
-    // =================================================================================
-    // ВЫПОЛНЕНИЕ ЭКШЕНОВ
-    // =================================================================================
-
     @Subcommand("run")
-    @AutoComplete("@actions @action_args") // Исправленная аннотация на уровне метода
-    public void run(
-            BukkitCommandActor actor,
-            String actionId,
-            @Optional String argsString
-    ) {
+    @AutoComplete("@actions @action_args")
+    public void run(BukkitCommandActor actor, String actionId, @Optional String argsString) {
         String fullInput = argsString == null ? "" : argsString;
         Map<String, String> argsRaw = parseBlock(fullInput, "args");
         ExecutionContext context = buildMergedContext(actor, fullInput);
@@ -59,106 +48,29 @@ public class ActionCommand {
         try {
             Map<String, Object> actionMap = new HashMap<>(argsRaw);
             actionMap.put("id", actionId);
-
             AATParser parser = new AATParser();
             Action action = parser.parseAction(actionMap);
 
-            boolean result = action.execute(context);
-            if (result) {
-                actor.reply(mm.deserialize("<green>✔ Экшен успешно выполнен!</green>"));
+            if (action.execute(context)) {
+                actor.reply(mm.deserialize("<green>✔ Экшен выполнен!</green>"));
             } else {
-                actor.reply(mm.deserialize("<yellow>⚠ Экшен отработал, но вернул false.</yellow>"));
+                actor.reply(mm.deserialize("<yellow>⚠ Экшен вернул false.</yellow>"));
             }
         } catch (Exception e) {
             actor.reply(mm.deserialize("<red>✖ Ошибка: " + e.getMessage() + "</red>"));
         }
     }
 
-    // =================================================================================
-    // ИМИТАЦИЯ ТРИГГЕРОВ
-    // =================================================================================
-
     @Subcommand("trigger")
-    @AutoComplete("@triggers @trigger_args") // Исправленная аннотация на уровне метода
-    public void trigger(
-            BukkitCommandActor actor,
-            String triggerId,
-            @Optional String argsString
-    ) {
+    @AutoComplete("@triggers @trigger_args") // ПРАВИЛЬНО
+    public void trigger(BukkitCommandActor actor, String triggerId, @Optional String argsString) {
         NamespacedKey key = NamespacedKey.fromString(triggerId);
-        if (key == null) {
-            actor.reply(mm.deserialize("<red>Неверный формат ключа триггера!</red>"));
-            return;
-        }
+        if (key == null) return;
 
         String fullInput = argsString == null ? "" : argsString;
         ExecutionContext context = buildMergedContext(actor, fullInput);
-
         ActionTriggerAPI.getTriggers().dispatch(key, context);
-        actor.reply(mm.deserialize("<green>✔ Триггер <white>" + triggerId + "</white> успешно запущен!</green>"));
-    }
-
-    // =================================================================================
-    // БАЗОВЫЕ КОМАНДЫ И ИНТЕРФЕЙС (/AAT LIST)
-    // =================================================================================
-
-    @Subcommand("list")
-    public void asList(BukkitCommandActor actor) {
-        // --- 1. Собираем Экшены с красивым Hover (Метаданные) ---
-        List<Component> actionComps = ActionTriggerAPI.getActions().asList().stream().sorted().map(id -> {
-            NamespacedKey key = NamespacedKey.fromString(id);
-            List<ActionParameterMeta> meta = ActionTriggerAPI.getActions().getMetadata(key);
-
-            StringBuilder hover = new StringBuilder("<color:#FFaaaa><b>" + id + "</b></color><br>");
-            if (meta.isEmpty()) hover.append("<gray>Нет параметров</gray>");
-            for (ActionParameterMeta m : meta) {
-                hover.append("<gray>▪</gray> <white>").append(m.getKey()).append("</white> <dark_gray>(").append(m.getType().getSimpleName()).append(")</dark_gray>");
-                if (m.isRequired()) hover.append(" <red>*</red>");
-                if (!m.getDescription().isEmpty()) hover.append("<br>  <gray><i>").append(m.getDescription()).append("</i></gray>");
-                hover.append("<br>");
-            }
-            return mm.deserialize("<hover:show_text:'" + hover.toString() + "'><color:#FFaaaa>" + id + "</color></hover>");
-        }).collect(Collectors.toList());
-
-        // --- 2. Собираем Триггеры с красивым Hover (Контекст) ---
-        List<Component> triggerComps = ActionTriggerAPI.getTriggers().asList().stream().sorted().map(id -> {
-            NamespacedKey key = NamespacedKey.fromString(id);
-            List<ContextKey<?>> ctxList = ActionTriggerAPI.getTriggers().getProvidedContext(key);
-
-            StringBuilder hover = new StringBuilder("<color:#aaFFaa><b>" + id + "</b></color><br>");
-            hover.append("<gray>Предоставляет контекст:</gray><br>");
-            if (ctxList.isEmpty()) hover.append("<gray><i>(пусто)</i></gray>");
-            for (ContextKey<?> c : ctxList) {
-                hover.append("<gray>▪</gray> <white>").append(c.getId()).append("</white> <dark_gray>(").append(c.getType().getSimpleName()).append(")</dark_gray><br>");
-            }
-            return mm.deserialize("<hover:show_text:'" + hover.toString() + "'><color:#aaFFaa>" + id + "</color></hover>");
-        }).collect(Collectors.toList());
-
-        // --- 3. Фильтры и Скрипты (оставляем просто строками) ---
-        List<Component> filterComps = ActionTriggerAPI.getFilters().asList().stream().sorted()
-                .map(id -> mm.deserialize("<color:#ffffaa>" + id + "</color>")).collect(Collectors.toList());
-        List<Component> scriptComps = ActionTriggerAPI.getScripts().getLoadedScripts().stream().sorted()
-                .map(id -> mm.deserialize("<color:#aaffff>" + id + "</color>")).collect(Collectors.toList());
-
-        // --- 4. Рендер ---
-        Component header = mm.deserialize("\n<gradient:#FF5555:#FFAA00><strikethrough>--------</strikethrough> [ Actions & Triggers ] <strikethrough>--------</strikethrough></gradient>\n");
-        Component footer = mm.deserialize("\n<dark_gray><strikethrough>                                        </strikethrough></dark_gray>");
-
-        Component finalMessage = header
-                .append(buildSection("Экшены", actionComps, "#FF5555")).append(mm.deserialize("<br><br>"))
-                .append(buildSection("Триггеры", triggerComps, "#55FF55")).append(mm.deserialize("<br><br>"))
-                .append(buildSection("Условия", filterComps, "#FFFF55")).append(mm.deserialize("<br><br>"))
-                .append(buildSection("Скрипты", scriptComps, "#55FFFF"))
-                .append(footer);
-
-        Bukkit.getConsoleSender().sendMessage(finalMessage);
-        if (actor.isPlayer()) actor.requirePlayer().sendMessage(finalMessage);
-    }
-
-    private Component buildSection(String title, List<Component> items, String titleColor) {
-        Component titleComp = mm.deserialize("<color:" + titleColor + "><b>" + title + ":</b></color>\n");
-        if (items == null || items.isEmpty()) return titleComp.append(mm.deserialize("<gray><i>Пусто</i></gray>"));
-        return titleComp.append(Component.join(JoinConfiguration.separator(mm.deserialize(" <dark_gray><b>|</b></dark_gray> ")), items));
+        actor.reply(mm.deserialize("<green>✔ Триггер запущен!</green>"));
     }
 
     @Subcommand("debug")
@@ -168,8 +80,8 @@ public class ActionCommand {
             debugListener = null;
             actor.reply(mm.deserialize("<red>[A&T] Дебаг ВЫКЛЮЧЕН.</red>"));
         } else {
-            debugListener = (triggerKey, context) -> {
-                String msg = String.format("\n<yellow>[A&T DEBUG] Триггер: %s</yellow>\n<gray>Контекст: %s</gray>", triggerKey, context.dump());
+            debugListener = (key, ctx) -> {
+                String msg = "\n<yellow>[A&T DEBUG] " + key + "</yellow>\n<gray>" + ctx.dump() + "</gray>";
                 Bukkit.getConsoleSender().sendMessage(mm.deserialize(msg));
                 if (actor.isPlayer()) actor.requirePlayer().sendMessage(mm.deserialize(msg));
             };
@@ -178,61 +90,85 @@ public class ActionCommand {
         }
     }
 
+    @Subcommand("list")
+    public void asList(BukkitCommandActor actor) {
+        Component header = mm.deserialize("\n<gradient:#FF5555:#FFAA00><strikethrough>-------</strikethrough> [ A&T Registry ] <strikethrough>-------</strikethrough></gradient>\n");
+
+        // Секция Экшенов с Hover-описанием параметров
+        List<Component> actionComps = ActionTriggerAPI.getActions().asList().stream().sorted().map(id -> {
+            NamespacedKey key = NamespacedKey.fromString(id);
+            List<ActionParameterMeta> meta = ActionTriggerAPI.getActions().getMetadata(key);
+            String hover = "<color:#FFaaaa><b>" + id + "</b></color><br>" +
+                    meta.stream().map(m -> "<gray>▪</gray> <white>" + m.key() + "</white> <dark_gray>(" + m.type().getSimpleName() + ")</dark_gray>" + (m.required() ? " <red>*</red>" : "") + (m.description().isEmpty() ? "" : "<br>  <gray><i>" + m.description() + "</i></gray>")).collect(Collectors.joining("<br>"));
+            return mm.deserialize("<hover:show_text:'" + hover + "'><color:#FFaaaa>" + id + "</color></hover>");
+        }).collect(Collectors.toList());
+
+        // Секция Триггеров с Hover-контекстом
+        List<Component> triggerComps = ActionTriggerAPI.getTriggers().asList().stream().sorted().map(id -> {
+            NamespacedKey key = NamespacedKey.fromString(id);
+            List<ContextKey<?>> ctx = ActionTriggerAPI.getTriggers().getProvidedContext(key);
+            String hover = "<color:#aaFFaa><b>" + id + "</b></color><br><gray>Контекст:</gray><br>" +
+                    ctx.stream().map(c -> "<gray>▪</gray> <white>" + c.getId() + "</white> <dark_gray>(" + c.getType().getSimpleName() + ")</dark_gray>").collect(Collectors.joining("<br>"));
+            return mm.deserialize("<hover:show_text:'" + hover + "'><color:#aaFFaa>" + id + "</color></hover>");
+        }).collect(Collectors.toList());
+
+        Component finalMessage = header
+                .append(buildSection("Экшены", actionComps, "#FF5555")).append(mm.deserialize("<br><br>"))
+                .append(buildSection("Триггеры", triggerComps, "#55FF55")).append(mm.deserialize("<br><br>"))
+                .append(mm.deserialize("<color:#FFFF55><b>Условия:</b></color> " + String.join(", ", ActionTriggerAPI.getFilters().asList())));
+
+        actor.reply(finalMessage);
+    }
+
+    @Subcommand("get")
+    @AutoComplete("@get @actions")
+    public void get(BukkitCommandActor actor, String type, String actionId) {
+        if (type.equals("params")) {
+            NamespacedKey key = NamespacedKey.fromString(actionId);
+            List<ActionParameterMeta> meta = ActionTriggerAPI.getActions().getMetadata(key);
+            String hover = "<color:#FFaaaa><b>" + actionId + "</b></color><br>" +
+                    meta.stream().map(m -> "<gray>▪</gray> <white>" + m.key() + "</white> <dark_gray>(" + m.type().getSimpleName() + ")</dark_gray>" + (m.required() ? " <red>*</red>" : "") + (m.description().isEmpty() ? "" : "<br>  <gray><i>" + m.description() + "</i></gray>")).collect(Collectors.joining("<br>"));
+            actor.reply(mm.deserialize(hover));
+        }
+    }
+
+    private Component buildSection(String title, List<Component> items, String color) {
+        return mm.deserialize("<color:" + color + "><b>" + title + ":</b></color> ")
+                .append(Component.join(JoinConfiguration.separator(mm.deserialize(" <dark_gray>|</dark_gray> ")), items));
+    }
+
     @Subcommand("reload")
     public void reload(BukkitCommandActor actor) {
         ActionTriggerAPI.getScripts().clear();
         YamlTriggerLoader.load(plugin, "triggers");
-        actor.reply(mm.deserialize("<green><b>✔ Скрипты перезагружены!</b></green>"));
+        actor.reply(mm.deserialize("<green>✔ Скрипты перезагружены!</green>"));
     }
 
-    @DefaultFor({"actionapi", "aat"})
-    @Subcommand("help")
-    public void help(BukkitCommandActor actor) {
-        actor.reply(mm.deserialize("<blue><b>A&T Помощь:</b></blue><br>" +
-                "<gray>/aat run <action> context={k=v} args={k=v}</gray><br>" +
-                "<gray>/aat trigger <trigger> context={k=v}</gray><br>" +
-                "<gray>/aat list | debug | reload</gray>"));
-    }
-
-    // =================================================================================
-    // ПАРСЕРЫ
-    // =================================================================================
-
-    private ExecutionContext buildMergedContext(BukkitCommandActor actor, String fullInput) {
-        ExecutionContext context = new ExecutionContext();
+    private ExecutionContext buildMergedContext(BukkitCommandActor actor, String input) {
+        ExecutionContext ctx = new ExecutionContext();
         if (actor.isPlayer()) {
-            Player player = actor.requirePlayer();
-            context.set(CoreKeys.PLAYER, player);
-            context.set(CoreKeys.LOCATION, player.getLocation());
-            context.set(ContextKey.of("item_in_hand_id", String.class), ActionTriggerAPI.getItems().getFullId(player.getInventory().getItemInMainHand()));
+            Player p = actor.requirePlayer();
+            ctx.set(CoreKeys.PLAYER, p);
+            ctx.set(CoreKeys.LOCATION, p.getLocation());
         }
-
-        Map<String, String> customContext = parseBlock(fullInput, "context");
-        customContext.forEach((k, v) -> {
-            if (k.equalsIgnoreCase("player")) {
-                Player target = Bukkit.getPlayer(v);
-                if (target != null) {
-                    context.set(CoreKeys.PLAYER, target);
-                    context.set(CoreKeys.LOCATION, target.getLocation());
-                }
-            } else {
-                context.set(ContextKey.of(k, String.class), v);
-            }
+        parseBlock(input, "context").forEach((k, v) -> {
+            if (k.equals("player")) {
+                Player t = Bukkit.getPlayer(v);
+                if (t != null) { ctx.set(CoreKeys.PLAYER, t); ctx.set(CoreKeys.LOCATION, t.getLocation()); }
+            } else ctx.set(ContextKey.of(k, String.class), v);
         });
-        return context;
+        return ctx;
     }
 
-    private Map<String, String> parseBlock(String input, String blockName) {
-        Map<String, String> result = new HashMap<>();
-        Pattern pattern = Pattern.compile(blockName + "=\\{(.*?)\\}");
-        Matcher matcher = pattern.matcher(input);
-        if (matcher.find()) {
-            String[] pairs = matcher.group(1).split(",\\s*");
-            for (String pair : pairs) {
-                String[] kv = pair.split("[:=]", 2);
-                if (kv.length == 2) result.put(kv[0].trim(), kv[1].trim().replace("\"", "").replace("'", ""));
+    private Map<String, String> parseBlock(String input, String name) {
+        Map<String, String> res = new HashMap<>();
+        Matcher m = Pattern.compile(name + "=\\{(.*?)\\}").matcher(input);
+        if (m.find()) {
+            for (String p : m.group(1).split(",\\s*")) {
+                String[] kv = p.split("[:=]", 2);
+                if (kv.length == 2) res.put(kv[0].trim(), kv[1].trim().replace("\"", ""));
             }
         }
-        return result;
+        return res;
     }
 }

@@ -41,7 +41,6 @@ public class TriggerRegistry {
         this.logger = logger;
     }
 
-    // --- Существующие методы subscribe остаются без изменений ---
     public void subscribe(@NotNull NamespacedKey key, @NotNull Plugin plugin, @NotNull Filter filter, @NotNull Consumer<ExecutionContext> callback) {
         subscriptions.computeIfAbsent(key, k -> new CopyOnWriteArrayList<>())
                 .add(new TriggerSubscription(plugin, filter, callback));
@@ -51,7 +50,6 @@ public class TriggerRegistry {
         subscribe(key, plugin, Filters.alwaysTrue(), callback);
     }
 
-    // НОВЫЙ МЕТОД ДЛЯ ГЛОБАЛЬНОЙ ПОДПИСКИ
     public void subscribeGlobal(@NotNull BiConsumer<NamespacedKey, ExecutionContext> callback) {
         globalListeners.add(callback);
     }
@@ -102,6 +100,7 @@ public class TriggerRegistry {
     }
 
     public void register(Trigger trigger) {
-        triggers.put(trigger.getKey(), trigger);
+        triggers.putIfAbsent(trigger.getKey(), trigger);
+        triggerContextCache.putIfAbsent(trigger.getKey(), trigger.getProvidedContext());
     }
 }

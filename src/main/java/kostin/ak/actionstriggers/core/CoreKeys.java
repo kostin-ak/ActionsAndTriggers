@@ -45,6 +45,10 @@ public final class CoreKeys {
     public static final ContextKey<Boolean> IS_FLYING = ContextKey.of("is_flying", Boolean.class);
     public static final ContextKey<String> BLOCK_ID = ContextKey.of("block_id", String.class);
     public static final ContextKey<String> ITEM_IN_HAND_ID = ContextKey.of("item_in_hand_id", String.class);
+    public static final ContextKey<String> ITEM_ID = ContextKey.of("item_id", String.class);
+    public static final ContextKey<String> CLICKED_BLOCK_ID = ContextKey.of("clicked_block_id", String.class);
+    public static final ContextKey<String> MAIN_HAND_ITEM_ID = ContextKey.of("main_hand_item_id", String.class);
+    public static final ContextKey<String> OFF_HAND_ITEM_ID = ContextKey.of("off_hand_item_id", String.class);
 
 
     public static enum ButtonType{

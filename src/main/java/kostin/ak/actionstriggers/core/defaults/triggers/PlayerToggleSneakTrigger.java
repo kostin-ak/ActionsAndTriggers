@@ -9,26 +9,12 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 
 public class PlayerToggleSneakTrigger extends BukkitEventTrigger<PlayerToggleSneakEvent> {
-
-    private static final NamespacedKey KEY = CoreTriggerKeys.PLAYER_SNEAK;
-
-    @EventHandler
-    public void onSneak(PlayerToggleSneakEvent event) {
-        if (event.isSneaking()) {
-            handleEvent(event);
-        }
+    public PlayerToggleSneakTrigger() {
+        declare(CoreKeys.PLAYER, PlayerToggleSneakEvent::getPlayer);
+        declare(CoreKeys.LOCATION, e -> e.getPlayer().getLocation());
     }
-
-    @Override
-    protected ExecutionContext buildContext(PlayerToggleSneakEvent event) {
-        ExecutionContext context = new ExecutionContext();
-        context.set(CoreKeys.PLAYER, event.getPlayer());
-        context.set(CoreKeys.LOCATION, event.getPlayer().getLocation());
-        return context;
+    @EventHandler public void onEvent(PlayerToggleSneakEvent e) {
+        if (e.isSneaking()) handleEvent(e); // Сохраняем логику "только при приседании"
     }
-
-    @Override
-    public NamespacedKey getKey() {
-        return KEY;
-    }
+    @Override public NamespacedKey getKey() { return CoreTriggerKeys.PLAYER_SNEAK; }
 }

@@ -13,38 +13,15 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.inventory.CraftItemEvent;
 
 public class CraftItemTrigger extends BukkitEventTrigger<CraftItemEvent> {
-
-    private static final NamespacedKey KEY = CoreTriggerKeys.ITEM_CRAFT;
-
+    public CraftItemTrigger() {
+        declare(CoreKeys.PLAYER, e -> (Player) e.getWhoClicked());
+        declare(CoreKeys.ITEM, e -> e.getRecipe().getResult());
+        declare(CoreKeys.LOCATION, e -> e.getInventory().getLocation() != null ? e.getInventory().getLocation() : e.getWhoClicked().getLocation());
+        declare(CoreKeys.ITEM_ID, e -> ActionTriggerAPI.getItems().getFullId(e.getRecipe().getResult()));
+    }
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    public void onCraft(CraftItemEvent event) {
-        if (event.getWhoClicked() instanceof Player) {
-            handleEvent(event);
-        }
+    public void onEvent(CraftItemEvent e) {
+        if (e.getWhoClicked() instanceof Player) handleEvent(e);
     }
-
-    @Override
-    protected ExecutionContext buildContext(CraftItemEvent event) {
-        ExecutionContext context = new ExecutionContext();
-        Player player = (Player) event.getWhoClicked();
-
-        context.set(CoreKeys.PLAYER, player);
-        context.set(CoreKeys.ITEM, event.getRecipe().getResult());
-
-        if (event.getInventory().getLocation() != null) {
-            context.set(CoreKeys.LOCATION, event.getInventory().getLocation());
-        } else {
-            context.set(CoreKeys.LOCATION, player.getLocation());
-        }
-
-        // Скрафченный предмет
-        context.set(ContextKey.of("item_id", String.class), ActionTriggerAPI.getItems().getFullId(event.getRecipe().getResult()));
-
-        return context;
-    }
-
-    @Override
-    public NamespacedKey getKey() {
-        return KEY;
-    }
+    @Override public NamespacedKey getKey() { return CoreTriggerKeys.ITEM_CRAFT; }
 }

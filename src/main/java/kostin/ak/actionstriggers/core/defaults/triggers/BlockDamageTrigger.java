@@ -12,7 +12,19 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockDamageEvent;
 
 public class BlockDamageTrigger extends BukkitEventTrigger<BlockDamageEvent> {
-    private static final NamespacedKey KEY = CoreTriggerKeys.BLOCK_DAMAGE;
+
+    public BlockDamageTrigger() {
+        // Мапим ключи контекста на методы события
+        declare(CoreKeys.PLAYER, BlockDamageEvent::getPlayer);
+        declare(CoreKeys.BLOCK, BlockDamageEvent::getBlock);
+        declare(CoreKeys.BLOCK_MATERIAL, e -> e.getBlock().getType());
+        declare(CoreKeys.LOCATION, e -> e.getBlock().getLocation());
+        declare(CoreKeys.ITEM_IN_HAND, BlockDamageEvent::getItemInHand);
+
+        // Интеграция с API через лямбды
+        declare(CoreKeys.BLOCK_ID, e -> ActionTriggerAPI.getBlocks().getFullId(e.getBlock()));
+        declare(CoreKeys.ITEM_IN_HAND_ID, e -> ActionTriggerAPI.getItems().getFullId(e.getItemInHand()));
+    }
 
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onBlockDamage(BlockDamageEvent event) {
@@ -20,21 +32,7 @@ public class BlockDamageTrigger extends BukkitEventTrigger<BlockDamageEvent> {
     }
 
     @Override
-    protected ExecutionContext buildContext(BlockDamageEvent event) {
-        ExecutionContext context = new ExecutionContext();
-        context.set(CoreKeys.PLAYER, event.getPlayer());
-        context.set(CoreKeys.BLOCK, event.getBlock());
-        context.set(CoreKeys.BLOCK_MATERIAL, event.getBlock().getType());
-        context.set(CoreKeys.LOCATION, event.getBlock().getLocation());
-        context.set(CoreKeys.ITEM_IN_HAND, event.getItemInHand());
-
-        // Новые строковые ID
-        context.set(ContextKey.of("block_id", String.class), ActionTriggerAPI.getBlocks().getFullId(event.getBlock()));
-        context.set(ContextKey.of("item_in_hand_id", String.class), ActionTriggerAPI.getItems().getFullId(event.getItemInHand()));
-
-        return context;
+    public NamespacedKey getKey() {
+        return CoreTriggerKeys.BLOCK_DAMAGE;
     }
-
-    @Override
-    public NamespacedKey getKey() { return KEY; }
 }

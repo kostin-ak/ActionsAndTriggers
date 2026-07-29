@@ -5,7 +5,7 @@ import java.util.List;
 
 public class ParserOptions {
     // Сторонний разработчик может поменять эти списки, если захочет другие ключи в конфигах
-    public List<String> actionKeys = Arrays.asList("action", "type", "id");
+    public List<String> actionKeys = Arrays.asList("action", "action_type", "id");
     public List<String> conditionKeys = Arrays.asList("type", "condition", "id");
     public List<String> triggerKeys = Arrays.asList("trigger", "event", "type");
     public String injectContextKey = "inject_context";

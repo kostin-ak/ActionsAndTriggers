@@ -10,22 +10,12 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerAdvancementDoneEvent;
 
 public class PlayerAdvancementDoneTrigger extends BukkitEventTrigger<PlayerAdvancementDoneEvent> {
-    private static final NamespacedKey KEY = CoreTriggerKeys.ADVANCEMENT_DONE;
-
+    public PlayerAdvancementDoneTrigger() {
+        declare(CoreKeys.PLAYER, PlayerAdvancementDoneEvent::getPlayer);
+        declare(CoreKeys.LOCATION, e -> e.getPlayer().getLocation());
+        declare(CoreKeys.ADVANCEMENT_KEY, e -> e.getAdvancement().getKey().toString());
+    }
     @EventHandler(priority = EventPriority.NORMAL)
-    public void onAdvancement(PlayerAdvancementDoneEvent event) {
-        handleEvent(event);
-    }
-
-    @Override
-    protected ExecutionContext buildContext(PlayerAdvancementDoneEvent event) {
-        ExecutionContext context = new ExecutionContext();
-        context.set(CoreKeys.PLAYER, event.getPlayer());
-        context.set(CoreKeys.LOCATION, event.getPlayer().getLocation());
-        context.set(CoreKeys.ADVANCEMENT_KEY, event.getAdvancement().getKey().toString());
-        return context;
-    }
-
-    @Override
-    public NamespacedKey getKey() { return KEY; }
+    public void onEvent(PlayerAdvancementDoneEvent e) { handleEvent(e); }
+    @Override public NamespacedKey getKey() { return CoreTriggerKeys.ADVANCEMENT_DONE; }
 }

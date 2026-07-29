@@ -9,24 +9,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.player.PlayerLevelChangeEvent;
 
 public class PlayerLevelChangeTrigger extends BukkitEventTrigger<PlayerLevelChangeEvent> {
-
-    private static final NamespacedKey KEY = CoreTriggerKeys.PLAYER_LEVEL_CHANGE;
-
-    @EventHandler
-    public void onLevelChange(PlayerLevelChangeEvent event) {
-        handleEvent(event);
+    public PlayerLevelChangeTrigger() {
+        declare(CoreKeys.PLAYER, PlayerLevelChangeEvent::getPlayer);
+        declare(CoreKeys.LEVEL, PlayerLevelChangeEvent::getNewLevel);
     }
-
-    @Override
-    protected ExecutionContext buildContext(PlayerLevelChangeEvent event) {
-        ExecutionContext context = new ExecutionContext();
-        context.set(CoreKeys.PLAYER, event.getPlayer());
-        context.set(CoreKeys.LEVEL, event.getNewLevel());
-        return context;
-    }
-
-    @Override
-    public NamespacedKey getKey() {
-        return KEY;
-    }
+    @EventHandler public void onEvent(PlayerLevelChangeEvent e) { handleEvent(e); }
+    @Override public NamespacedKey getKey() { return CoreTriggerKeys.PLAYER_LEVEL_CHANGE; }
 }

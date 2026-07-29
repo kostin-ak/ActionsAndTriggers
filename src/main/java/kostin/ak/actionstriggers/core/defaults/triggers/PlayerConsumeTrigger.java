@@ -12,29 +12,14 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 
 public class PlayerConsumeTrigger extends BukkitEventTrigger<PlayerItemConsumeEvent> {
-
-    private static final NamespacedKey KEY = CoreTriggerKeys.PLAYER_CONSUME;
-
+    public PlayerConsumeTrigger() {
+        declare(CoreKeys.PLAYER, PlayerItemConsumeEvent::getPlayer);
+        declare(CoreKeys.ITEM, PlayerItemConsumeEvent::getItem);
+        declare(CoreKeys.LOCATION, e -> e.getPlayer().getLocation());
+        declare(CoreKeys.ITEM_ID, e -> ActionTriggerAPI.getItems().getFullId(e.getItem()));
+    }
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    public void onConsume(PlayerItemConsumeEvent event) {
-        handleEvent(event);
-    }
-
-    @Override
-    protected ExecutionContext buildContext(PlayerItemConsumeEvent event) {
-        ExecutionContext context = new ExecutionContext();
-        context.set(CoreKeys.PLAYER, event.getPlayer());
-        context.set(CoreKeys.ITEM, event.getItem());
-        context.set(CoreKeys.LOCATION, event.getPlayer().getLocation());
-
-        // Предмет, который съели/выпили
-        context.set(ContextKey.of("item_id", String.class), ActionTriggerAPI.getItems().getFullId(event.getItem()));
-
-        return context;
-    }
-
-    @Override
-    public NamespacedKey getKey() {
-        return KEY;
-    }
+    public void onEvent(PlayerItemConsumeEvent e) { handleEvent(e); }
+    @Override public NamespacedKey getKey() { return CoreTriggerKeys.PLAYER_CONSUME; }
 }
+

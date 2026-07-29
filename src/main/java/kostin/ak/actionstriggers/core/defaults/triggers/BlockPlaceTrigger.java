@@ -12,31 +12,15 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.BlockPlaceEvent;
 
 public class BlockPlaceTrigger extends BukkitEventTrigger<BlockPlaceEvent> {
-
-    private static final NamespacedKey KEY = CoreTriggerKeys.BLOCK_PLACE;
-
+    public BlockPlaceTrigger() {
+        declare(CoreKeys.PLAYER, BlockPlaceEvent::getPlayer);
+        declare(CoreKeys.BLOCK, BlockPlaceEvent::getBlockPlaced);
+        declare(CoreKeys.BLOCK_MATERIAL, e -> e.getBlockPlaced().getType());
+        declare(CoreKeys.LOCATION, e -> e.getBlockPlaced().getLocation());
+        declare(CoreKeys.BLOCK_ID, e -> ActionTriggerAPI.getBlocks().getFullId(e.getBlockPlaced()));
+        declare(CoreKeys.ITEM_IN_HAND_ID, e -> ActionTriggerAPI.getItems().getFullId(e.getItemInHand()));
+    }
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    public void onBlockPlace(BlockPlaceEvent event) {
-        handleEvent(event);
-    }
-
-    @Override
-    protected ExecutionContext buildContext(BlockPlaceEvent event) {
-        ExecutionContext context = new ExecutionContext();
-        context.set(CoreKeys.PLAYER, event.getPlayer());
-        context.set(CoreKeys.BLOCK, event.getBlockPlaced());
-        context.set(CoreKeys.BLOCK_MATERIAL, event.getBlockPlaced().getType());
-        context.set(CoreKeys.LOCATION, event.getBlockPlaced().getLocation());
-
-        // В событии BlockPlaceEvent предмет, которым ставили блок, находится в руке
-        context.set(ContextKey.of("block_id", String.class), ActionTriggerAPI.getBlocks().getFullId(event.getBlockPlaced()));
-        context.set(ContextKey.of("item_in_hand_id", String.class), ActionTriggerAPI.getItems().getFullId(event.getItemInHand()));
-
-        return context;
-    }
-
-    @Override
-    public NamespacedKey getKey() {
-        return KEY;
-    }
+    public void onEvent(BlockPlaceEvent e) { handleEvent(e); }
+    @Override public NamespacedKey getKey() { return CoreTriggerKeys.BLOCK_PLACE; }
 }

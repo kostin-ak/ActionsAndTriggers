@@ -13,28 +13,12 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 
 public class AsyncChatTrigger extends BukkitEventTrigger<AsyncChatEvent> {
-
-    private static final NamespacedKey KEY = CoreTriggerKeys.PLAYER_CHAT;
-
+    public AsyncChatTrigger() {
+        declare(CoreKeys.PLAYER, AsyncChatEvent::getPlayer);
+        declare(CoreKeys.LOCATION, e -> e.getPlayer().getLocation());
+        declare(CoreKeys.MESSAGE, e -> PlainTextComponentSerializer.plainText().serialize(e.message()));
+    }
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    public void onChat(AsyncChatEvent event) {
-        handleEvent(event);
-    }
-
-    @Override
-    public NamespacedKey getKey() {
-        return KEY;
-    }
-
-    @Override
-    protected ExecutionContext buildContext(AsyncChatEvent event) {
-        ExecutionContext context = new ExecutionContext();
-        context.set(CoreKeys.PLAYER, event.getPlayer());
-        context.set(CoreKeys.LOCATION, event.getPlayer().getLocation());
-
-        String plainMessage = PlainTextComponentSerializer.plainText().serialize(event.message());
-        context.set(CoreKeys.MESSAGE, plainMessage);
-
-        return context;
-    }
+    public void onEvent(AsyncChatEvent e) { handleEvent(e); }
+    @Override public NamespacedKey getKey() { return CoreTriggerKeys.PLAYER_CHAT; }
 }

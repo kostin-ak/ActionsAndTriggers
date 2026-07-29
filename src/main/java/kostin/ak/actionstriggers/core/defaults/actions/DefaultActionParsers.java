@@ -42,6 +42,8 @@ public final class DefaultActionParsers implements IActionParsers {
     // ========================================================================
 
     @ConfigAction("core:command")
+    @ActionParam(key = CoreActionParams.COMMAND, type = String.class, required = true, description = "Текст выполняемой команды. По умолчанию: say Привет")
+    @ActionParam(key = CoreActionParams.AS_CONSOLE, type = Boolean.class, description = "Выполнять от имени консоли (true) или от игрока (false). По умолчанию: true")
     public static Action parseCommand(Map<String, Object> params) {
         String defaultCmd = String.valueOf(params.getOrDefault(CoreActionParams.COMMAND, "say Привет"));
         boolean asConsole = Boolean.parseBoolean(String.valueOf(params.getOrDefault(CoreActionParams.AS_CONSOLE, "true")));
@@ -63,9 +65,9 @@ public final class DefaultActionParsers implements IActionParsers {
     }
 
     @ConfigAction("core:message")
-    @ActionParam(key = CoreActionParams.TEXT, type = String.class, required = true, description = "Текст")
-    @ActionParam(key = CoreActionParams.TYPE, type = String.class, description = "Тип")
-    @ActionParam(key = CoreActionParams.SUBTITLE, type = String.class, description = "Подзаголовок")
+    @ActionParam(key = CoreActionParams.TEXT, type = String.class, required = true, description = "Основной текст сообщения (поддерживает MiniMessage). По умолчанию: <red>Текст не задан</red>")
+    @ActionParam(key = CoreActionParams.TYPE, type = String.class, description = "Тип вывода сообщения: chat, actionbar или title. По умолчанию: chat")
+    @ActionParam(key = CoreActionParams.SUBTITLE, type = String.class, description = "Подзаголовок (используется только если тип установлен на title). По умолчанию пустая строка")
     public static Action parseMessage(Map<String, Object> params) {
         String defaultText = String.valueOf(params.getOrDefault(CoreActionParams.TEXT, "<red>Текст не задан</red>"));
         String defaultSubtitle = String.valueOf(params.getOrDefault(CoreActionParams.SUBTITLE, ""));
@@ -92,6 +94,9 @@ public final class DefaultActionParsers implements IActionParsers {
     }
 
     @ConfigAction("core:sound")
+    @ActionParam(key = CoreActionParams.SOUND, type = String.class, required = true, description = "Ключ звука (namespace:id или старый Bukkit формат). По умолчанию: minecraft:entity.player.levelup")
+    @ActionParam(key = CoreActionParams.VOLUME, type = Float.class, description = "Громкость воспроизведения звука. По умолчанию: 1.0")
+    @ActionParam(key = CoreActionParams.PITCH, type = Float.class, description = "Высота/тональность звука. По умолчанию: 1.0")
     public static Action parseSound(Map<String, Object> params) {
         String defaultSound = String.valueOf(params.getOrDefault(CoreActionParams.SOUND, "minecraft:entity.player.levelup"));
 
@@ -119,6 +124,7 @@ public final class DefaultActionParsers implements IActionParsers {
     // ========================================================================
 
     @ConfigAction("core:damage")
+    @ActionParam(key = CoreActionParams.AMOUNT, type = Double.class, required = true, description = "Количество наносимого игроку урона в полусердцах. По умолчанию: 1.0")
     public static Action parseDamage(Map<String, Object> params) {
         double defaultAmount = Double.parseDouble(String.valueOf(params.getOrDefault(CoreActionParams.AMOUNT, "1.0")));
 
@@ -144,8 +150,11 @@ public final class DefaultActionParsers implements IActionParsers {
             return false;
         };
     }
-
     @ConfigAction("core:potion_effect")
+    @ActionParam(key = CoreActionParams.EFFECT, type = String.class, required = true, description = "Название эффекта зелья (например, speed, strength). По умолчанию: speed")
+    @ActionParam(key = CoreActionParams.DURATION, type = Integer.class, description = "Длительность эффекта в тиках (20 тиков = 1 секунда). По умолчанию: 200")
+    @ActionParam(key = CoreActionParams.AMPLIFIER, type = Integer.class, description = "Уровень/сила эффекта (0 равен I уровню, 1 равен II уровню). По умолчанию: 0")
+    @ActionParam(key = CoreActionParams.PARTICLES, type = Boolean.class, description = "Отображать ли видимые частицы вокруг игрока. По умолчанию: true")
     public static Action parsePotionEffect(Map<String, Object> params) {
         String defaultEffect = String.valueOf(params.getOrDefault(CoreActionParams.EFFECT, "speed")).toLowerCase();
 
@@ -173,8 +182,8 @@ public final class DefaultActionParsers implements IActionParsers {
     // ========================================================================
 
     @ConfigAction("core:give_item")
-    @ActionParam(key = CoreActionParams.MATERIAL, type = String.class, required = true, description = "Предмет для выдачи (namespace:id)")
-    @ActionParam(key = CoreActionParams.AMOUNT, type = Integer.class, description = "Количество предметов")
+    @ActionParam(key = CoreActionParams.MATERIAL, type = String.class, required = true, description = "Материал или ID предмета для выдачи (namespace:id). По умолчанию: minecraft:stone")
+    @ActionParam(key = CoreActionParams.AMOUNT, type = Integer.class, description = "Количество выдаваемых предметов. По умолчанию: 1")
     public static Action parseGiveItem(Map<String, Object> params) {
         return context -> {
             Player player = context.get(CoreKeys.PLAYER);
@@ -201,6 +210,15 @@ public final class DefaultActionParsers implements IActionParsers {
     }
 
     @ConfigAction("core:particle")
+    @ActionParam(key = CoreActionParams.PARTICLE, type = String.class, description = "Тип партикла (например, FLAME). По умолчанию: FLAME")
+    @ActionParam(key = CoreActionParams.COUNT, type = Integer.class, description = "Количество частиц. По умолчанию: 10")
+    @ActionParam(key = CoreActionParams.dx, type = Double.class, description = "Смещение по оси X от игрока. По умолчанию: 0.0")
+    @ActionParam(key = CoreActionParams.dy, type = Double.class, description = "Смещение по оси Y от игрока. По умолчанию: 1.0")
+    @ActionParam(key = CoreActionParams.dz, type = Double.class, description = "Смещение по оси Z от игрока. По умолчанию: 0.0")
+    @ActionParam(key = CoreActionParams.SPREAD_X, type = Double.class, description = "Радиус разлета частиц по оси X. По умолчанию: 0.5")
+    @ActionParam(key = CoreActionParams.SPREAD_Y, type = Double.class, description = "Радиус разлета частиц по оси Y. По умолчанию: 0.5")
+    @ActionParam(key = CoreActionParams.SPREAD_Z, type = Double.class, description = "Радиус разлета частиц по оси Z. По умолчанию: 0.5")
+    @ActionParam(key = CoreActionParams.SPEED, type = Double.class, description = "Скорость движения частиц. По умолчанию: 0.0")
     public static Action parseParticle(Map<String, Object> params) {
         String defaultParticle = String.valueOf(params.getOrDefault(CoreActionParams.PARTICLE, "FLAME")).toUpperCase();
 
@@ -233,6 +251,7 @@ public final class DefaultActionParsers implements IActionParsers {
     }
 
     @ConfigAction("core:firework")
+    @ActionParam(key = CoreActionParams.POWER, type = Integer.class, description = "Высота полёта/сила фейерверка. По умолчанию: 1")
     public static Action parseFirework(Map<String, Object> params) {
         return context -> {
             Player player = context.get(CoreKeys.PLAYER);
@@ -257,6 +276,12 @@ public final class DefaultActionParsers implements IActionParsers {
     }
 
     @ConfigAction("core:teleport")
+    @ActionParam(key = CoreActionParams.X, type = Double.class, description = "Координата X. По умолчанию: текущий X игрока")
+    @ActionParam(key = CoreActionParams.Y, type = Double.class, description = "Координата Y. По умолчанию: текущий Y игрока")
+    @ActionParam(key = CoreActionParams.Z, type = Double.class, description = "Координата Z. По умолчанию: текущий Z игрока")
+    @ActionParam(key = CoreActionParams.YAW, type = Float.class, description = "Поворот головы по горизонтали. По умолчанию: текущий yaw игрока")
+    @ActionParam(key = CoreActionParams.PITCH, type = Float.class, description = "Поворот головы по вертикали. По умолчанию: текущий pitch игрока")
+    @ActionParam(key = CoreActionParams.WORLD, type = String.class, description = "Название целевого мира. По умолчанию: текущий мир игрока")
     public static Action parseTeleport(Map<String, Object> params) {
         return context -> {
             Player player = context.get(CoreKeys.PLAYER);
@@ -269,11 +294,11 @@ public final class DefaultActionParsers implements IActionParsers {
                 double y = actionParams.getDouble(CoreActionParams.Y, player.getLocation().getY());
                 double z = actionParams.getDouble(CoreActionParams.Z, player.getLocation().getZ());
 
-                float yaw = actionParams.getFloat("yaw", player.getLocation().getYaw());
-                float pitch = actionParams.getFloat("pitch", player.getLocation().getPitch());
+                float yaw = actionParams.getFloat(CoreActionParams.YAW, player.getLocation().getYaw());
+                float pitch = actionParams.getFloat(CoreActionParams.PITCH, player.getLocation().getPitch());
 
                 // Парсим мир (если не указан, берем текущий мир игрока)
-                String worldName = actionParams.getString("world", player.getWorld().getName());
+                String worldName = actionParams.getString(CoreActionParams.WORLD, player.getWorld().getName());
                 org.bukkit.World targetWorld = Bukkit.getWorld(worldName);
 
                 if (targetWorld == null) {
@@ -296,6 +321,10 @@ public final class DefaultActionParsers implements IActionParsers {
         };
     }
     @ConfigAction("core:push")
+    @ActionParam(key = CoreActionParams.X, type = Double.class, description = "Сила импульса по оси X. По умолчанию: 0.0")
+    @ActionParam(key = CoreActionParams.Y, type = Double.class, description = "Сила импульса по оси Y. По умолчанию: 0.5")
+    @ActionParam(key = CoreActionParams.Z, type = Double.class, description = "Сила импульса по оси Z. По умолчанию: 0.0")
+    @ActionParam(key = CoreActionParams.ADD, type = Boolean.class, description = "Если true, прибавляет скорость к текущей. Иначе перезаписывает. По умолчанию: false")
     public static Action parsePush(Map<String, Object> params) {
         return context -> {
             Player player = context.get(CoreKeys.PLAYER);
@@ -317,6 +346,10 @@ public final class DefaultActionParsers implements IActionParsers {
         };
     }
     @ConfigAction("core:spawn_entity")
+    @ActionParam(key = CoreActionParams.ENTITY, type = String.class, description = "Тип призываемого существа (EntityType). По умолчанию: ZOMBIE")
+    @ActionParam(key = CoreActionParams.X, type = Double.class, description = "Координата X для спавна. По умолчанию: текущий X игрока")
+    @ActionParam(key = CoreActionParams.Y, type = Double.class, description = "Координата Y для спавна. По умолчанию: текущий Y игрока")
+    @ActionParam(key = CoreActionParams.Z, type = Double.class, description = "Координата Z для спавна. По умолчанию: текущий Z игрока")
     public static Action parseSpawnEntity(Map<String, Object> params) {
         String defaultEntity = String.valueOf(params.getOrDefault(CoreActionParams.ENTITY, "ZOMBIE")).toUpperCase();
 
@@ -347,6 +380,7 @@ public final class DefaultActionParsers implements IActionParsers {
         };
     }
     @ConfigAction("core:grant_advancement")
+    @ActionParam(key = CoreActionParams.ADVANCEMENT, type = String.class, required = true, description = "Ключ достижения (namespace:id). Обязательный параметр")
     public static Action parseGrantAdvancement(Map<String, Object> params) {
         return context -> {
             Player player = context.get(CoreKeys.PLAYER);

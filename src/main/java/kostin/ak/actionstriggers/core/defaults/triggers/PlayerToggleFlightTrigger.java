@@ -10,22 +10,12 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerToggleFlightEvent;
 
 public class PlayerToggleFlightTrigger extends BukkitEventTrigger<PlayerToggleFlightEvent> {
-    private static final NamespacedKey KEY = CoreTriggerKeys.PLAYER_FLIGHT;
-
+    public PlayerToggleFlightTrigger() {
+        declare(CoreKeys.PLAYER, PlayerToggleFlightEvent::getPlayer);
+        declare(CoreKeys.LOCATION, e -> e.getPlayer().getLocation());
+        declare(CoreKeys.IS_FLYING, PlayerToggleFlightEvent::isFlying);
+    }
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    public void onToggleFlight(PlayerToggleFlightEvent event) {
-        handleEvent(event);
-    }
-
-    @Override
-    protected ExecutionContext buildContext(PlayerToggleFlightEvent event) {
-        ExecutionContext context = new ExecutionContext();
-        context.set(CoreKeys.PLAYER, event.getPlayer());
-        context.set(CoreKeys.LOCATION, event.getPlayer().getLocation());
-        context.set(CoreKeys.IS_FLYING, event.isFlying());
-        return context;
-    }
-
-    @Override
-    public NamespacedKey getKey() { return KEY; }
+    public void onEvent(PlayerToggleFlightEvent e) { handleEvent(e); }
+    @Override public NamespacedKey getKey() { return CoreTriggerKeys.PLAYER_FLIGHT; }
 }

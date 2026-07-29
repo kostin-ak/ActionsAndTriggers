@@ -12,26 +12,13 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.player.PlayerDropItemEvent;
 
 public class PlayerDropItemTrigger extends BukkitEventTrigger<PlayerDropItemEvent> {
-    private static final NamespacedKey KEY = CoreTriggerKeys.DROP_ITEM;
-
+    public PlayerDropItemTrigger() {
+        declare(CoreKeys.PLAYER, PlayerDropItemEvent::getPlayer);
+        declare(CoreKeys.LOCATION, e -> e.getPlayer().getLocation());
+        declare(CoreKeys.ITEM, e -> e.getItemDrop().getItemStack());
+        declare(CoreKeys.ITEM_ID, e -> ActionTriggerAPI.getItems().getFullId(e.getItemDrop().getItemStack()));
+    }
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
-    public void onDrop(PlayerDropItemEvent event) {
-        handleEvent(event);
-    }
-
-    @Override
-    protected ExecutionContext buildContext(PlayerDropItemEvent event) {
-        ExecutionContext context = new ExecutionContext();
-        context.set(CoreKeys.PLAYER, event.getPlayer());
-        context.set(CoreKeys.LOCATION, event.getPlayer().getLocation());
-        context.set(CoreKeys.ITEM, event.getItemDrop().getItemStack());
-
-        // Выброшенный предмет
-        context.set(ContextKey.of("item_id", String.class), ActionTriggerAPI.getItems().getFullId(event.getItemDrop().getItemStack()));
-
-        return context;
-    }
-
-    @Override
-    public NamespacedKey getKey() { return KEY; }
+    public void onEvent(PlayerDropItemEvent e) { handleEvent(e); }
+    @Override public NamespacedKey getKey() { return CoreTriggerKeys.DROP_ITEM; }
 }

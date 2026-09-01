@@ -24,4 +24,9 @@ public interface ItemProvider {
      * @return Локальный ID или null, если это предмет не из этого плагина.
      */
     @Nullable String getId(@NotNull ItemStack item);
+
+    @NotNull
+    default java.util.List<String> getAvailableIds() {
+        return java.util.Collections.emptyList();
+    }
 }

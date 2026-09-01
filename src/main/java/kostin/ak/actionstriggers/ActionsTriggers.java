@@ -48,7 +48,7 @@ public final class ActionsTriggers extends JavaPlugin {
                 new PlayerDeathTrigger(), new PlayerLevelChangeTrigger(), new PlayerQuitTrigger(),
                 new CraftItemTrigger(),new PlayerJumpTrigger(), new PlayerSwapHandItemsTrigger(),
                 new PlayerDropItemTrigger(), new BlockDamageTrigger(), new PlayerAdvancementDoneTrigger(),
-                new PlayerToggleFlightTrigger());
+                new PlayerToggleFlightTrigger(), new PlayerWorldChangeTrigger());
 
         ActionTriggerAPI.getRegistrar().registerFilters(DefaultFilterParsers.class);
 

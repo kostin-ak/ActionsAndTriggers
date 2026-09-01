@@ -21,4 +21,12 @@ public class VanillaItemProvider implements ItemProvider {
     public @Nullable String getId(@NotNull ItemStack item) {
         return item.getType().name().toLowerCase();
     }
+
+    @Override
+    public @NotNull java.util.List<String> getAvailableIds() {
+        return java.util.Arrays.stream(Material.values())
+                .filter(Material::isItem) // Оставляем только предметы
+                .map(m -> m.name().toLowerCase())
+                .collect(java.util.stream.Collectors.toList());
+    }
 }

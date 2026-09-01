@@ -20,6 +20,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 
 import java.util.Map;
@@ -185,6 +186,8 @@ public final class DefaultActionParsers implements IActionParsers {
     @ActionParam(key = CoreActionParams.MATERIAL, type = String.class, required = true, description = "Материал или ID предмета для выдачи (namespace:id). По умолчанию: minecraft:stone")
     @ActionParam(key = CoreActionParams.AMOUNT, type = Integer.class, description = "Количество выдаваемых предметов. По умолчанию: 1")
     public static Action parseGiveItem(Map<String, Object> params) {
+        boolean ifAbsent = Boolean.parseBoolean(String.valueOf(params.getOrDefault("if_absent", params.getOrDefault("unique", "false"))));
+
         return context -> {
             Player player = context.get(CoreKeys.PLAYER);
             if (player == null || !player.isOnline()) return false;
@@ -193,6 +196,16 @@ public final class DefaultActionParsers implements IActionParsers {
             // Заметь: теперь дефолтное значение с неймспейсом
             String materialStr = actionParams.getString(CoreActionParams.MATERIAL, "minecraft:stone");
             int amount = actionParams.getInt(CoreActionParams.AMOUNT, 1);
+
+            if (ifAbsent) {
+                for (ItemStack is : player.getInventory().getContents()) {
+                    if (is == null || is.getType() == Material.AIR) continue;
+                    String fullId = ActionTriggerAPI.getItems().getFullId(is);
+                    if (fullId != null && fullId.equalsIgnoreCase(materialStr)) {
+                        return false; // Уже есть в инвентаре, пропускаем выдачу
+                    }
+                }
+            }
 
             // Магия! Используем наш новый Реестр. Он сам разберется, какой плагин дергать.
             ItemStack item = ActionTriggerAPI.getItems().resolveItem(materialStr);

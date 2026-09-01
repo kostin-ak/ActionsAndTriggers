@@ -171,4 +171,183 @@ public class ActionCommand {
         }
         return res;
     }
+
+    @Subcommand("providers")
+    @CommandPermission("actionstriggers.admin")
+    public void listProviders(BukkitCommandActor actor) {
+        // Мрачный, атмосферный градиент для заголовка
+        Component msg = mm.deserialize("\n<gradient:#5C1616:#A1290B><strikethrough>--------</strikethrough> [ Providers Registry ] <strikethrough>--------</strikethrough></gradient>\n");
+
+        msg = msg.append(mm.deserialize("<color:#B02E0C><b>:</b></color>\n"));
+        for (kostin.ak.actionstriggers.api.provider.ItemProvider provider : ActionTriggerAPI.getItems().getProviders()) {
+            int count = provider.getAvailableIds().size();
+            msg = msg.append(mm.deserialize(" <dark_gray>-</dark_gray> <gold>" + provider.getNamespace() + "</gold> " + (count > 0 ? "<gray>(" + count + " )</gray>" : "") + "\n"));
+        }
+
+        msg = msg.append(mm.deserialize("\n<color:#B02E0C><b>:</b></color>\n"));
+        for (kostin.ak.actionstriggers.api.provider.BlockProvider provider : ActionTriggerAPI.getBlocks().getProviders()) {
+            int count = provider.getAvailableIds().size();
+            msg = msg.append(mm.deserialize(" <dark_gray>-</dark_gray> <gold>" + provider.getNamespace() + "</gold> " + (count > 0 ? "<gray>(" + count + " )</gray>" : "") + "\n"));
+        }
+
+        actor.reply(msg);
+        actor.reply(mm.deserialize("<dark_gray>     : <gold>/aat provider_items <namespace></gold></dark_gray>"));
+    }
+
+    @Subcommand("provider_items")
+    @CommandPermission("actionstriggers.admin")
+    public void listProviderItems(BukkitCommandActor actor, String namespace) {
+        kostin.ak.actionstriggers.api.provider.ItemProvider provider = ActionTriggerAPI.getItems().getProvider(namespace);
+
+        if (provider == null) {
+            actor.reply(mm.deserialize("<dark_red>  '" + namespace + "'  .</dark_red>"));
+            return;
+        }
+
+        List<String> ids = provider.getAvailableIds();
+        if (ids.isEmpty()) {
+            actor.reply(mm.deserialize("<gray>  " + namespace + "        API.</gray>"));
+            return;
+        }
+
+        String joined = String.join(", ", ids);
+
+        // Защита от переполнения чата (1000 символов — безопасный предел)
+        if (joined.length() > 1000) {
+            joined = joined.substring(0, 1000) + "... <dark_gray>(   " + ids.size() + " )</dark_gray>";
+        }
+
+        actor.reply(mm.deserialize("<color:#B02E0C><b>  " + namespace + ":</b></color>\n<gray>" + joined + "</gray>"));
+    }
+
+    @Subcommand("hand")
+    @CommandPermission("actionstriggers.admin")
+    public void identifyHand(BukkitCommandActor actor) {
+        if (!actor.isPlayer()) {
+            actor.reply(mm.deserialize("<red>Эта команда доступна только игрокам.</red>"));
+            return;
+        }
+
+        Player player = actor.requirePlayer();
+
+        // Получаем предмет в руке
+        org.bukkit.inventory.ItemStack item = player.getInventory().getItemInMainHand();
+        String itemId = ActionTriggerAPI.getItems().getFullId(item);
+
+        // Получаем блок, на который смотрит игрок (дистанция 5 блоков)
+        org.bukkit.block.Block block = player.getTargetBlockExact(5);
+        String blockId = block != null ? ActionTriggerAPI.getBlocks().getFullId(block) : "minecraft:air";
+
+        // Формируем интерактивное сообщение
+        Component msg = mm.deserialize("\n<gradient:#5C1616:#A1290B><strikethrough>--------</strikethrough> [ Inspector ] <strikethrough>--------</strikethrough></gradient>\n")
+                .append(mm.deserialize("<color:#B02E0C><b>В руке:</b></color> <gray>" + itemId + "</gray> " +
+                        "<hover:show_text:'<green>Нажми, чтобы скопировать</green>'><click:copy_to_clipboard:'" + itemId + "'><dark_gray>[ Скопировать ]</dark_gray></click></hover>\n"))
+                .append(mm.deserialize("<color:#B02E0C><b>Взгляд на блок:</b></color> <gray>" + blockId + "</gray> " +
+                        "<hover:show_text:'<green>Нажми, чтобы скопировать</green>'><click:copy_to_clipboard:'" + blockId + "'><dark_gray>[ Скопировать ]</dark_gray></click></hover>\n"));
+
+        actor.reply(msg);
+    }
+
+    @Subcommand("search")
+    @CommandPermission("actionstriggers.admin")
+    public void searchAll(BukkitCommandActor actor, String query, @Optional SearchCategory category) {
+        String lowerQuery = query.toLowerCase();
+
+        List<Component> actions = new ArrayList<>();
+        List<Component> triggers = new ArrayList<>();
+        List<Component> filters = new ArrayList<>();
+        List<Component> items = new ArrayList<>();
+        List<Component> blocks = new ArrayList<>();
+
+        // 1. Поиск по Действиям
+        if (category == null || category == SearchCategory.ACTIONS) {
+            for (String id : ActionTriggerAPI.getActions().asList()) {
+                if (id.toLowerCase().contains(lowerQuery)) {
+                    actions.add(createCopyableComponent(id, "#FF5555")); // Передаем только цвет
+                }
+            }
+        }
+
+        // 2. Поиск по Триггерам
+        if (category == null || category == SearchCategory.TRIGGERS) {
+            for (String id : ActionTriggerAPI.getTriggers().asList()) {
+                if (id.toLowerCase().contains(lowerQuery)) {
+                    triggers.add(createCopyableComponent(id, "#55FF55"));
+                }
+            }
+        }
+
+        // 3. Поиск по Условиям
+        if (category == null || category == SearchCategory.FILTERS) {
+            for (String id : ActionTriggerAPI.getFilters().asList()) {
+                if (id.toLowerCase().contains(lowerQuery)) {
+                    filters.add(createCopyableComponent(id, "#FFFF55"));
+                }
+            }
+        }
+
+        // 4. Поиск по Предметам
+        if (category == null || category == SearchCategory.ITEMS) {
+            for (kostin.ak.actionstriggers.api.provider.ItemProvider provider : ActionTriggerAPI.getItems().getProviders()) {
+                for (String id : provider.getAvailableIds()) {
+                    if (id.toLowerCase().contains(lowerQuery)) {
+                        items.add(createCopyableComponent(provider.getNamespace() + ":" + id, "gray"));
+                    }
+                }
+            }
+        }
+
+        // 5. Поиск по Блокам
+        if (category == null || category == SearchCategory.BLOCKS) {
+            for (kostin.ak.actionstriggers.api.provider.BlockProvider provider : ActionTriggerAPI.getBlocks().getProviders()) {
+                for (String id : provider.getAvailableIds()) {
+                    if (id.toLowerCase().contains(lowerQuery)) {
+                        Component comp = createCopyableComponent(provider.getNamespace() + ":" + id, "gray");
+                        if (!blocks.contains(comp)) blocks.add(comp);
+                    }
+                }
+            }
+        }
+
+        // Проверка: если ничего не найдено
+        if (actions.isEmpty() && triggers.isEmpty() && filters.isEmpty() && items.isEmpty() && blocks.isEmpty()) {
+            actor.reply(mm.deserialize("<dark_red>Ничего не найдено по запросу: '" + query + "'.</dark_red>"));
+            return;
+        }
+
+        // Собираем итоговое сообщение по блокам
+        Component msg = mm.deserialize("\n<gradient:#5C1616:#A1290B><strikethrough>--------</strikethrough> [ Search Results ] <strikethrough>--------</strikethrough></gradient>\n");
+
+        msg = appendCategory(msg, "Действия", actions);
+        msg = appendCategory(msg, "Триггеры", triggers);
+        msg = appendCategory(msg, "Условия", filters);
+        msg = appendCategory(msg, "Предметы", items);
+        msg = appendCategory(msg, "Блоки", blocks);
+
+        actor.reply(msg);
+    }
+
+    // --- Исправленный хелпер ---
+    private Component createCopyableComponent(String text, String color) {
+        // Теперь мы используем строгий тег <color:наш_цвет>, который корректно закроется через </color>
+        return mm.deserialize("<hover:show_text:'<green>Нажми, чтобы скопировать</green>'><click:copy_to_clipboard:'" + text + "'><color:" + color + ">" + text + "</color></click></hover>");
+    }
+
+    private Component appendCategory(Component base, String title, List<Component> list) {
+        if (list.isEmpty()) return base;
+
+        int limit = Math.min(list.size(), 50);
+
+        Component section = mm.deserialize("<color:#B02E0C><b>" + title + ":</b></color> ")
+                .append(Component.join(JoinConfiguration.separator(mm.deserialize(" <dark_gray>|</dark_gray> ")), list.subList(0, limit)));
+
+        if (list.size() > 50) {
+            section = section.append(mm.deserialize(" <dark_gray><i>...и еще " + (list.size() - limit) + "</i></dark_gray>"));
+        }
+
+        return base.append(section).append(mm.deserialize("\n"));
+    }
+    public enum SearchCategory {
+        ACTIONS, TRIGGERS, FILTERS, ITEMS, BLOCKS
+    }
 }

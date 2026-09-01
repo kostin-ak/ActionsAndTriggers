@@ -16,4 +16,10 @@ public interface BlockProvider {
      * Возвращает локальный ID кастомного блока или null.
      */
     @Nullable String getId(@NotNull Block block);
+
+    @NotNull
+    default java.util.List<String> getAvailableIds() {
+        return java.util.Collections.emptyList();
+    }
+
 }

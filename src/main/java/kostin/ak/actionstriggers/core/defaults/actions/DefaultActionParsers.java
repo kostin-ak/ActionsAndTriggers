@@ -193,8 +193,8 @@ public final class DefaultActionParsers implements IActionParsers {
             if (player == null || !player.isOnline()) return false;
 
             ActionParameters actionParams = new ActionParameters(params, context);
-            // Заметь: теперь дефолтное значение с неймспейсом
-            String materialStr = actionParams.getString(CoreActionParams.MATERIAL, "minecraft:stone");
+            String rawMatKey = params.containsKey("item") ? "item" : CoreActionParams.MATERIAL;
+            String materialStr = actionParams.getString(rawMatKey, "minecraft:stone");
             int amount = actionParams.getInt(CoreActionParams.AMOUNT, 1);
 
             if (ifAbsent) {

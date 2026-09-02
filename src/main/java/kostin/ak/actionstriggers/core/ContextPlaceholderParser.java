@@ -127,7 +127,12 @@ public class ContextPlaceholderParser {
         }
         matcher.appendTail(result);
 
-        return result.toString();
+        String parsed = result.toString();
+        Player player = context.get(CoreKeys.PLAYER);
+        if (player != null) {
+            parsed = kostin.ak.actionstriggers.core.hook.PapiHook.parse(player, parsed);
+        }
+        return parsed;
     }
 
     /**

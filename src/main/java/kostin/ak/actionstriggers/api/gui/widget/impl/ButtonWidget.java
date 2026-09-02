@@ -88,7 +88,7 @@ public class ButtonWidget extends AbstractWidget {
                 text = text.replace("{" + entry.getKey() + "}", String.valueOf(entry.getValue()));
             }
         }
-        return text;
+        return kostin.ak.actionstriggers.core.hook.PapiHook.parse(ctx.getPlayer(), text);
     }
 
     @Override

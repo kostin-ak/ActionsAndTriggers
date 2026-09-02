@@ -101,12 +101,12 @@ public class CycleButtonWidget extends AbstractWidget {
         if (meta != null) {
             MiniMessage mm = MiniMessage.miniMessage();
             if (entry.getName() != null) {
-                meta.displayName(mm.deserialize(entry.getName()));
+                meta.displayName(mm.deserialize(kostin.ak.actionstriggers.core.hook.PapiHook.parse(ctx.getPlayer(), entry.getName())));
             }
             if (entry.getLore() != null && !entry.getLore().isEmpty()) {
                 List<Component> loreList = new ArrayList<>();
                 for (String l : entry.getLore()) {
-                    loreList.add(mm.deserialize(l));
+                    loreList.add(mm.deserialize(kostin.ak.actionstriggers.core.hook.PapiHook.parse(ctx.getPlayer(), l)));
                 }
                 meta.lore(loreList);
             }

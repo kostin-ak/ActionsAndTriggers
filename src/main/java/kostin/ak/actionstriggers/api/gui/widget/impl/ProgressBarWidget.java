@@ -114,6 +114,7 @@ public class ProgressBarWidget extends AbstractWidget {
                         .replace("{stage}", currentStage.getStage())
                         .replace("{temp}", currentStage.getTemp())
                         .replace("{status}", currentStage.getStatus());
+                nameStr = kostin.ak.actionstriggers.core.hook.PapiHook.parse(ctx.getPlayer(), nameStr);
                 meta.displayName(MiniMessage.miniMessage().deserialize(nameStr));
 
                 List<Component> lore = new ArrayList<>();
@@ -125,6 +126,7 @@ public class ProgressBarWidget extends AbstractWidget {
                                 .replace("{stage}", currentStage.getStage())
                                 .replace("{temp}", currentStage.getTemp())
                                 .replace("{status}", currentStage.getStatus());
+                        formatted = kostin.ak.actionstriggers.core.hook.PapiHook.parse(ctx.getPlayer(), formatted);
                         lore.add(MiniMessage.miniMessage().deserialize(formatted));
                     }
                 } else {
@@ -143,11 +145,11 @@ public class ProgressBarWidget extends AbstractWidget {
 
             ItemMeta meta = item.getItemMeta();
             if (meta != null) {
-                meta.displayName(MiniMessage.miniMessage().deserialize(idleName));
+                meta.displayName(MiniMessage.miniMessage().deserialize(kostin.ak.actionstriggers.core.hook.PapiHook.parse(ctx.getPlayer(), idleName)));
                 if (!idleLore.isEmpty()) {
                     List<Component> lore = new ArrayList<>();
                     for (String line : idleLore) {
-                        lore.add(MiniMessage.miniMessage().deserialize(line));
+                        lore.add(MiniMessage.miniMessage().deserialize(kostin.ak.actionstriggers.core.hook.PapiHook.parse(ctx.getPlayer(), line)));
                     }
                     meta.lore(lore);
                 }

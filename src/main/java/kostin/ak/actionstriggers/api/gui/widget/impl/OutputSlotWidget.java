@@ -49,12 +49,12 @@ public class OutputSlotWidget extends AbstractWidget {
             ItemMeta meta = placeholder.getItemMeta();
             if (meta != null) {
                 if (placeholderName != null && !placeholderName.isEmpty()) {
-                    meta.displayName(MiniMessage.miniMessage().deserialize(placeholderName));
+                    meta.displayName(MiniMessage.miniMessage().deserialize(kostin.ak.actionstriggers.core.hook.PapiHook.parse(ctx.getPlayer(), placeholderName)));
                 }
                 if (placeholderLore != null && !placeholderLore.isEmpty()) {
                     List<Component> lore = new ArrayList<>();
                     for (String l : placeholderLore) {
-                        lore.add(MiniMessage.miniMessage().deserialize(l));
+                        lore.add(MiniMessage.miniMessage().deserialize(kostin.ak.actionstriggers.core.hook.PapiHook.parse(ctx.getPlayer(), l)));
                     }
                     meta.lore(lore);
                 }

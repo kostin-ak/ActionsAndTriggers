@@ -98,13 +98,14 @@ public class GuiListener implements Listener {
                 }
             }
 
-            // Возврат реальных предметов из слотов ввода (InputSlotWidget), чтобы они не потерялись
+            // 1. Возврат ресурсов из слотов ввода (InputSlotWidget) и авто-забор готовой продукции (OutputSlotWidget)
             for (java.util.Map.Entry<Integer, Widget> entry : holder.getSlotWidgets().entrySet()) {
-                if (entry.getValue() instanceof kostin.ak.actionstriggers.api.gui.widget.impl.InputSlotWidget) {
+                Widget widget = entry.getValue();
+
+                if (widget instanceof kostin.ak.actionstriggers.api.gui.widget.impl.InputSlotWidget inputWidget) {
                     org.bukkit.inventory.ItemStack item = event.getInventory().getItem(entry.getKey());
                     if (item != null && item.getType() != org.bukkit.Material.AIR) {
-                        // Не возвращаем плейсхолдеры
-                        if (item.getItemMeta() != null && item.getItemMeta().hasDisplayName() && item.getItemMeta().displayName().toString().contains("Вход:")) {
+                        if (inputWidget.isPlaceholder(item)) {
                             continue;
                         }
                         event.getInventory().setItem(entry.getKey(), null);
@@ -112,6 +113,16 @@ public class GuiListener implements Listener {
                         for (org.bukkit.inventory.ItemStack drop : leftovers.values()) {
                             player.getWorld().dropItemNaturally(player.getLocation(), drop);
                         }
+                    }
+                } else if (widget instanceof kostin.ak.actionstriggers.api.gui.widget.impl.OutputSlotWidget) {
+                    org.bukkit.inventory.ItemStack item = event.getInventory().getItem(entry.getKey());
+                    if (item != null && item.getType() != org.bukkit.Material.AIR) {
+                        event.getInventory().setItem(entry.getKey(), null);
+                        java.util.HashMap<Integer, org.bukkit.inventory.ItemStack> leftovers = player.getInventory().addItem(item);
+                        for (org.bukkit.inventory.ItemStack drop : leftovers.values()) {
+                            player.getWorld().dropItemNaturally(player.getLocation(), drop);
+                        }
+                        player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_ITEM_PICKUP, 0.8f, 1.2f);
                     }
                 }
             }

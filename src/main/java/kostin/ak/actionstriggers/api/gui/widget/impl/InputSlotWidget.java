@@ -56,7 +56,7 @@ public class InputSlotWidget extends AbstractWidget {
         }
     }
 
-    private boolean isPlaceholder(ItemStack item) {
+    public boolean isPlaceholder(ItemStack item) {
         if (item == null || placeholderMaterial == null || placeholderMaterial.isEmpty()) return false;
         ItemMeta meta = item.getItemMeta();
         if (meta == null || !meta.hasDisplayName()) return false;

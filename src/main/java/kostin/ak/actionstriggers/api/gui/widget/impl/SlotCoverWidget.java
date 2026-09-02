@@ -36,15 +36,38 @@ public class SlotCoverWidget extends AbstractWidget {
         if (!isVisible(ctx)) return;
 
         ItemStack item = null;
+        
+        // 1. Попытка получить кастомный предмет (Oraxen / ItemsAdder / Custom)
         if (materialStr != null && !materialStr.isEmpty()) {
             item = ActionTriggerAPI.getItems().resolveItem(materialStr);
+            
+            // Если указан Oraxen, но он не установлен — пробуем аналог в ItemsAdder
+            if (item == null && materialStr.startsWith("oraxen:")) {
+                String iaId = "itemsadder:" + materialStr.substring("oraxen:".length());
+                item = ActionTriggerAPI.getItems().resolveItem(iaId);
+            }
         }
 
-        // Многоуровневый фолбэк: если Oraxen отсутствует или предмет не найден
+        // 2. Глобальный первичный предмет из config.yml (если настроен)
+        if (item == null) {
+            String globalPrimary = kostin.ak.actionstriggers.ActionsTriggers.getInstance().getConfig().getString("gui.slot_cover.primary");
+            if (globalPrimary != null && !globalPrimary.isEmpty() && !globalPrimary.equalsIgnoreCase(materialStr)) {
+                item = ActionTriggerAPI.getItems().resolveItem(globalPrimary);
+            }
+        }
+
+        // 3. Локальный или глобальный fallback (ванильный материал)
         if (item == null && fallbackMaterial != null && !fallbackMaterial.isEmpty()) {
             item = ActionTriggerAPI.getItems().resolveItem(fallbackMaterial);
         }
+        if (item == null) {
+            String globalFallback = kostin.ak.actionstriggers.ActionsTriggers.getInstance().getConfig().getString("gui.slot_cover.fallback");
+            if (globalFallback != null && !globalFallback.isEmpty()) {
+                item = ActionTriggerAPI.getItems().resolveItem(globalFallback);
+            }
+        }
 
+        // 4. Железный ванильный фолбэк
         if (item == null) {
             item = new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE);
         } else {

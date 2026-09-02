@@ -425,6 +425,17 @@ public final class DefaultActionParsers implements IActionParsers {
         return context -> {
             Player player = context.get(CoreKeys.PLAYER);
             if (player == null || !player.isOnline()) return false;
+
+            if ("astral_atlas".equalsIgnoreCase(guiId) && kostin.ak.actionstriggers.ActionsTriggers.getCombatTracker().isInCombat(player)) {
+                int remaining = kostin.ak.actionstriggers.ActionsTriggers.getCombatTracker().getRemainingSeconds(player);
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 0.9f);
+                player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_FIRE_EXTINGUISH, 0.8f, 1.5f);
+                player.sendActionBar(MiniMessage.miniMessage().deserialize(
+                        "<red><bold>✖ Астральные потоки нестабильны в бою! Подождите " + remaining + " сек.</bold></red>"
+                ));
+                return false;
+            }
+
             org.bukkit.block.Block block = context.get(CoreKeys.BLOCK);
             return kostin.ak.actionstriggers.ActionsTriggers.getGuiRegistry().openGui(player, guiId, block);
         };

@@ -21,8 +21,8 @@ import java.util.Map;
 public class SlotCoverWidget extends AbstractWidget {
 
     private boolean transparent = false;
-    private String materialStr = "oraxen:gui_slot_cover";
-    private String fallbackMaterial = "minecraft:light_gray_stained_glass_pane";
+    private String materialStr = "minecraft:gray_stained_glass_pane";
+    private String fallbackMaterial = "minecraft:gray_stained_glass_pane";
 
     public SlotCoverWidget() {
         super(0, 0, 1, 1);
@@ -35,9 +35,6 @@ public class SlotCoverWidget extends AbstractWidget {
     public boolean isTransparent() { return transparent; }
     public void setTransparent(boolean transparent) {
         this.transparent = transparent;
-        if (transparent) {
-            this.materialStr = "oraxen:gui_transparent_slot";
-        }
     }
 
     @Override
@@ -84,7 +81,7 @@ public class SlotCoverWidget extends AbstractWidget {
 
         // 4. Железный ванильный фолбэк
         if (item == null) {
-            item = new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE);
+            item = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
         } else {
             item = item.clone();
         }

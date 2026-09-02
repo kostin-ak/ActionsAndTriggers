@@ -2,6 +2,7 @@ package kostin.ak.actionstriggers.api.gui.widget.impl;
 
 import kostin.ak.actionstriggers.api.ActionTriggerAPI;
 import kostin.ak.actionstriggers.api.action.Action;
+import kostin.ak.actionstriggers.api.gui.AATGuiHolder;
 import kostin.ak.actionstriggers.api.gui.ClickContext;
 import kostin.ak.actionstriggers.api.gui.GuiContext;
 import kostin.ak.actionstriggers.api.gui.widget.AbstractWidget;
@@ -55,12 +56,12 @@ public class ButtonWidget extends AbstractWidget {
         if (meta != null) {
             MiniMessage mm = MiniMessage.miniMessage();
             if (name != null && !name.isEmpty()) {
-                meta.displayName(mm.deserialize(name));
+                meta.displayName(mm.deserialize(formatText(name, ctx)));
             }
             if (lore != null && !lore.isEmpty()) {
                 List<Component> loreComponents = new ArrayList<>();
                 for (String l : lore) {
-                    loreComponents.add(mm.deserialize(l));
+                    loreComponents.add(mm.deserialize(formatText(l, ctx)));
                 }
                 meta.lore(loreComponents);
             }
@@ -71,6 +72,18 @@ public class ButtonWidget extends AbstractWidget {
         }
 
         matrix.put(toSlot(0, 0), item);
+    }
+
+    private String formatText(String text, GuiContext ctx) {
+        if (text == null || text.isEmpty()) return "";
+        text = text.replace("{player}", ctx.getPlayer().getName());
+        AATGuiHolder holder = ctx.getHolder();
+        if (holder != null) {
+            for (Map.Entry<String, Object> entry : holder.getSessionState().entrySet()) {
+                text = text.replace("{" + entry.getKey() + "}", String.valueOf(entry.getValue()));
+            }
+        }
+        return text;
     }
 
     @Override

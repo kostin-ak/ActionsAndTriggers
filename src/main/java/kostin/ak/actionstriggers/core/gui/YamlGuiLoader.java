@@ -203,6 +203,36 @@ public class YamlGuiLoader {
                 return slot;
             }
 
+            case "progress_bar": {
+                kostin.ak.actionstriggers.api.gui.widget.impl.ProgressBarWidget pb =
+                        new kostin.ak.actionstriggers.api.gui.widget.impl.ProgressBarWidget(x, y);
+                pb.setCondition(condition);
+
+                if (sec.contains("idle_material")) pb.setIdleMaterial(sec.getString("idle_material"));
+                else if (sec.contains("material")) pb.setIdleMaterial(sec.getString("material"));
+
+                if (sec.contains("idle_name")) pb.setIdleName(sec.getString("idle_name"));
+                else if (sec.contains("name")) pb.setIdleName(sec.getString("name"));
+
+                if (sec.contains("idle_lore")) pb.setIdleLore(sec.getStringList("idle_lore"));
+                else if (sec.contains("lore")) pb.setIdleLore(sec.getStringList("lore"));
+
+                if (sec.contains("running_material")) pb.setRunningMaterial(sec.getString("running_material"));
+                if (sec.contains("running_name")) pb.setRunningName(sec.getString("running_name"));
+                if (sec.contains("running_lore")) pb.setRunningLoreTemplate(sec.getStringList("running_lore"));
+
+                if (sec.contains("bar_length")) pb.setBarLength(sec.getInt("bar_length", 10));
+                if (sec.contains("filled_color")) pb.setFilledColor(sec.getString("filled_color"));
+                if (sec.contains("empty_color")) pb.setEmptyColor(sec.getString("empty_color"));
+
+                if (sec.contains("on_click")) {
+                    for (Action a : parser.parseActions(sec.get("on_click"))) {
+                        pb.addClickAction(a);
+                    }
+                }
+                return pb;
+            }
+
             case "toggle": {
                 ToggleWidget toggle = new ToggleWidget();
                 toggle.setX(x);

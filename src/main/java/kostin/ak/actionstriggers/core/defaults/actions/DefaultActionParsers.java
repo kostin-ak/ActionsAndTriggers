@@ -499,16 +499,26 @@ public final class DefaultActionParsers implements IActionParsers {
                 return false;
             }
 
-            // Проверяем выбранный режим
+            if (Boolean.TRUE.equals(holder.getSessionState().get("progress_running"))) {
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>✖ Станок уже выполняет заморозку! Дождитесь завершения.</red>"));
+                return false;
+            }
+
+            // Проверяем выбранный режим и длительность
             String mode = holder.getSessionState().getOrDefault("fabricator_mode", "blue_ice").toString();
             Material iceMat = Material.BLUE_ICE;
             int iceAmount = 4;
+            int durationTicks = 160; // 8 секунд для Blue Ice
+
             if (mode.equalsIgnoreCase("packed_ice")) {
                 iceMat = Material.PACKED_ICE;
                 iceAmount = 16;
+                durationTicks = 100; // 5 секунд для Packed Ice
             } else if (mode.equalsIgnoreCase("ice")) {
                 iceMat = Material.ICE;
                 iceAmount = 32;
+                durationTicks = 60; // 3 секунды для обычного Ice
             }
 
             ItemStack currentOut = topInv.getItem(outputSlot);
@@ -518,7 +528,7 @@ public final class DefaultActionParsers implements IActionParsers {
                 return false;
             }
 
-            // 1. Потребляем ведро воды -> заменяем на пустое ведро
+            // 1. Потребляем ингредиенты СРАЗУ (защита от дюпа)
             if (waterItem.getAmount() > 1) {
                 waterItem.setAmount(waterItem.getAmount() - 1);
                 topInv.setItem(waterSlot, waterItem);
@@ -527,7 +537,6 @@ public final class DefaultActionParsers implements IActionParsers {
                 topInv.setItem(waterSlot, new ItemStack(Material.BUCKET));
             }
 
-            // 2. Потребляем 1 кристалл
             if (crystalItem.getAmount() > 1) {
                 crystalItem.setAmount(crystalItem.getAmount() - 1);
                 topInv.setItem(crystalSlot, crystalItem);
@@ -535,15 +544,57 @@ public final class DefaultActionParsers implements IActionParsers {
                 topInv.setItem(crystalSlot, null);
             }
 
-            // 3. Выдаем лед в слот выдачи
-            topInv.setItem(outputSlot, new ItemStack(iceMat, iceAmount));
+            // Стартовые звуки активации
+            player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_BEACON_ACTIVATE, 0.8f, 1.6f);
+            player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_BREWING_STAND_BREW, 1.0f, 0.9f);
+            player.sendActionBar(MiniMessage.miniMessage().deserialize("<gradient:#74B9FF:#0984E3>⚙ Криогенный цикл запущен...</gradient>"));
 
-            // 4. Эффекты
-            player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_GLASS_BREAK, 1.0f, 1.5f);
-            player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_SNOW_STEP, 1.0f, 0.8f);
-            player.getWorld().spawnParticle(org.bukkit.Particle.SNOWFLAKE, player.getLocation().add(0, 1, 0), 25, 0.5, 0.5, 0.5, 0.05);
+            final Material finalIceMat = iceMat;
+            final int finalIceAmount = iceAmount;
 
-            player.sendActionBar(MiniMessage.miniMessage().deserialize("<gradient:#74B9FF:#0984E3>❄ Крио-заморозка завершена! Заберите лед из слота выхода.</gradient>"));
+            Runnable onFinish = () -> {
+                // Выдаем лед в слот выдачи
+                if (player.isOnline() && player.getOpenInventory().getTopInventory().equals(topInv)) {
+                    topInv.setItem(outputSlot, new ItemStack(finalIceMat, finalIceAmount));
+                } else if (player.isOnline()) {
+                    player.getInventory().addItem(new ItemStack(finalIceMat, finalIceAmount));
+                } else if (holder.getBoundBlock() != null) {
+                    holder.getBoundBlock().getWorld().dropItemNaturally(
+                            holder.getBoundBlock().getLocation().add(0.5, 1.0, 0.5),
+                            new ItemStack(finalIceMat, finalIceAmount)
+                    );
+                }
+
+                // Эффекты завершения
+                if (player.isOnline()) {
+                    player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_GLASS_BREAK, 1.0f, 1.5f);
+                    player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 0.8f, 1.8f);
+                    player.sendActionBar(MiniMessage.miniMessage().deserialize("<gradient:#74B9FF:#0984E3>❄ Крио-заморозка завершена! Заберите лед.</gradient>"));
+                }
+                if (holder.getBoundBlock() != null) {
+                    holder.getBoundBlock().getWorld().spawnParticle(
+                            org.bukkit.Particle.SNOWFLAKE,
+                            holder.getBoundBlock().getLocation().add(0.5, 1.1, 0.5),
+                            30, 0.5, 0.5, 0.5, 0.05
+                    );
+                }
+            };
+
+            // Ищем ProgressBarWidget
+            kostin.ak.actionstriggers.api.gui.widget.impl.ProgressBarWidget pb = null;
+            for (kostin.ak.actionstriggers.api.gui.widget.Widget w : holder.getSlotWidgets().values()) {
+                if (w instanceof kostin.ak.actionstriggers.api.gui.widget.impl.ProgressBarWidget candidate) {
+                    pb = candidate;
+                    break;
+                }
+            }
+
+            if (pb != null) {
+                pb.startProcess(holder, durationTicks, onFinish);
+            } else {
+                onFinish.run();
+            }
+
             return true;
         };
     }

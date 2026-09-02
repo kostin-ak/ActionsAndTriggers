@@ -466,4 +466,85 @@ public final class DefaultActionParsers implements IActionParsers {
             return true;
         };
     }
+
+    @ConfigAction("core:cryo_freeze")
+    public static Action parseCryoFreeze(Map<String, Object> params) {
+        int waterSlot = params.containsKey("water_slot") ? Integer.parseInt(params.get("water_slot").toString()) : 10;
+        int crystalSlot = params.containsKey("crystal_slot") ? Integer.parseInt(params.get("crystal_slot").toString()) : 12;
+        int outputSlot = params.containsKey("output_slot") ? Integer.parseInt(params.get("output_slot").toString()) : 16;
+
+        return context -> {
+            Player player = context.get(CoreKeys.PLAYER);
+            if (player == null || !player.isOnline()) return false;
+
+            org.bukkit.inventory.InventoryView openView = player.getOpenInventory();
+            org.bukkit.inventory.Inventory topInv = openView.getTopInventory();
+            if (!(topInv.getHolder() instanceof kostin.ak.actionstriggers.api.gui.AATGuiHolder holder)) {
+                return false;
+            }
+
+            ItemStack waterItem = topInv.getItem(waterSlot);
+            if (waterItem == null || waterItem.getType() != Material.WATER_BUCKET) {
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>✖ Поместите Ведро с Водой в слот сырья (слот слева)!</red>"));
+                return false;
+            }
+
+            ItemStack crystalItem = topInv.getItem(crystalSlot);
+            String crystalId = crystalItem != null ? ActionTriggerAPI.getItems().getFullId(crystalItem) : "";
+            boolean isCrystal = crystalItem != null && (crystalId.contains("frost_crystal") || crystalItem.getType() == Material.AMETHYST_SHARD || crystalItem.getType() == Material.PRISMARINE_CRYSTALS);
+            if (!isCrystal) {
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>✖ Поместите Морозный Кристалл в слот катализатора!</red>"));
+                return false;
+            }
+
+            // Проверяем выбранный режим
+            String mode = holder.getSessionState().getOrDefault("fabricator_mode", "blue_ice").toString();
+            Material iceMat = Material.BLUE_ICE;
+            int iceAmount = 4;
+            if (mode.equalsIgnoreCase("packed_ice")) {
+                iceMat = Material.PACKED_ICE;
+                iceAmount = 16;
+            } else if (mode.equalsIgnoreCase("ice")) {
+                iceMat = Material.ICE;
+                iceAmount = 32;
+            }
+
+            ItemStack currentOut = topInv.getItem(outputSlot);
+            if (currentOut != null && currentOut.getType() != Material.AIR) {
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>✖ Сначала заберите готовый лед из слота выхода!</red>"));
+                return false;
+            }
+
+            // 1. Потребляем ведро воды -> заменяем на пустое ведро
+            if (waterItem.getAmount() > 1) {
+                waterItem.setAmount(waterItem.getAmount() - 1);
+                topInv.setItem(waterSlot, waterItem);
+                player.getInventory().addItem(new ItemStack(Material.BUCKET));
+            } else {
+                topInv.setItem(waterSlot, new ItemStack(Material.BUCKET));
+            }
+
+            // 2. Потребляем 1 кристалл
+            if (crystalItem.getAmount() > 1) {
+                crystalItem.setAmount(crystalItem.getAmount() - 1);
+                topInv.setItem(crystalSlot, crystalItem);
+            } else {
+                topInv.setItem(crystalSlot, null);
+            }
+
+            // 3. Выдаем лед в слот выдачи
+            topInv.setItem(outputSlot, new ItemStack(iceMat, iceAmount));
+
+            // 4. Эффекты
+            player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_GLASS_BREAK, 1.0f, 1.5f);
+            player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_SNOW_STEP, 1.0f, 0.8f);
+            player.getWorld().spawnParticle(org.bukkit.Particle.SNOWFLAKE, player.getLocation().add(0, 1, 0), 25, 0.5, 0.5, 0.5, 0.05);
+
+            player.sendActionBar(MiniMessage.miniMessage().deserialize("<gradient:#74B9FF:#0984E3>❄ Крио-заморозка завершена! Заберите лед из слота выхода.</gradient>"));
+            return true;
+        };
+    }
 }

@@ -127,11 +127,15 @@ public class CycleButtonWidget extends AbstractWidget {
         StateEntry newEntry = states.get(next);
         ctx.executeActions(newEntry.getActions());
 
-        // Мгновенная перерисовка слота
+        // Мгновенная перерисовка слота: обновляем именно слот клика ctx.getSlot()
         Map<Integer, ItemStack> matrix = new HashMap<>();
         render(ctx.getGuiContext(), matrix);
-        for (Map.Entry<Integer, ItemStack> entry : matrix.entrySet()) {
-            ctx.getEvent().getInventory().setItem(entry.getKey(), entry.getValue());
+        ItemStack newItem = matrix.get(toSlot(0, 0));
+        if (newItem == null && !matrix.isEmpty()) {
+            newItem = matrix.values().iterator().next();
+        }
+        if (newItem != null) {
+            ctx.getEvent().getInventory().setItem(ctx.getSlot(), newItem);
         }
 
         return true;

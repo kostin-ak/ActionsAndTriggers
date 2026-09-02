@@ -73,14 +73,15 @@ public class GuiRegistry {
         holder.setInventory(inventory);
 
         GuiContext ctx = new GuiContext(player, holder);
-        renderGui(ctx, def, inventory);
 
-        player.openInventory(inventory);
-
-        // Колбеки открытия
+        // Колбеки открытия (инициализация сессионных переменных)
         for (Widget widget : def.getWidgets()) {
             widget.onOpen(ctx);
         }
+
+        renderGui(ctx, def, inventory);
+
+        player.openInventory(inventory);
         executeActions(player, boundBlock, def.getOnOpenActions());
 
         return true;

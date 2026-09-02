@@ -71,6 +71,19 @@ public class ProgressBarWidget extends AbstractWidget {
     }
 
     @Override
+    public void onOpen(@NotNull GuiContext ctx) {
+        AATGuiHolder holder = ctx.getHolder();
+        if (holder != null) {
+            holder.getSessionState().putIfAbsent("progress_running", false);
+            holder.getSessionState().putIfAbsent("progress_value", 0.0);
+            holder.getSessionState().putIfAbsent("progress_percent", 0);
+            holder.getSessionState().putIfAbsent("progress_status", "<green>В норме</green>");
+            holder.getSessionState().putIfAbsent("progress_temp", "-180°C");
+            holder.getSessionState().putIfAbsent("progress_stage", "Ожидание сырья");
+        }
+    }
+
+    @Override
     public void render(@NotNull GuiContext ctx, @NotNull Map<Integer, ItemStack> matrix) {
         if (!isVisible(ctx)) return;
 

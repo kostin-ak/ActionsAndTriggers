@@ -79,6 +79,11 @@ public class ButtonWidget extends AbstractWidget {
         text = text.replace("{player}", ctx.getPlayer().getName());
         AATGuiHolder holder = ctx.getHolder();
         if (holder != null) {
+            text = text.replace("{progress_status}", String.valueOf(holder.getSessionState().getOrDefault("progress_status", "<green>В норме</green>")));
+            text = text.replace("{progress_temp}", String.valueOf(holder.getSessionState().getOrDefault("progress_temp", "-180°C")));
+            text = text.replace("{progress_stage}", String.valueOf(holder.getSessionState().getOrDefault("progress_stage", "Ожидание сырья")));
+            text = text.replace("{progress_percent}", String.valueOf(holder.getSessionState().getOrDefault("progress_percent", "0")));
+
             for (Map.Entry<String, Object> entry : holder.getSessionState().entrySet()) {
                 text = text.replace("{" + entry.getKey() + "}", String.valueOf(entry.getValue()));
             }

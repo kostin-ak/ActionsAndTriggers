@@ -141,10 +141,22 @@ public class YamlGuiLoader {
         Filter condition = null;
         if (sec.contains("condition") || sec.contains("conditions")) {
             Object condObj = sec.get("condition") != null ? sec.get("condition") : sec.get("conditions");
-            condition = parser.parseConditions(condObj instanceof List ? condObj : List.of(condObj));
+            condition = parser.parseConditions(condObj);
         }
 
         switch (type) {
+            case "slot_cover":
+            case "cover":
+            case "blank": {
+                kostin.ak.actionstriggers.api.gui.widget.impl.SlotCoverWidget cover =
+                        new kostin.ak.actionstriggers.api.gui.widget.impl.SlotCoverWidget(x, y);
+                cover.setCondition(condition);
+                if (sec.contains("material") || sec.contains("item")) {
+                    cover.setMaterialStr(sec.getString("material", sec.getString("item", "oraxen:gui_slot_cover")));
+                }
+                return cover;
+            }
+
             case "filler": {
                 FillerWidget filler = new FillerWidget();
                 filler.setX(x);

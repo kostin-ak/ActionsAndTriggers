@@ -21,6 +21,7 @@ import java.util.Map;
 public class SlotCoverWidget extends AbstractWidget {
 
     private String materialStr = "oraxen:gui_slot_cover";
+    private String fallbackMaterial = "minecraft:light_gray_stained_glass_pane";
 
     public SlotCoverWidget() {
         super(0, 0, 1, 1);
@@ -34,10 +35,18 @@ public class SlotCoverWidget extends AbstractWidget {
     public void render(@NotNull GuiContext ctx, @NotNull Map<Integer, ItemStack> matrix) {
         if (!isVisible(ctx)) return;
 
-        ItemStack item = ActionTriggerAPI.getItems().resolveItem(materialStr);
+        ItemStack item = null;
+        if (materialStr != null && !materialStr.isEmpty()) {
+            item = ActionTriggerAPI.getItems().resolveItem(materialStr);
+        }
+
+        // Многоуровневый фолбэк: если Oraxen отсутствует или предмет не найден
+        if (item == null && fallbackMaterial != null && !fallbackMaterial.isEmpty()) {
+            item = ActionTriggerAPI.getItems().resolveItem(fallbackMaterial);
+        }
+
         if (item == null) {
-            // Фолбэк на ванильный серый материал, если Oraxen еще не загружен
-            item = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+            item = new ItemStack(Material.LIGHT_GRAY_STAINED_GLASS_PANE);
         } else {
             item = item.clone();
         }
@@ -61,4 +70,7 @@ public class SlotCoverWidget extends AbstractWidget {
 
     public String getMaterialStr() { return materialStr; }
     public void setMaterialStr(String materialStr) { this.materialStr = materialStr; }
+
+    public String getFallbackMaterial() { return fallbackMaterial; }
+    public void setFallbackMaterial(String fallbackMaterial) { this.fallbackMaterial = fallbackMaterial; }
 }

@@ -154,6 +154,9 @@ public class YamlGuiLoader {
                 if (sec.contains("material") || sec.contains("item")) {
                     cover.setMaterialStr(sec.getString("material", sec.getString("item", "oraxen:gui_slot_cover")));
                 }
+                if (sec.contains("fallback")) {
+                    cover.setFallbackMaterial(sec.getString("fallback"));
+                }
                 return cover;
             }
 

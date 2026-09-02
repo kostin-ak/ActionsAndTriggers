@@ -41,6 +41,7 @@ public class ContextPlaceholderParser {
                 case "name" -> p.getName();
                 case "uuid" -> p.getUniqueId().toString();
                 case "health" -> String.format("%.1f", p.getHealth());
+                case "combat_remaining" -> String.valueOf(kostin.ak.actionstriggers.ActionsTriggers.getCombatTracker().getRemainingSeconds(p));
                 default -> p.getName();
             };
         });

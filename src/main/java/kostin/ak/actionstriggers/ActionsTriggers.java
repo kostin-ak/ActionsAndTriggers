@@ -120,13 +120,21 @@ public final class ActionsTriggers extends JavaPlugin {
         kostin.ak.actionstriggers.core.gui.YamlGuiLoader guiLoader = new kostin.ak.actionstriggers.core.gui.YamlGuiLoader(GUI_REGISTRY, getLogger());
         guiLoader.loadAll(this, "guis");
 
+        // 6. Инициализация Combat Tracker (Боевой режим)
+        getServer().getPluginManager().registerEvents(new kostin.ak.actionstriggers.core.combat.CombatListener(COMBAT_TRACKER), this);
+
         getLogger().info("Actions&Triggers API успешно загружен!");
     }
 
     private static final kostin.ak.actionstriggers.core.gui.GuiRegistry GUI_REGISTRY = new kostin.ak.actionstriggers.core.gui.GuiRegistry();
+    private static final kostin.ak.actionstriggers.core.combat.CombatTracker COMBAT_TRACKER = new kostin.ak.actionstriggers.core.combat.CombatTracker();
 
     public static kostin.ak.actionstriggers.core.gui.GuiRegistry getGuiRegistry() {
         return GUI_REGISTRY;
+    }
+
+    public static kostin.ak.actionstriggers.core.combat.CombatTracker getCombatTracker() {
+        return COMBAT_TRACKER;
     }
 
     @Override

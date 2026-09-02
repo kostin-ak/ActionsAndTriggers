@@ -439,4 +439,31 @@ public final class DefaultActionParsers implements IActionParsers {
             return true;
         };
     }
+
+    @ConfigAction("core:tag_combat")
+    public static Action parseTagCombat(Map<String, Object> params) {
+        int seconds = 15;
+        if (params.containsKey("seconds")) {
+            try {
+                seconds = Integer.parseInt(params.get("seconds").toString());
+            } catch (NumberFormatException ignored) {}
+        }
+        final int finalSeconds = seconds;
+        return context -> {
+            Player player = context.get(CoreKeys.PLAYER);
+            if (player == null || !player.isOnline()) return false;
+            kostin.ak.actionstriggers.ActionsTriggers.getCombatTracker().tag(player, finalSeconds);
+            return true;
+        };
+    }
+
+    @ConfigAction("core:untag_combat")
+    public static Action parseUntagCombat(Map<String, Object> params) {
+        return context -> {
+            Player player = context.get(CoreKeys.PLAYER);
+            if (player == null || !player.isOnline()) return false;
+            kostin.ak.actionstriggers.ActionsTriggers.getCombatTracker().untag(player);
+            return true;
+        };
+    }
 }

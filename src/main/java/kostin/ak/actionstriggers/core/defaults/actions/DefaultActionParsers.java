@@ -534,9 +534,13 @@ public final class DefaultActionParsers implements IActionParsers {
 
             ItemStack currentOut = topInv.getItem(outputSlot);
             if (currentOut != null && currentOut.getType() != Material.AIR) {
-                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
-                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>✖ Сначала заберите готовый лед из слота выхода!</red>"));
-                return false;
+                kostin.ak.actionstriggers.api.gui.widget.Widget outWidget = holder.getSlotWidgets().get(outputSlot);
+                boolean isPl = (outWidget instanceof kostin.ak.actionstriggers.api.gui.widget.impl.OutputSlotWidget osw && osw.isPlaceholder(currentOut));
+                if (!isPl) {
+                    player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                    player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>✖ Сначала заберите готовый лед из слота выхода!</red>"));
+                    return false;
+                }
             }
 
             // 1. Потребляем ингредиенты СРАЗУ (защита от дюпа)

@@ -37,6 +37,9 @@ public class OutputSlotWidget extends AbstractWidget {
         super(x, y, 1, 1);
     }
 
+    public static final org.bukkit.NamespacedKey PLACEHOLDER_KEY =
+            new org.bukkit.NamespacedKey("actionstriggers", "gui_placeholder");
+
     @Override
     public void render(@NotNull GuiContext ctx, @NotNull Map<Integer, ItemStack> matrix) {
         if (!isVisible(ctx)) return;
@@ -48,6 +51,7 @@ public class OutputSlotWidget extends AbstractWidget {
 
             ItemMeta meta = placeholder.getItemMeta();
             if (meta != null) {
+                meta.getPersistentDataContainer().set(PLACEHOLDER_KEY, org.bukkit.persistence.PersistentDataType.BYTE, (byte) 1);
                 if (placeholderName != null && !placeholderName.isEmpty()) {
                     meta.displayName(MiniMessage.miniMessage().deserialize(kostin.ak.actionstriggers.core.hook.PapiHook.parse(ctx.getPlayer(), placeholderName)));
                 }
@@ -65,10 +69,8 @@ public class OutputSlotWidget extends AbstractWidget {
     }
 
     public boolean isPlaceholder(ItemStack item) {
-        if (item == null || placeholderMaterial == null || placeholderMaterial.isEmpty()) return false;
-        ItemMeta meta = item.getItemMeta();
-        if (meta == null || !meta.hasDisplayName()) return false;
-        return placeholderName != null;
+        if (item == null || !item.hasItemMeta()) return false;
+        return item.getItemMeta().getPersistentDataContainer().has(PLACEHOLDER_KEY, org.bukkit.persistence.PersistentDataType.BYTE);
     }
 
     @Override

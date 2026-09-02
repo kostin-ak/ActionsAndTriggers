@@ -17,6 +17,7 @@ graph TD
     ActionPipeline --> ItemRegistry[Item Registry]
     ActionPipeline --> BlockRegistry[Block Registry]
     ActionPipeline --> GuiEngine[Widget GUI Engine]
+    ActionPipeline --> CombatTracker[Combat Tracker]
     
     ItemRegistry --> VanillaItem[Vanilla Provider]
     ItemRegistry --> OraxenItem[Oraxen Provider]
@@ -25,6 +26,9 @@ graph TD
     BlockRegistry --> VanillaBlock[Vanilla Provider]
     BlockRegistry --> OraxenBlock[Oraxen Provider]
     BlockRegistry --> IABlock[ItemsAdder Provider]
+    
+    GuiEngine --> PapiHook[PapiHook Soft-Dependency]
+    ActionPipeline --> PapiHook
 ```
 
 ### 2.1. Контекст исполнения (`ExecutionContext`)
@@ -46,12 +50,31 @@ graph TD
   - `itemsadder:ruby_sword` $\rightarrow$ Провайдер ItemsAdder (`ItemsAdderItemProvider`).
 - Провайдеры умеют:
   1. `resolveItem(id)`: Создавать готовый `ItemStack` со всеми тегами, CustomModelData и компонентами.
-  2. `getFullId(itemStack)`: Определять исходный ID предмета (например, опознать кастомный меч Oraxen в инвентаре).
+  2. `getFullId(itemStack)`: Определять исходный ID предмета.
   3. `isCustomBlock(block)` / `getBlockId(block)`: Определять механику блоков в мире.
 
 ---
 
-## 3. Реестры и Жизненный цикл
+## 3. Подсистемы расширения
+
+### 3.1. Мягкая интеграция PlaceholderAPI (`PapiHook`)
+- Построен на базе чистой Java Reflection без прямого хардкода зависимостей в `plugin.yml`.
+- Поддерживает прозрачный парсинг плейсхолдеров в стилях `%placeholder%` и `{placeholder}`.
+- Безопасен: при отсутствии плагина PAPI на сервере строки остаются нетронутыми без выбрасывания исключений.
+
+### 3.2. Менеджер Боевого Режима (`CombatTracker` & `CombatListener`)
+- Централизованный трекер комбат-тега для игроков в режимах `SURVIVAL` и `ADVENTURE`.
+- Слушает все источники урона (`EntityDamageByEntityEvent`, `EntityDamageEvent`) и атаки игроков.
+- Автоматически инициирует закрытие критических интерфейсов (например, Астрального Атласа) при получении урона.
+
+### 3.3. Виджето-ориентированный GUI Движок (`GuiEngine`)
+- Базируется на `AATGuiHolder` и иерархии `Widget`.
+- Поддерживает маски (`MaskWidget`), анимированные прогресс-бары (`ProgressBarWidget`), слоты загрузки и выдачи с защитой PDC (`InputSlotWidget`, `OutputSlotWidget`) и циклические селекторы (`CycleButtonWidget`).
+- Полная изоляция от дюпов: защита от Shift-кликов, хотбар-свопов (1-9, F) и Drag-событий.
+
+---
+
+## 4. Реестры и Жизненный цикл
 
 1. **Регистрация парсеров**: При старте плагина через рефлексию сканируются классы-парсеры:
    - `DefaultActionParsers`: аннотации `@ConfigAction("core:...")` с метаданными `@ActionParam`.
@@ -65,7 +88,7 @@ graph TD
 
 ---
 
-## 4. Потокобезопасность и Производительность
+## 5. Потокобезопасность и Производительность
 - Все базовые операции чтения реестров кэшируются в `ConcurrentHashMap`.
 - Обработка асинхронных событий (например, `AsyncChatEvent`) изолирована от операций мутации инвентарей через планировщик `Bukkit.getScheduler().runTask(plugin, ...)`.
 - Создание `MiniMessage` компонентов оптимизировано с использованием единого синглтона `MiniMessage.miniMessage()`.

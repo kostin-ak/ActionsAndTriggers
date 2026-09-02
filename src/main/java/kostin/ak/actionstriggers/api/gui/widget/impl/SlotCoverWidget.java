@@ -44,6 +44,12 @@ public class SlotCoverWidget extends AbstractWidget {
     public void render(@NotNull GuiContext ctx, @NotNull Map<Integer, ItemStack> matrix) {
         if (!isVisible(ctx)) return;
 
+        // Если виджет прозрачный — слот физически пустой!
+        // Никакой предмет не кладется, клики полностью блокируются, а фон чистый.
+        if (transparent) {
+            return;
+        }
+
         ItemStack item = null;
         
         // 1. Попытка получить кастомный предмет (Oraxen / ItemsAdder / Custom)

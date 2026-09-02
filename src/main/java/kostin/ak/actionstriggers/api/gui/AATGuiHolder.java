@@ -33,7 +33,7 @@ public class AATGuiHolder implements InventoryHolder {
     private final Map<Integer, kostin.ak.actionstriggers.api.gui.widget.Widget> slotWidgets = new HashMap<>();
 
     // Ссылка на определение интерфейса
-    private Object guiDefinition;
+    private kostin.ak.actionstriggers.core.gui.GuiDefinition guiDefinition;
 
     public AATGuiHolder(@NotNull String id, int rows, @NotNull Player player, @Nullable Block boundBlock) {
         this.id = id;
@@ -68,6 +68,6 @@ public class AATGuiHolder implements InventoryHolder {
     public Map<String, Object> getSessionState() { return sessionState; }
     public Map<Integer, kostin.ak.actionstriggers.api.gui.widget.Widget> getSlotWidgets() { return slotWidgets; }
 
-    public Object getGuiDefinition() { return guiDefinition; }
-    public void setGuiDefinition(Object guiDefinition) { this.guiDefinition = guiDefinition; }
+    public kostin.ak.actionstriggers.core.gui.GuiDefinition getGuiDefinition() { return guiDefinition; }
+    public void setGuiDefinition(kostin.ak.actionstriggers.core.gui.GuiDefinition guiDefinition) { this.guiDefinition = guiDefinition; }
 }

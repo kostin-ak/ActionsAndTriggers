@@ -42,13 +42,25 @@ public class GuiListener implements Listener {
             GuiContext guiContext = new GuiContext(player, holder);
             ClickContext clickContext = new ClickContext(guiContext, event);
 
-            if (widget != null) {
+            // Если виджет не назначен или неактивен, ищем активный виджет для этого слота
+            if ((widget == null || !widget.isVisible(guiContext)) && holder.getGuiDefinition() != null) {
+                for (int i = holder.getGuiDefinition().getWidgets().size() - 1; i >= 0; i--) {
+                    Widget w = holder.getGuiDefinition().getWidgets().get(i);
+                    if (w.occupiesSlot(rawSlot) && w.isVisible(guiContext)) {
+                        widget = w;
+                        holder.getSlotWidgets().put(rawSlot, w);
+                        break;
+                    }
+                }
+            }
+
+            if (widget != null && widget.isVisible(guiContext)) {
                 boolean cancel = widget.handleClick(clickContext);
                 if (cancel) {
                     event.setCancelled(true);
                 }
             } else {
-                // Если слот пустой и не назначен виджету — защищаем от забирания/размещения
+                // Если слот пустой и не назначен активному виджету — защищаем от забирания/размещения
                 event.setCancelled(true);
             }
         } else if (event.isShiftClick()) {

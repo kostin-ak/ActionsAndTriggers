@@ -44,6 +44,13 @@ public interface Widget {
      */
     default void onClose(@NotNull GuiContext ctx) {}
 
+    /**
+     * Проверяет, видим ли виджет в данном контексте интерфейса.
+     */
+    default boolean isVisible(@NotNull GuiContext ctx) {
+        return true;
+    }
+
     int getX();
     int getY();
     int getWidth();

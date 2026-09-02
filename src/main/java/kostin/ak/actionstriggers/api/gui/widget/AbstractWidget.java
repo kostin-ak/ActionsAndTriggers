@@ -4,6 +4,7 @@ import kostin.ak.actionstriggers.api.context.ExecutionContext;
 import kostin.ak.actionstriggers.api.filter.Filter;
 import kostin.ak.actionstriggers.api.gui.GuiContext;
 import kostin.ak.actionstriggers.core.CoreKeys;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
@@ -51,7 +52,8 @@ public abstract class AbstractWidget implements Widget {
     /**
      * Проверяет, удовлетворяет ли контекст условию видимости виджета.
      */
-    protected boolean isVisible(GuiContext ctx) {
+    @Override
+    public boolean isVisible(@NotNull GuiContext ctx) {
         if (condition == null) return true;
 
         ExecutionContext execCtx = new ExecutionContext();

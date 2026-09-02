@@ -87,9 +87,10 @@ public class GuiRegistry {
             int slot = entry.getKey();
             if (slot >= 0 && slot < inventory.getSize()) {
                 inventory.setItem(slot, entry.getValue());
-                // Привязываем виджет к слоту для быстрого роутинга кликов
-                for (Widget w : def.getWidgets()) {
-                    if (w.occupiesSlot(slot)) {
+                // Привязываем активный (видимый) виджет к слоту для быстрого роутинга кликов
+                for (int i = def.getWidgets().size() - 1; i >= 0; i--) {
+                    Widget w = def.getWidgets().get(i);
+                    if (w.occupiesSlot(slot) && w.isVisible(ctx)) {
                         holder.getSlotWidgets().put(slot, w);
                         break;
                     }

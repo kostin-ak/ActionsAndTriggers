@@ -145,14 +145,20 @@ public class YamlGuiLoader {
         }
 
         switch (type) {
+            case "transparent_slot":
+            case "invisible_slot":
             case "slot_cover":
             case "cover":
             case "blank": {
                 kostin.ak.actionstriggers.api.gui.widget.impl.SlotCoverWidget cover =
                         new kostin.ak.actionstriggers.api.gui.widget.impl.SlotCoverWidget(x, y);
                 cover.setCondition(condition);
+
+                boolean isTrans = type.equals("transparent_slot") || type.equals("invisible_slot") || sec.getBoolean("transparent", false);
+                cover.setTransparent(isTrans);
+
                 if (sec.contains("material") || sec.contains("item")) {
-                    cover.setMaterialStr(sec.getString("material", sec.getString("item", "oraxen:gui_slot_cover")));
+                    cover.setMaterialStr(sec.getString("material", sec.getString("item", isTrans ? "oraxen:gui_transparent_slot" : "oraxen:gui_slot_cover")));
                 }
                 if (sec.contains("fallback")) {
                     cover.setFallbackMaterial(sec.getString("fallback"));

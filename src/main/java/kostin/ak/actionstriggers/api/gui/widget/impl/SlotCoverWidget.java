@@ -20,6 +20,7 @@ import java.util.Map;
  */
 public class SlotCoverWidget extends AbstractWidget {
 
+    private boolean transparent = false;
     private String materialStr = "oraxen:gui_slot_cover";
     private String fallbackMaterial = "minecraft:light_gray_stained_glass_pane";
 
@@ -29,6 +30,14 @@ public class SlotCoverWidget extends AbstractWidget {
 
     public SlotCoverWidget(int x, int y) {
         super(x, y, 1, 1);
+    }
+
+    public boolean isTransparent() { return transparent; }
+    public void setTransparent(boolean transparent) {
+        this.transparent = transparent;
+        if (transparent) {
+            this.materialStr = "oraxen:gui_transparent_slot";
+        }
     }
 
     @Override

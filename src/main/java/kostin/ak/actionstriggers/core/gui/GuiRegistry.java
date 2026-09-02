@@ -90,8 +90,22 @@ public class GuiRegistry {
         AATGuiHolder holder = ctx.getHolder();
         holder.getSlotWidgets().clear();
 
-        Map<Integer, ItemStack> matrix = new HashMap<>();
+        // 1. Привязываем ВСЕ активные виджеты к слотам инвентаря
+        for (Widget widget : def.getWidgets()) {
+            if (widget.isVisible(ctx)) {
+                for (int y = 0; y < widget.getHeight(); y++) {
+                    for (int x = 0; x < widget.getWidth(); x++) {
+                        int slot = (widget.getY() + y) * 9 + (widget.getX() + x);
+                        if (slot >= 0 && slot < inventory.getSize()) {
+                            holder.getSlotWidgets().put(slot, widget);
+                        }
+                    }
+                }
+            }
+        }
 
+        // 2. Отрисовываем элементы в матрицу и помещаем в инвентарь
+        Map<Integer, ItemStack> matrix = new HashMap<>();
         for (Widget widget : def.getWidgets()) {
             widget.render(ctx, matrix);
         }
@@ -100,14 +114,6 @@ public class GuiRegistry {
             int slot = entry.getKey();
             if (slot >= 0 && slot < inventory.getSize()) {
                 inventory.setItem(slot, entry.getValue());
-                // Привязываем активный (видимый) виджет к слоту для быстрого роутинга кликов
-                for (int i = def.getWidgets().size() - 1; i >= 0; i--) {
-                    Widget w = def.getWidgets().get(i);
-                    if (w.occupiesSlot(slot) && w.isVisible(ctx)) {
-                        holder.getSlotWidgets().put(slot, w);
-                        break;
-                    }
-                }
             }
         }
     }

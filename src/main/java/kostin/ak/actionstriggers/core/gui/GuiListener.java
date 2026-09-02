@@ -99,25 +99,36 @@ public class GuiListener implements Listener {
             }
 
             // 1. Возврат ресурсов из слотов ввода (InputSlotWidget) и авто-забор готовой продукции (OutputSlotWidget)
-            for (java.util.Map.Entry<Integer, Widget> entry : holder.getSlotWidgets().entrySet()) {
-                Widget widget = entry.getValue();
+            org.bukkit.inventory.Inventory inv = event.getInventory();
+            for (int slot = 0; slot < inv.getSize(); slot++) {
+                Widget widget = holder.getSlotWidgets().get(slot);
+
+                // Если виджет не был привязан напрямую, ищем его в GuiDefinition
+                if (widget == null && holder.getGuiDefinition() != null) {
+                    for (Widget w : holder.getGuiDefinition().getWidgets()) {
+                        if (w.occupiesSlot(slot) && w.isVisible(ctx)) {
+                            widget = w;
+                            break;
+                        }
+                    }
+                }
 
                 if (widget instanceof kostin.ak.actionstriggers.api.gui.widget.impl.InputSlotWidget inputWidget) {
-                    org.bukkit.inventory.ItemStack item = event.getInventory().getItem(entry.getKey());
+                    org.bukkit.inventory.ItemStack item = inv.getItem(slot);
                     if (item != null && item.getType() != org.bukkit.Material.AIR) {
                         if (inputWidget.isPlaceholder(item)) {
                             continue;
                         }
-                        event.getInventory().setItem(entry.getKey(), null);
+                        inv.setItem(slot, null);
                         java.util.HashMap<Integer, org.bukkit.inventory.ItemStack> leftovers = player.getInventory().addItem(item);
                         for (org.bukkit.inventory.ItemStack drop : leftovers.values()) {
                             player.getWorld().dropItemNaturally(player.getLocation(), drop);
                         }
                     }
                 } else if (widget instanceof kostin.ak.actionstriggers.api.gui.widget.impl.OutputSlotWidget) {
-                    org.bukkit.inventory.ItemStack item = event.getInventory().getItem(entry.getKey());
+                    org.bukkit.inventory.ItemStack item = inv.getItem(slot);
                     if (item != null && item.getType() != org.bukkit.Material.AIR) {
-                        event.getInventory().setItem(entry.getKey(), null);
+                        inv.setItem(slot, null);
                         java.util.HashMap<Integer, org.bukkit.inventory.ItemStack> leftovers = player.getInventory().addItem(item);
                         for (org.bukkit.inventory.ItemStack drop : leftovers.values()) {
                             player.getWorld().dropItemNaturally(player.getLocation(), drop);

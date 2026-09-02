@@ -140,6 +140,12 @@ public final class DefaultFilterParsers implements IFilterParsers {
         return Filters.match(template, expected, ignoreCase);
     }
 
+    @ConfigFilter("core:mismatch")
+    public static Filter parseMismatch(Map<String, Object> params) {
+        Filter match = parseMatch(params);
+        return context -> !match.test(context);
+    }
+
     // ========================================================================
     // ЛОГИЧЕСКИЕ ОПЕРАТОРЫ
     // ========================================================================

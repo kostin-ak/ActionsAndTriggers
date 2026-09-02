@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -37,6 +38,14 @@ public class GuiRegistry {
 
     public void clear() {
         guis.clear();
+    }
+
+    public Map<String, GuiDefinition> getGuis() {
+        return java.util.Collections.unmodifiableMap(guis);
+    }
+
+    public List<String> getAvailableIds() {
+        return new java.util.ArrayList<>(guis.keySet());
     }
 
     public boolean openGui(@NotNull Player player, @NotNull String guiId) {

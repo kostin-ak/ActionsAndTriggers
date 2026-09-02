@@ -78,6 +78,7 @@ public final class ActionsTriggers extends JavaPlugin {
         CommandHandler handler = BukkitCommandHandler.create(this);
         handler.getAutoCompleter().registerSuggestion("actions", (args, sender, cmd) -> ActionTriggerAPI.getActions().asList());
         handler.getAutoCompleter().registerSuggestion("triggers", (args, sender, cmd) -> ActionTriggerAPI.getTriggers().asList());
+        handler.getAutoCompleter().registerSuggestion("guis", (args, sender, cmd) -> GUI_REGISTRY.getAvailableIds());
 
         // Провайдер для аргументов экшена
         handler.getAutoCompleter().registerSuggestion("get", (args, sender, cmd) -> List.of("params"));

@@ -112,12 +112,44 @@ public class ActionCommand {
             return mm.deserialize("<hover:show_text:'" + hover + "'><color:#aaFFaa>" + id + "</color></hover>");
         }).collect(Collectors.toList());
 
+        // Секция GUI интерфейсов с кликабельным открытием
+        List<Component> guiComps = kostin.ak.actionstriggers.ActionsTriggers.getGuiRegistry().getAvailableIds().stream().sorted().map(guiId -> {
+            var def = kostin.ak.actionstriggers.ActionsTriggers.getGuiRegistry().get(guiId);
+            String title = def != null ? def.getTitle() : guiId;
+            String hover = "<color:#70E1F5><b>" + guiId + "</b></color><br>" +
+                    "<gray>Заголовок: </gray>" + title + "<br>" +
+                    "<gray>Рядов: </gray><white>" + (def != null ? def.getRows() : 0) + "</white><br><br>" +
+                    "<yellow>➤ Нажмите, чтобы открыть этот GUI</yellow>";
+            return mm.deserialize("<hover:show_text:'" + hover + "'><click:run_command:'/aat open " + guiId + "'><color:#70E1F5><u>" + guiId + "</u></color></click></hover>");
+        }).collect(Collectors.toList());
+
         Component finalMessage = header
                 .append(buildSection("Экшены", actionComps, "#FF5555")).append(mm.deserialize("<br><br>"))
                 .append(buildSection("Триггеры", triggerComps, "#55FF55")).append(mm.deserialize("<br><br>"))
+                .append(buildSection("Интерфейсы (GUI)", guiComps, "#70E1F5")).append(mm.deserialize("<br><br>"))
                 .append(mm.deserialize("<color:#FFFF55><b>Условия:</b></color> " + String.join(", ", ActionTriggerAPI.getFilters().asList())));
 
         actor.reply(finalMessage);
+    }
+
+    @Subcommand("guis")
+    public void listGuis(BukkitCommandActor actor) {
+        var guis = kostin.ak.actionstriggers.ActionsTriggers.getGuiRegistry().getGuis();
+        if (guis.isEmpty()) {
+            actor.reply(mm.deserialize("<yellow>Нет зарегистрированных GUI интерфейсов в guis/*.yml.</yellow>"));
+            return;
+        }
+
+        Component msg = mm.deserialize("\n<gradient:#70E1F5:#FFD194><b>[ Доступные Графические Интерфейсы (GUI) ]</b></gradient>\n<gray>Нажмите на название интерфейса для его открытия:</gray>\n\n");
+
+        for (var entry : guis.entrySet()) {
+            String id = entry.getKey();
+            var def = entry.getValue();
+            Component line = mm.deserialize(" <dark_gray>▪</dark_gray> <hover:show_text:'<green>Нажмите для открытия GUI</green><br><gray>ID: " + id + "<br>Рядов: " + def.getRows() + "'><click:run_command:'/aat open " + id + "'><color:#70E1F5><u><b>" + id + "</b></u></color></click></hover> <dark_gray>—</dark_gray> " + def.getTitle() + " <dark_gray>(" + def.getRows() + " рядов)</dark_gray>\n");
+            msg = msg.append(line);
+        }
+
+        actor.reply(msg);
     }
 
     @Subcommand("get")
@@ -351,6 +383,7 @@ public class ActionCommand {
         return base.append(section).append(mm.deserialize("\n"));
     }
     @Subcommand("open")
+    @AutoComplete("@guis")
     public void openGui(BukkitCommandActor actor, String guiId, @Optional Player target) {
         Player player = target != null ? target : (actor.isPlayer() ? actor.getAsPlayer() : null);
         if (player == null) {

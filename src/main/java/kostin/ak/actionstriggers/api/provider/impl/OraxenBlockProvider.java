@@ -26,9 +26,21 @@ public class OraxenBlockProvider implements BlockProvider {
     @Override
     public @Nullable String getId(@NotNull Block block) {
         if (OraxenBlocks.isOraxenBlock(block)) {
-            Mechanic mechanic = OraxenBlocks.getOraxenBlock(block.getLocation());
+            Mechanic mechanic = OraxenBlocks.getOraxenBlock(block.getBlockData());
             if (mechanic != null) {
                 return mechanic.getItemID();
+            }
+            mechanic = OraxenBlocks.getOraxenBlock(block.getLocation());
+            if (mechanic != null) {
+                return mechanic.getItemID();
+            }
+            var noteMech = OraxenBlocks.getNoteBlockMechanic(block);
+            if (noteMech != null) {
+                return noteMech.getItemID();
+            }
+            var stringMech = OraxenBlocks.getStringMechanic(block);
+            if (stringMech != null) {
+                return stringMech.getItemID();
             }
         }
         return null;

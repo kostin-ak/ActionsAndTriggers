@@ -25,8 +25,15 @@ import java.util.stream.Collectors;
 
 public final class ActionsTriggers extends JavaPlugin {
 
+    private static ActionsTriggers instance;
+
+    public static ActionsTriggers getInstance() {
+        return instance;
+    }
+
     @Override
     public void onEnable() {
+        instance = this;
         // 1. Инициализируем реестры и шедулер
         ActionRegistry actionRegistry = new ActionRegistry(getLogger());
         TriggerRegistry triggerRegistry = new TriggerRegistry(getLogger());

@@ -429,4 +429,14 @@ public final class DefaultActionParsers implements IActionParsers {
             return kostin.ak.actionstriggers.ActionsTriggers.getGuiRegistry().openGui(player, guiId, block);
         };
     }
+
+    @ConfigAction("core:close_gui")
+    public static Action parseCloseGui(Map<String, Object> params) {
+        return context -> {
+            Player player = context.get(CoreKeys.PLAYER);
+            if (player == null || !player.isOnline()) return false;
+            Bukkit.getScheduler().runTask(kostin.ak.actionstriggers.ActionsTriggers.getInstance(), (Runnable) player::closeInventory);
+            return true;
+        };
+    }
 }

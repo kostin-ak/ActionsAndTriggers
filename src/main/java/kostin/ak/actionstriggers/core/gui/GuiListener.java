@@ -97,6 +97,24 @@ public class GuiListener implements Listener {
                     w.onClose(ctx);
                 }
             }
+
+            // Возврат реальных предметов из слотов ввода (InputSlotWidget), чтобы они не потерялись
+            for (java.util.Map.Entry<Integer, Widget> entry : holder.getSlotWidgets().entrySet()) {
+                if (entry.getValue() instanceof kostin.ak.actionstriggers.api.gui.widget.impl.InputSlotWidget) {
+                    org.bukkit.inventory.ItemStack item = event.getInventory().getItem(entry.getKey());
+                    if (item != null && item.getType() != org.bukkit.Material.AIR) {
+                        // Не возвращаем плейсхолдеры
+                        if (item.getItemMeta() != null && item.getItemMeta().hasDisplayName() && item.getItemMeta().displayName().toString().contains("Вход:")) {
+                            continue;
+                        }
+                        event.getInventory().setItem(entry.getKey(), null);
+                        java.util.HashMap<Integer, org.bukkit.inventory.ItemStack> leftovers = player.getInventory().addItem(item);
+                        for (org.bukkit.inventory.ItemStack drop : leftovers.values()) {
+                            player.getWorld().dropItemNaturally(player.getLocation(), drop);
+                        }
+                    }
+                }
+            }
         }
     }
 }

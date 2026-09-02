@@ -56,6 +56,13 @@ public class InputSlotWidget extends AbstractWidget {
         }
     }
 
+    private boolean isPlaceholder(ItemStack item) {
+        if (item == null || placeholderMaterial == null || placeholderMaterial.isEmpty()) return false;
+        ItemMeta meta = item.getItemMeta();
+        if (meta == null || !meta.hasDisplayName()) return false;
+        return placeholderName != null;
+    }
+
     @Override
     public boolean handleClick(@NotNull ClickContext ctx) {
         InventoryClickEvent event = ctx.getEvent();
@@ -72,14 +79,24 @@ public class InputSlotWidget extends AbstractWidget {
                 return true; // блокируем размещение
             }
 
+            // Если в слоте лежал плейсхолдер — убираем его перед размещением реального предмета
+            if (isPlaceholder(current)) {
+                event.setCurrentItem(null);
+            }
+
             ctx.executeActions(onInsert);
             return false; // разрешаем Bukkit переместить предмет в слот
         }
 
         // 2. Попытка забрать предмет из слота
         if (current != null && current.getType() != Material.AIR) {
+            // Защита: нельзя забрать сам декоративный плейсхолдер!
+            if (isPlaceholder(current)) {
+                return true; // блокируем взятие плейсхолдера
+            }
+
             ctx.executeActions(onExtract);
-            return false; // разрешаем забрать предмет
+            return false; // разрешаем забрать реальный предмет
         }
 
         return false;

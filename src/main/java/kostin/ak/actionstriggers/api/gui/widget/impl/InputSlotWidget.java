@@ -5,6 +5,7 @@ import kostin.ak.actionstriggers.api.action.Action;
 import kostin.ak.actionstriggers.api.gui.ClickContext;
 import kostin.ak.actionstriggers.api.gui.GuiContext;
 import kostin.ak.actionstriggers.api.gui.widget.AbstractWidget;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Material;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -24,8 +25,8 @@ public class InputSlotWidget extends AbstractWidget {
 
     private List<String> allowedItems = new ArrayList<>();
     private String placeholderMaterial;
-    private String placeholderName;
-
+    private String placeholderName = null;
+    private List<String> placeholderLore = new ArrayList<>();
     private List<Action> onInsert = new ArrayList<>();
     private List<Action> onExtract = new ArrayList<>();
 
@@ -48,8 +49,17 @@ public class InputSlotWidget extends AbstractWidget {
             else placeholder = placeholder.clone();
 
             ItemMeta meta = placeholder.getItemMeta();
-            if (meta != null && placeholderName != null) {
-                meta.displayName(MiniMessage.miniMessage().deserialize(placeholderName));
+            if (meta != null) {
+                if (placeholderName != null && !placeholderName.isEmpty()) {
+                    meta.displayName(MiniMessage.miniMessage().deserialize(placeholderName));
+                }
+                if (placeholderLore != null && !placeholderLore.isEmpty()) {
+                    List<Component> lore = new ArrayList<>();
+                    for (String l : placeholderLore) {
+                        lore.add(MiniMessage.miniMessage().deserialize(l));
+                    }
+                    meta.lore(lore);
+                }
                 placeholder.setItemMeta(meta);
             }
             matrix.put(toSlot(0, 0), placeholder);
@@ -120,6 +130,9 @@ public class InputSlotWidget extends AbstractWidget {
 
     public String getPlaceholderName() { return placeholderName; }
     public void setPlaceholderName(String placeholderName) { this.placeholderName = placeholderName; }
+
+    public List<String> getPlaceholderLore() { return placeholderLore; }
+    public void setPlaceholderLore(List<String> placeholderLore) { this.placeholderLore = placeholderLore; }
 
     public List<Action> getOnInsert() { return onInsert; }
     public void setOnInsert(List<Action> onInsert) { this.onInsert = onInsert; }

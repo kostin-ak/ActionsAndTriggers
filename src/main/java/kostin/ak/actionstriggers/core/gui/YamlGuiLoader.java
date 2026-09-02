@@ -185,6 +185,9 @@ public class YamlGuiLoader {
                 slot.setAllowedItems(sec.getStringList("allowed_items"));
                 slot.setPlaceholderMaterial(sec.getString("placeholder_material"));
                 slot.setPlaceholderName(sec.getString("placeholder_name"));
+                if (sec.contains("placeholder_lore")) {
+                    slot.setPlaceholderLore(sec.getStringList("placeholder_lore"));
+                }
                 if (sec.contains("on_insert")) {
                     slot.setOnInsert(parser.parseActions(sec.get("on_insert")));
                 }
@@ -197,6 +200,11 @@ public class YamlGuiLoader {
             case "output_slot": {
                 OutputSlotWidget slot = new OutputSlotWidget(x, y);
                 slot.setCondition(condition);
+                slot.setPlaceholderMaterial(sec.getString("placeholder_material"));
+                slot.setPlaceholderName(sec.getString("placeholder_name"));
+                if (sec.contains("placeholder_lore")) {
+                    slot.setPlaceholderLore(sec.getStringList("placeholder_lore"));
+                }
                 if (sec.contains("on_take")) {
                     slot.setOnTake(parser.parseActions(sec.get("on_take")));
                 }

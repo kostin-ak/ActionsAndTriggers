@@ -125,9 +125,12 @@ public class GuiListener implements Listener {
                             player.getWorld().dropItemNaturally(player.getLocation(), drop);
                         }
                     }
-                } else if (widget instanceof kostin.ak.actionstriggers.api.gui.widget.impl.OutputSlotWidget) {
+                } else if (widget instanceof kostin.ak.actionstriggers.api.gui.widget.impl.OutputSlotWidget outputWidget) {
                     org.bukkit.inventory.ItemStack item = inv.getItem(slot);
                     if (item != null && item.getType() != org.bukkit.Material.AIR) {
+                        if (outputWidget.isPlaceholder(item)) {
+                            continue;
+                        }
                         inv.setItem(slot, null);
                         java.util.HashMap<Integer, org.bukkit.inventory.ItemStack> leftovers = player.getInventory().addItem(item);
                         for (org.bukkit.inventory.ItemStack drop : leftovers.values()) {

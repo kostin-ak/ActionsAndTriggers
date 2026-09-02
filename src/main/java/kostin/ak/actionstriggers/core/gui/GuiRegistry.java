@@ -63,6 +63,10 @@ public class GuiRegistry {
         holder.setGuiDefinition(def);
 
         String titleStr = def.getTitle().replace("{player}", player.getName());
+        boolean hasOraxen = Bukkit.getPluginManager().getPlugin("Oraxen") != null;
+        if (!hasOraxen) {
+            titleStr = titleStr.replaceAll("(?i)<glyph:[^>]+>", "").replaceAll("(?i)<shift:[^>]+>", "");
+        }
         Component titleComponent = MiniMessage.miniMessage().deserialize(titleStr);
 
         Inventory inventory = Bukkit.createInventory(holder, def.getRows() * 9, titleComponent);

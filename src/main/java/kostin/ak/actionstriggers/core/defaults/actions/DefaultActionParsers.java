@@ -417,4 +417,16 @@ public final class DefaultActionParsers implements IActionParsers {
             return false;
         };
     }
+
+    @ConfigAction("core:open_gui")
+    @ActionParam(key = "gui", type = String.class, required = true, description = "Идентификатор GUI для открытия игроку")
+    public static Action parseOpenGui(Map<String, Object> params) {
+        String guiId = String.valueOf(params.getOrDefault("gui", params.getOrDefault("id", "")));
+        return context -> {
+            Player player = context.get(CoreKeys.PLAYER);
+            if (player == null || !player.isOnline()) return false;
+            org.bukkit.block.Block block = context.get(CoreKeys.BLOCK);
+            return kostin.ak.actionstriggers.ActionsTriggers.getGuiRegistry().openGui(player, guiId, block);
+        };
+    }
 }

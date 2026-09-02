@@ -141,7 +141,10 @@ public class ActionCommand {
     public void reload(BukkitCommandActor actor) {
         ActionTriggerAPI.getScripts().clear();
         YamlTriggerLoader.load(plugin, "triggers");
-        actor.reply(mm.deserialize("<green>✔ Скрипты перезагружены!</green>"));
+        kostin.ak.actionstriggers.ActionsTriggers.getGuiRegistry().clear();
+        kostin.ak.actionstriggers.core.gui.YamlGuiLoader guiLoader = new kostin.ak.actionstriggers.core.gui.YamlGuiLoader(kostin.ak.actionstriggers.ActionsTriggers.getGuiRegistry(), plugin.getLogger());
+        guiLoader.loadAll(plugin, "guis");
+        actor.reply(mm.deserialize("<green>✔ Скрипты, триггеры и GUI успешно перезагружены!</green>"));
     }
 
     private ExecutionContext buildMergedContext(BukkitCommandActor actor, String input) {
@@ -347,6 +350,21 @@ public class ActionCommand {
 
         return base.append(section).append(mm.deserialize("\n"));
     }
+    @Subcommand("open")
+    public void openGui(BukkitCommandActor actor, String guiId, @Optional Player target) {
+        Player player = target != null ? target : (actor.isPlayer() ? actor.getAsPlayer() : null);
+        if (player == null) {
+            actor.reply(mm.deserialize("<red>Укажите целевого игрока!</red>"));
+            return;
+        }
+        boolean ok = kostin.ak.actionstriggers.ActionsTriggers.getGuiRegistry().openGui(player, guiId);
+        if (ok) {
+            actor.reply(mm.deserialize("<green>✔ Открыт интерфейс " + guiId + " для " + player.getName() + "!</green>"));
+        } else {
+            actor.reply(mm.deserialize("<red>✖ Интерфейс '" + guiId + "' не найден в guis/*.yml!</red>"));
+        }
+    }
+
     public enum SearchCategory {
         ACTIONS, TRIGGERS, FILTERS, ITEMS, BLOCKS
     }

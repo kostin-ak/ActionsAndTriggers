@@ -108,7 +108,18 @@ public final class ActionsTriggers extends JavaPlugin {
 
         YamlTriggerLoader.load(this, "triggers");
 
+        // 5. Инициализация Widget GUI Engine
+        getServer().getPluginManager().registerEvents(new kostin.ak.actionstriggers.core.gui.GuiListener(GUI_REGISTRY), this);
+        kostin.ak.actionstriggers.core.gui.YamlGuiLoader guiLoader = new kostin.ak.actionstriggers.core.gui.YamlGuiLoader(GUI_REGISTRY, getLogger());
+        guiLoader.loadAll(this, "guis");
+
         getLogger().info("Actions&Triggers API успешно загружен!");
+    }
+
+    private static final kostin.ak.actionstriggers.core.gui.GuiRegistry GUI_REGISTRY = new kostin.ak.actionstriggers.core.gui.GuiRegistry();
+
+    public static kostin.ak.actionstriggers.core.gui.GuiRegistry getGuiRegistry() {
+        return GUI_REGISTRY;
     }
 
     @Override

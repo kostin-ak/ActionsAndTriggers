@@ -1,1 +1,3 @@
 rootProject.name = 'ActionsAndTriggers'
+include ':aat-api'
+include ':aat-core'

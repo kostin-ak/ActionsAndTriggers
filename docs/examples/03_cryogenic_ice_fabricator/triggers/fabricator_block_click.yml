@@ -1,0 +1,13 @@
+triggers:
+  # Открытие фабрикатора при клике по блоку синего льда с шифтом
+  - trigger: "core:player_interact"
+    conditions:
+      - type: "core:match"
+        template: "{block_type}"
+        value: "BLUE_ICE"
+      - type: "core:not_in_combat"
+    actions:
+      - action: "core:open_gui"
+        gui: "ice_fabricator_gui"
+      - action: "core:sound"
+        sound: "block.snow.step"

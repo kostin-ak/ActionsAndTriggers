@@ -1,0 +1,12 @@
+triggers:
+  - trigger: "core:player_interact"
+    conditions:
+      - type: "core:match"
+        template: "{block_type}"
+        value: "DISPENSER"
+      - type: "core:not_in_combat"
+    actions:
+      - action: "core:open_gui"
+        gui: "coolant_generator_gui"
+      - action: "core:sound"
+        sound: "block.iron_trapdoor.open"

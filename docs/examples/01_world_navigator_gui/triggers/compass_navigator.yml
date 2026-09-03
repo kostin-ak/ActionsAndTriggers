@@ -1,0 +1,28 @@
+triggers:
+  # Открытие меню компасом вне боя
+  - trigger: "core:player_interact"
+    conditions:
+      - type: "core:match"
+        template: "{item_in_hand_id}"
+        value: "minecraft:compass"
+      - type: "core:not_in_combat"
+    actions:
+      - action: "core:open_gui"
+        gui: "world_navigator"
+      - action: "core:sound"
+        sound: "item.book.page_turn"
+        pitch: 1.1
+
+  # Оповещение при попытке открыть компас в бою
+  - trigger: "core:player_interact"
+    conditions:
+      - type: "core:match"
+        template: "{item_in_hand_id}"
+        value: "minecraft:compass"
+      - type: "core:in_combat"
+    actions:
+      - action: "core:sound"
+        sound: "entity.villager.no"
+      - action: "core:message"
+        type: "actionbar"
+        text: "<red>⚔ Нельзя открывать навигатор во время сражения!</red>"

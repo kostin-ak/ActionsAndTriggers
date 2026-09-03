@@ -1,0 +1,61 @@
+plugins {
+    id 'java'
+    id 'com.gradleup.shadow' version '8.3.6'
+    id 'jacoco'
+}
+
+dependencies {
+    // Внутренняя зависимость от модуля API
+    implementation project(':aat-api')
+
+    // Paper API
+    compileOnly("io.papermc.paper:paper-api:1.21.5-R0.1-SNAPSHOT")
+    testImplementation("io.papermc.paper:paper-api:1.21.5-R0.1-SNAPSHOT")
+
+    // Revxrsal Commands (Lamp)
+    implementation("com.github.Revxrsal.Lamp:common:3.2.1")
+    implementation("com.github.Revxrsal.Lamp:bukkit:3.2.1")
+
+    // Lombok
+    compileOnly("org.projectlombok:lombok:1.18.36")
+    annotationProcessor("org.projectlombok:lombok:1.18.36")
+    testCompileOnly("org.projectlombok:lombok:1.18.36")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.36")
+
+    // Кастомный контент и права
+    compileOnly("io.th0rgal:oraxen:1.193.3")
+    compileOnly("com.github.LoneDev6:api-itemsadder:3.6.1")
+    compileOnly("net.luckperms:api:5.4")
+
+    // Тестирование
+    testImplementation(platform("org.junit:junit-bom:5.10.2"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.mockito:mockito-core:5.11.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.11.0")
+    testImplementation("net.luckperms:api:5.4")
+}
+
+shadowJar {
+    archiveBaseName.set("ActionsAndTriggers")
+    archiveClassifier.set("all")
+
+    // Релокация Lamp команд
+    relocate 'revxrsal.commands', 'kostin.ak.actionstriggers.libs.revxrsal'
+
+    // Копирование в корневой build/libs/ для сохранения жестких ссылок
+    destinationDirectory.set(file("${rootProject.projectDir}/build/libs"))
+}
+
+test {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}

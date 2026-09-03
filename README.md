@@ -176,9 +176,11 @@ AATGui.builder("navigator")
 
 ---
 
-## 🔨 Building & Modular Artifacts
+## 🔨 Building & Modular Structure
 
-The project offers dedicated Gradle build tasks:
+The project is architected as a professional multi-module Gradle project:
+- **`:aat-api`**: Lightweight standalone public API, interfaces, context models, and fluent builders. Has ZERO internal core dependencies.
+- **`:aat-core`**: Full plugin implementation, shaded commands, YAML parser engine, and soft-dependencies (`LuckPerms`, `Oraxen`, `ItemsAdder`).
 
 ```bash
 # 1. Compile lightweight public API jar (for external plugin developers)
@@ -192,9 +194,22 @@ The project offers dedicated Gradle build tasks:
 
 ---
 
-## ⚖️ License & Intellectual Property
+## ⚖️ Dual-Licensing, Intellectual Property & Enterprise
 
-This project is licensed under the **[PolyForm Noncommercial License 1.0.0](LICENSE)**.
-- **Commercial Rights**: Permanently and exclusively reserved by the original author (**Kostin AK**). Nobody else may sell, monetize, or bundle this software commercially.
-- **Forking & Personal Use**: You are free to view source code, fork, modify, audit, and use it on non-commercial community servers.
-- **Strict Attribution**: All forks must preserve the original author credit (**Kostin AK**), license text, and a direct link to this official repository without rebranding abuse.
+This project operates under a professional **Dual-Licensing** business model:
+
+1. **Community Edition (Non-Commercial)**:
+   - Licensed under the **[PolyForm Noncommercial License 1.0.0](LICENSE)**.
+   - Free for personal testing, private educational review, and non-monetized community servers.
+   - **Free Source Compilation**: Anyone is welcome to clone the repository and compile the plugin from source for free via Gradle (`./gradlew build`).
+   - **Pre-Compiled Releases**: Official ready-to-use release JAR files (on SpigotMC, BuiltByBit, Polymart, etc.) may be offered as paid distribution packages by the author. Redistribution of pre-compiled binaries by third parties is prohibited.
+   - **Forking & Attribution**: Forks and modifications are permitted for non-commercial use, provided strict attribution to the original author (**Alex Kostin**) is maintained.
+   - **Addon Linking Exception**: Third-party plugins compiling against the `:aat-api` module may be distributed under any license of their choice.
+
+2. **Commercial & Enterprise Edition**:
+   - Any deployment on commercial Minecraft networks (with web stores, monetization, or paid perks), hosting bundles, or proprietary forks requires an official **Commercial License** issued directly by the copyright holder (**Alex Kostin**).
+   - **Enterprise Support & Custom Modules**: Custom triggers, actions, and priority SLA agreements are available directly from the author.
+   - **Inquiries**: Contact `kostin.ak@mail.ru`.
+
+3. **Contributions**:
+   - All contributions (pull requests, patches, improvements) are subject to full copyright assignment to **Alex Kostin** as specified in [CONTRIBUTING.md](CONTRIBUTING.md) and Section 3.2 of the [LICENSE](LICENSE). Submitting code does not grant co-ownership or profit sharing.

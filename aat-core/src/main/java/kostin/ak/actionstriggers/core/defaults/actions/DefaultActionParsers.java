@@ -638,6 +638,252 @@ public final class DefaultActionParsers implements IActionParsers {
         };
     }
 
+    @ConfigAction("core:magma_smelt")
+    public static Action parseMagmaSmelt(Map<String, Object> params) {
+        int oraxSlot = params.containsKey("orax_slot") ? Integer.parseInt(params.get("orax_slot").toString()) : 10;
+        int onyxSlot = params.containsKey("onyx_slot") ? Integer.parseInt(params.get("onyx_slot").toString()) : 12;
+        int fuelSlot = params.containsKey("fuel_slot") ? Integer.parseInt(params.get("fuel_slot").toString()) : 14;
+        int outputSlot = params.containsKey("output_slot") ? Integer.parseInt(params.get("output_slot").toString()) : 16;
+        int durationTicks = params.containsKey("duration") ? Integer.parseInt(params.get("duration").toString()) : 100;
+
+        return context -> {
+            Player player = context.get(CoreKeys.PLAYER);
+            if (player == null || !player.isOnline()) return false;
+
+            org.bukkit.inventory.InventoryView openView = player.getOpenInventory();
+            org.bukkit.inventory.Inventory topInv = openView.getTopInventory();
+            if (!(topInv.getHolder() instanceof kostin.ak.actionstriggers.api.gui.AATGuiHolder holder)) {
+                return false;
+            }
+
+            ItemStack oraxItem = topInv.getItem(oraxSlot);
+            String oraxId = oraxItem != null ? ActionTriggerAPI.getItems().getFullId(oraxItem).toLowerCase() : "";
+            boolean hasOrax = oraxItem != null && (oraxId.contains("orax") || oraxItem.getType() == Material.IRON_INGOT);
+
+            ItemStack onyxItem = topInv.getItem(onyxSlot);
+            String onyxId = onyxItem != null ? ActionTriggerAPI.getItems().getFullId(onyxItem).toLowerCase() : "";
+            boolean hasOnyx = onyxItem != null && (onyxId.contains("onyx") || onyxItem.getType() == Material.DIAMOND);
+
+            ItemStack fuelItem = topInv.getItem(fuelSlot);
+            boolean hasFuel = fuelItem != null && (fuelItem.getType() == Material.LAVA_BUCKET || fuelItem.getType() == Material.BLAZE_POWDER || fuelItem.getType() == Material.BLAZE_ROD);
+
+            if (!hasOrax || !hasOnyx || !hasFuel) {
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>❌ Недостаточно ингредиентов для выплавки сплава!</red>"));
+                return false;
+            }
+
+            if (Boolean.TRUE.equals(holder.getSessionState().get("progress_running"))) {
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                return false;
+            }
+
+            ItemStack currentOut = topInv.getItem(outputSlot);
+            if (currentOut != null && currentOut.getType() != Material.AIR) {
+                kostin.ak.actionstriggers.api.gui.widget.Widget outWidget = holder.getSlotWidgets().get(outputSlot);
+                boolean isPl = (outWidget instanceof kostin.ak.actionstriggers.api.gui.widget.impl.OutputSlotWidget osw && osw.isPlaceholder(currentOut));
+                if (!isPl) {
+                    player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                    player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>❌ Слот выдачи уже занят!</red>"));
+                    return false;
+                }
+            }
+
+            // Потребляем ингредиенты
+            if (oraxItem.getAmount() > 1) {
+                oraxItem.setAmount(oraxItem.getAmount() - 1);
+                topInv.setItem(oraxSlot, oraxItem);
+            } else {
+                topInv.setItem(oraxSlot, null);
+            }
+
+            if (onyxItem.getAmount() > 1) {
+                onyxItem.setAmount(onyxItem.getAmount() - 1);
+                topInv.setItem(onyxSlot, onyxItem);
+            } else {
+                topInv.setItem(onyxSlot, null);
+            }
+
+            if (fuelItem.getType() == Material.LAVA_BUCKET) {
+                topInv.setItem(fuelSlot, new ItemStack(Material.BUCKET));
+            } else if (fuelItem.getAmount() > 1) {
+                fuelItem.setAmount(fuelItem.getAmount() - 1);
+                topInv.setItem(fuelSlot, fuelItem);
+            } else {
+                topInv.setItem(fuelSlot, null);
+            }
+
+            player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_BLASTFURNACE_FIRE_CRACKLE, 1.0f, 1.0f);
+            player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_LAVA_POP, 1.0f, 1.2f);
+            player.sendActionBar(MiniMessage.miniMessage().deserialize("<gradient:#FF4500:#FFA500>🔥 Термоплавка сплава запущена...</gradient>"));
+
+            Runnable onFinish = () -> {
+                ItemStack result = ActionTriggerAPI.getItems().resolveItem("oraxen:pyro_onyx_ingot");
+                if (result == null) {
+                    result = new ItemStack(Material.NETHERITE_INGOT);
+                    var meta = result.getItemMeta();
+                    meta.displayName(MiniMessage.miniMessage().deserialize("<gradient:#FF4500:#2C3E50><bold>Пиро-Ониксовый Слиток</bold></gradient>"));
+                    result.setItemMeta(meta);
+                }
+
+                if (player.isOnline() && player.getOpenInventory().getTopInventory().equals(topInv)) {
+                    topInv.setItem(outputSlot, result);
+                } else if (player.isOnline()) {
+                    var leftovers = player.getInventory().addItem(result);
+                    for (var drop : leftovers.values()) {
+                        player.getWorld().dropItemNaturally(player.getLocation(), drop);
+                    }
+                } else if (holder.getBoundBlock() != null) {
+                    holder.getBoundBlock().getWorld().dropItemNaturally(
+                            holder.getBoundBlock().getLocation().add(0.5, 1.0, 0.5), result);
+                }
+
+                if (player.isOnline()) {
+                    player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_ANVIL_USE, 0.9f, 1.2f);
+                    player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 0.8f, 1.6f);
+                    player.sendActionBar(MiniMessage.miniMessage().deserialize("<gradient:#FF4500:#2C3E50>🔥 Пиро-Ониксовый сплав готов! Заберите результат.</gradient>"));
+                }
+                if (holder.getBoundBlock() != null) {
+                    holder.getBoundBlock().getWorld().spawnParticle(
+                            org.bukkit.Particle.FLAME,
+                            holder.getBoundBlock().getLocation().add(0.5, 1.1, 0.5),
+                            25, 0.3, 0.3, 0.3, 0.05
+                    );
+                }
+            };
+
+            kostin.ak.actionstriggers.api.gui.widget.impl.ProgressBarWidget pb = null;
+            for (kostin.ak.actionstriggers.api.gui.widget.Widget w : holder.getSlotWidgets().values()) {
+                if (w instanceof kostin.ak.actionstriggers.api.gui.widget.impl.ProgressBarWidget candidate) {
+                    pb = candidate;
+                    break;
+                }
+            }
+
+            if (pb != null) {
+                pb.startProcess(holder, durationTicks, onFinish);
+            } else {
+                onFinish.run();
+            }
+
+            return true;
+        };
+    }
+
+    @ConfigAction("core:alchemical_distill")
+    public static Action parseAlchemicalDistill(Map<String, Object> params) {
+        int ingredientSlot = params.containsKey("ingredient_slot") ? Integer.parseInt(params.get("ingredient_slot").toString()) : 10;
+        int waterSlot = params.containsKey("water_slot") ? Integer.parseInt(params.get("water_slot").toString()) : 12;
+        int outputSlot = params.containsKey("output_slot") ? Integer.parseInt(params.get("output_slot").toString()) : 16;
+        int durationTicks = params.containsKey("duration") ? Integer.parseInt(params.get("duration").toString()) : 80;
+
+        return context -> {
+            Player player = context.get(CoreKeys.PLAYER);
+            if (player == null || !player.isOnline()) return false;
+
+            org.bukkit.inventory.InventoryView openView = player.getOpenInventory();
+            org.bukkit.inventory.Inventory topInv = openView.getTopInventory();
+            if (!(topInv.getHolder() instanceof kostin.ak.actionstriggers.api.gui.AATGuiHolder holder)) {
+                return false;
+            }
+
+            ItemStack ingItem = topInv.getItem(ingredientSlot);
+            String ingId = ingItem != null ? ActionTriggerAPI.getItems().getFullId(ingItem).toLowerCase() : "";
+            boolean hasIng = ingItem != null && (ingId.contains("berry") || ingId.contains("grape") || ingItem.getType() == Material.SWEET_BERRIES || ingItem.getType() == Material.GLOW_BERRIES || ingItem.getType() == Material.HONEYCOMB);
+
+            ItemStack waterItem = topInv.getItem(waterSlot);
+            boolean hasWater = waterItem != null && (waterItem.getType() == Material.POTION || waterItem.getType() == Material.HONEY_BOTTLE || waterItem.getType() == Material.WATER_BUCKET);
+
+            if (!hasIng || !hasWater) {
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>❌ Недостаточно компонентов для дистилляции!</red>"));
+                return false;
+            }
+
+            if (Boolean.TRUE.equals(holder.getSessionState().get("progress_running"))) {
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                return false;
+            }
+
+            ItemStack currentOut = topInv.getItem(outputSlot);
+            if (currentOut != null && currentOut.getType() != Material.AIR) {
+                kostin.ak.actionstriggers.api.gui.widget.Widget outWidget = holder.getSlotWidgets().get(outputSlot);
+                boolean isPl = (outWidget instanceof kostin.ak.actionstriggers.api.gui.widget.impl.OutputSlotWidget osw && osw.isPlaceholder(currentOut));
+                if (!isPl) {
+                    player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                    player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>❌ Слот выдачи уже занят!</red>"));
+                    return false;
+                }
+            }
+
+            // Потребляем ингредиенты
+            if (ingItem.getAmount() > 1) {
+                ingItem.setAmount(ingItem.getAmount() - 1);
+                topInv.setItem(ingredientSlot, ingItem);
+            } else {
+                topInv.setItem(ingredientSlot, null);
+            }
+
+            if (waterItem.getType() == Material.WATER_BUCKET) {
+                topInv.setItem(waterSlot, new ItemStack(Material.BUCKET));
+            } else if (waterItem.getAmount() > 1) {
+                waterItem.setAmount(waterItem.getAmount() - 1);
+                topInv.setItem(waterSlot, waterItem);
+            } else {
+                topInv.setItem(waterSlot, null);
+            }
+
+            player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_BREWING_STAND_BREW, 1.0f, 1.2f);
+            player.sendActionBar(MiniMessage.miniMessage().deserialize("<gradient:#A29BFE:#6C5CE7>⚗ Дистилляция согревающего напитка запущена...</gradient>"));
+
+            String outputItemId = ingId.contains("honey") || ingItem.getType() == Material.HONEYCOMB ? "oraxen:hot_sbiten" : "oraxen:berry_tea";
+
+            Runnable onFinish = () -> {
+                ItemStack result = ActionTriggerAPI.getItems().resolveItem(outputItemId);
+                if (result == null) {
+                    result = new ItemStack(Material.POTION);
+                    var meta = result.getItemMeta();
+                    meta.displayName(MiniMessage.miniMessage().deserialize("<gradient:#FF6B81:#FF4757><bold>Чай из морозных ягод</bold></gradient>"));
+                    result.setItemMeta(meta);
+                }
+
+                if (player.isOnline() && player.getOpenInventory().getTopInventory().equals(topInv)) {
+                    topInv.setItem(outputSlot, result);
+                } else if (player.isOnline()) {
+                    var leftovers = player.getInventory().addItem(result);
+                    for (var drop : leftovers.values()) {
+                        player.getWorld().dropItemNaturally(player.getLocation(), drop);
+                    }
+                } else if (holder.getBoundBlock() != null) {
+                    holder.getBoundBlock().getWorld().dropItemNaturally(
+                            holder.getBoundBlock().getLocation().add(0.5, 1.0, 0.5), result);
+                }
+
+                if (player.isOnline()) {
+                    player.playSound(player.getLocation(), org.bukkit.Sound.ITEM_BOTTLE_FILL, 1.0f, 1.2f);
+                    player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 0.8f, 1.8f);
+                    player.sendActionBar(MiniMessage.miniMessage().deserialize("<gradient:#A29BFE:#6C5CE7>🍵 Напиток готов! Заберите результат.</gradient>"));
+                }
+            };
+
+            kostin.ak.actionstriggers.api.gui.widget.impl.ProgressBarWidget pb = null;
+            for (kostin.ak.actionstriggers.api.gui.widget.Widget w : holder.getSlotWidgets().values()) {
+                if (w instanceof kostin.ak.actionstriggers.api.gui.widget.impl.ProgressBarWidget candidate) {
+                    pb = candidate;
+                    break;
+                }
+            }
+
+            if (pb != null) {
+                pb.startProcess(holder, durationTicks, onFinish);
+            } else {
+                onFinish.run();
+            }
+
+            return true;
+        };
+    }
+
     @ConfigAction("core:delay")
     public static Action parseDelay(Map<String, Object> params) {
         long ticks = 20L;

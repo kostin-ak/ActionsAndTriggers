@@ -1,0 +1,30 @@
+# English localization for ActionsAndTriggers
+prefix: "<gradient:#70e1f5:#ffd194>[A&T]</gradient> "
+
+commands:
+  no_permission: "<red>You do not have permission to execute this command.</red>"
+  reload:
+    start: "<gray>Reloading ActionsAndTriggers configurations...</gray>"
+    success: "<gradient:#55efc4:#00b894>✔ Configurations reloaded successfully in {time} ms!</gradient> <dark_gray>({triggers} triggers, {guis} guis)</dark_gray>"
+    error: "<red>✖ An error occurred during reload: {error}</red>"
+  usage: "<yellow>Usage: <gold>/aat reload</gold></yellow>"
+
+combat:
+  atlas_blocked: "<red>⚔ You are in combat! Remaining: <yellow>{seconds}s</yellow></red>"
+  atlas_interrupted: "<red>⚔ Astral connection severed due to damage taken!</red>"
+  action_blocked: "<red>⚔ This action is unavailable while in combat!</red>"
+
+machine:
+  ice_fabricator:
+    output_occupied: "<red>✖ Please collect the finished ice from the output slot first!</red>"
+    insufficient_ingredients: "<red>✖ Insufficient ingredients for cryo-synthesis!</red>"
+
+gui:
+  not_found: "<red>✖ GUI <yellow>{id}</yellow> not found!</red>"
+  drag_blocked: "<red>✖ Dragging items in this window is disabled!</red>"
+  placeholder_take_blocked: "<red>✖ This is a sample item and cannot be taken!</red>"
+
+log:
+  triggers_loaded: "[A&T] Successfully loaded {count} triggers."
+  guis_loaded: "[A&T GUI] Successfully loaded {count} graphical interfaces."
+  gui_load_error: "[A&T GUI] Failed to load GUI from {file}: {error}"

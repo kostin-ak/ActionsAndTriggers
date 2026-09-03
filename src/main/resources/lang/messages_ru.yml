@@ -1,0 +1,30 @@
+# Русская локализация ActionsAndTriggers
+prefix: "<gradient:#70e1f5:#ffd194>[A&T]</gradient> "
+
+commands:
+  no_permission: "<red>У вас недостаточно прав для выполнения этой команды.</red>"
+  reload:
+    start: "<gray>Перезагрузка конфигураций ActionsAndTriggers...</gray>"
+    success: "<gradient:#55efc4:#00b894>✔ Конфигурации успешно перезагружены за {time} мс!</gradient> <dark_gray>({triggers} триггеров, {guis} интерфейсов)</dark_gray>"
+    error: "<red>✖ Произошла ошибка при перезагрузке: {error}</red>"
+  usage: "<yellow>Использование: <gold>/aat reload</gold></yellow>"
+
+combat:
+  atlas_blocked: "<red>⚔ Вы находитесь в бою! До окончания: <yellow>{seconds} сек.</yellow></red>"
+  atlas_interrupted: "<red>⚔ Астральная связь разорвана из-за получения урона!</red>"
+  action_blocked: "<red>⚔ Это действие недоступно во время боя!</red>"
+
+machine:
+  ice_fabricator:
+    output_occupied: "<red>✖ Сначала заберите готовый лед из слота выхода!</red>"
+    insufficient_ingredients: "<red>✖ Недостаточно ингредиентов для криогенного синтеза!</red>"
+
+gui:
+  not_found: "<red>✖ Графический интерфейс <yellow>{id}</yellow> не найден!</red>"
+  drag_blocked: "<red>✖ Перетаскивание предметов в этом окне запрещено!</red>"
+  placeholder_take_blocked: "<red>✖ Это демонстрационный образец, его нельзя забрать!</red>"
+
+log:
+  triggers_loaded: "[A&T] Успешно загружено {count} триггеров."
+  guis_loaded: "[A&T GUI] Успешно загружено {count} графических интерфейсов."
+  gui_load_error: "[A&T GUI] Ошибка загрузки интерфейса из {file}: {error}"

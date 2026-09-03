@@ -171,12 +171,21 @@ public class ActionCommand {
 
     @Subcommand("reload")
     public void reload(BukkitCommandActor actor) {
+        long start = System.currentTimeMillis();
+        plugin.reloadConfig();
+        kostin.ak.actionstriggers.core.i18n.I18n.reload();
         ActionTriggerAPI.getScripts().clear();
-        YamlTriggerLoader.load(plugin, "triggers");
+        int triggers = YamlTriggerLoader.load(plugin, "triggers");
         kostin.ak.actionstriggers.ActionsTriggers.getGuiRegistry().clear();
         kostin.ak.actionstriggers.core.gui.YamlGuiLoader guiLoader = new kostin.ak.actionstriggers.core.gui.YamlGuiLoader(kostin.ak.actionstriggers.ActionsTriggers.getGuiRegistry(), plugin.getLogger());
-        guiLoader.loadAll(plugin, "guis");
-        actor.reply(mm.deserialize("<green>✔ Скрипты, триггеры и GUI успешно перезагружены!</green>"));
+        int guis = guiLoader.loadAll(plugin, "guis");
+        long elapsed = System.currentTimeMillis() - start;
+
+        actor.reply(kostin.ak.actionstriggers.core.i18n.I18n.prefixed("commands.reload.success", Map.of(
+                "time", elapsed,
+                "triggers", triggers,
+                "guis", guis
+        )));
     }
 
     private ExecutionContext buildMergedContext(BukkitCommandActor actor, String input) {

@@ -1,0 +1,10 @@
+# ActionsAndTriggers Main Configuration
+# Язык интерфейса и сообщений: ru / en
+language: "ru"
+
+# Настройки боевого режима (Combat Tag)
+combat:
+  # Длительность комбат-тега в секундах
+  duration_seconds: 15
+  # Принудительно закрывать открытые меню при получении любого урона
+  close_gui_on_damage: true

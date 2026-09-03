@@ -34,18 +34,15 @@ public final class ActionsTriggers extends JavaPlugin {
     @Override
     public void onEnable() {
         instance = this;
-        // 1. Инициализируем реестры и шедулер
+        saveDefaultConfig();
+        kostin.ak.actionstriggers.core.i18n.I18n.init(this);
+
         ActionRegistry actionRegistry = new ActionRegistry(getLogger());
         TriggerRegistry triggerRegistry = new TriggerRegistry(getLogger());
         FilterRegistry filterRegistry = new FilterRegistry(getLogger());
         ActionScheduler actionScheduler = new ActionScheduler(this);
 
-
-        // 2. Инжектим их в публичный фасад API
         ActionTriggerAPI.init(actionRegistry, triggerRegistry, filterRegistry, actionScheduler);
-
-        // 3. Регистрируем базовые экшены и триггеры
-
         ActionTriggerAPI.getRegistrar().registerActions(DefaultActionParsers.class);
 
         ActionTriggerAPI.getRegistrar().registerTriggers(this,
@@ -53,7 +50,7 @@ public final class ActionsTriggers extends JavaPlugin {
                 new PlayerInteractTrigger(), new EntityDeathTrigger(), new PlayerToggleSneakTrigger(),
                 new BlockPlaceTrigger(), new PlayerConsumeTrigger(), new AsyncChatTrigger(),
                 new PlayerDeathTrigger(), new PlayerLevelChangeTrigger(), new PlayerQuitTrigger(),
-                new CraftItemTrigger(),new PlayerJumpTrigger(), new PlayerSwapHandItemsTrigger(),
+                new CraftItemTrigger(), new PlayerJumpTrigger(), new PlayerSwapHandItemsTrigger(),
                 new PlayerDropItemTrigger(), new BlockDamageTrigger(), new PlayerAdvancementDoneTrigger(),
                 new PlayerToggleFlightTrigger(), new PlayerWorldChangeTrigger());
 
@@ -116,15 +113,13 @@ public final class ActionsTriggers extends JavaPlugin {
 
         YamlTriggerLoader.load(this, "triggers");
 
-        // 5. Инициализация Widget GUI Engine
         getServer().getPluginManager().registerEvents(new kostin.ak.actionstriggers.core.gui.GuiListener(GUI_REGISTRY), this);
         kostin.ak.actionstriggers.core.gui.YamlGuiLoader guiLoader = new kostin.ak.actionstriggers.core.gui.YamlGuiLoader(GUI_REGISTRY, getLogger());
         guiLoader.loadAll(this, "guis");
 
-        // 6. Инициализация Combat Tracker (Боевой режим)
         getServer().getPluginManager().registerEvents(new kostin.ak.actionstriggers.core.combat.CombatListener(COMBAT_TRACKER), this);
 
-        getLogger().info("Actions&Triggers API успешно загружен!");
+        getLogger().info("Actions&Triggers initialized successfully.");
     }
 
     private static final kostin.ak.actionstriggers.core.gui.GuiRegistry GUI_REGISTRY = new kostin.ak.actionstriggers.core.gui.GuiRegistry();
@@ -140,6 +135,10 @@ public final class ActionsTriggers extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        getLogger().info("Actions&Triggers выключен.");
+        Bukkit.getScheduler().cancelTasks(this);
+        ActionTriggerAPI.getScripts().clear();
+        ActionTriggerAPI.getTriggers().unsubscribeAll(this);
+        GUI_REGISTRY.clear();
+        getLogger().info("Actions&Triggers disabled cleanly.");
     }
 }

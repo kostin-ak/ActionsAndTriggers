@@ -83,9 +83,7 @@ public class CombatListener implements Listener {
                     player.closeInventory();
                     player.playSound(player.getLocation(), Sound.BLOCK_FIRE_EXTINGUISH, 0.8f, 1.4f);
                     player.playSound(player.getLocation(), Sound.ENTITY_VILLAGER_NO, 1.0f, 0.9f);
-                    player.sendActionBar(MiniMessage.miniMessage().deserialize(
-                            "<red><bold>✖ Астральная связь разорвана из-за получения урона!</bold></red>"
-                    ));
+                    player.sendActionBar(kostin.ak.actionstriggers.core.i18n.I18n.component("combat.atlas_interrupted"));
                 }
             }
         } catch (Exception ignored) {}

@@ -27,14 +27,14 @@ public class YamlGuiLoader {
         this.logger = logger;
     }
 
-    public void loadAll(Plugin plugin, String folderName) {
+    public int loadAll(Plugin plugin, String folderName) {
         File folder = new File(plugin.getDataFolder(), folderName);
         if (!folder.exists()) {
             folder.mkdirs();
         }
 
         File[] files = folder.listFiles((dir, name) -> name.endsWith(".yml") || name.endsWith(".yaml"));
-        if (files == null) return;
+        if (files == null) return 0;
 
         int loaded = 0;
         for (File file : files) {
@@ -45,12 +45,12 @@ public class YamlGuiLoader {
                     loaded++;
                 }
             } catch (Exception e) {
-                logger.severe("[A&T GUI] Ошибка загрузки интерфейса из " + file.getName() + ": " + e.getMessage());
-                e.printStackTrace();
+                logger.log(java.util.logging.Level.SEVERE, kostin.ak.actionstriggers.core.i18n.I18n.get("log.gui_load_error", Map.of("file", file.getName(), "error", e.getMessage())), e);
             }
         }
 
-        logger.info("[A&T GUI] Загружено " + loaded + " графических интерфейсов!");
+        logger.info(kostin.ak.actionstriggers.core.i18n.I18n.get("log.guis_loaded", Map.of("count", loaded)));
+        return loaded;
     }
 
     @SuppressWarnings("unchecked")

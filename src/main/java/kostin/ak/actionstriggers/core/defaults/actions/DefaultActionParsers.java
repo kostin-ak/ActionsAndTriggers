@@ -430,9 +430,7 @@ public final class DefaultActionParsers implements IActionParsers {
                 int remaining = kostin.ak.actionstriggers.ActionsTriggers.getCombatTracker().getRemainingSeconds(player);
                 player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 0.9f);
                 player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_FIRE_EXTINGUISH, 0.8f, 1.5f);
-                player.sendActionBar(MiniMessage.miniMessage().deserialize(
-                        "<red><bold>✖ Астральные потоки нестабильны в бою! Подождите " + remaining + " сек.</bold></red>"
-                ));
+                player.sendActionBar(kostin.ak.actionstriggers.core.i18n.I18n.component("combat.atlas_blocked", Map.of("seconds", remaining)));
                 return false;
             }
 
@@ -497,7 +495,7 @@ public final class DefaultActionParsers implements IActionParsers {
             ItemStack waterItem = topInv.getItem(waterSlot);
             if (waterItem == null || waterItem.getType() != Material.WATER_BUCKET) {
                 player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
-                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>✖ Поместите Ведро с Водой в слот сырья (слот слева)!</red>"));
+                player.sendActionBar(kostin.ak.actionstriggers.core.i18n.I18n.component("machine.ice_fabricator.insufficient_ingredients"));
                 return false;
             }
 
@@ -506,13 +504,13 @@ public final class DefaultActionParsers implements IActionParsers {
             boolean isCrystal = crystalItem != null && (crystalId.contains("frost_crystal") || crystalItem.getType() == Material.AMETHYST_SHARD || crystalItem.getType() == Material.PRISMARINE_CRYSTALS);
             if (!isCrystal) {
                 player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
-                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>✖ Поместите Морозный Кристалл в слот катализатора!</red>"));
+                player.sendActionBar(kostin.ak.actionstriggers.core.i18n.I18n.component("machine.ice_fabricator.insufficient_ingredients"));
                 return false;
             }
 
             if (Boolean.TRUE.equals(holder.getSessionState().get("progress_running"))) {
                 player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
-                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>✖ Станок уже выполняет заморозку! Дождитесь завершения.</red>"));
+                player.sendActionBar(kostin.ak.actionstriggers.core.i18n.I18n.component("machine.ice_fabricator.insufficient_ingredients"));
                 return false;
             }
 
@@ -538,7 +536,7 @@ public final class DefaultActionParsers implements IActionParsers {
                 boolean isPl = (outWidget instanceof kostin.ak.actionstriggers.api.gui.widget.impl.OutputSlotWidget osw && osw.isPlaceholder(currentOut));
                 if (!isPl) {
                     player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
-                    player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>✖ Сначала заберите готовый лед из слота выхода!</red>"));
+                    player.sendActionBar(kostin.ak.actionstriggers.core.i18n.I18n.component("machine.ice_fabricator.output_occupied"));
                     return false;
                 }
             }

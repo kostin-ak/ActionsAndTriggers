@@ -1,6 +1,6 @@
 # 📊 Отчет о Производительности Ядра AAT (Benchmark Report)
 
-**Дата замера**: 2026-09-03T23:14:20.163800800
+**Дата замера**: 2026-09-03T23:19:31.682516300
 **Среда исполнения**: Java 21.0.2 (Windows 11, amd64)
 **Статус**: Исходная базовая линия (ДО оптимизации)
 
@@ -10,9 +10,9 @@
 
 | Компонент / Тест | Общее время (мс) | Задержка (нс/оп) | Пропускная способность | Аллокация памяти |
 | :--- | :--- | :--- | :--- | :--- |
-| **ContextPlaceholderParser.resolve()** | 283,53 ms | 2835,3 ns | 352 695 op/s | ~5,01 MB |
-| **Regex Placeholder Extraction** | 108,76 ms | 1087,6 ns | 919 453 op/s | ~84,43 MB |
-| **ExecutionContext Alloc & Dispatch** | 9,06 ms | 90,6 ns | 11 036 674 op/s | ~0,42 MB |
+| **ContextPlaceholderParser.resolve()** | 291,74 ms | 2917,4 ns | 342 768 op/s | ~31,51 MB |
+| **Regex Placeholder Extraction** | 159,91 ms | 1599,1 ns | 625 361 op/s | ~11,47 MB |
+| **ExecutionContext Alloc & Dispatch** | 12,01 ms | 120,1 ns | 8 327 504 op/s | ~22,50 MB |
 
 ---
 

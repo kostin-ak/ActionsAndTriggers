@@ -44,6 +44,7 @@ public final class ActionsTriggers extends JavaPlugin {
         ActionScheduler actionScheduler = new ActionScheduler(this);
 
         ActionTriggerAPI.init(actionRegistry, triggerRegistry, filterRegistry, actionScheduler);
+        kostin.ak.actionstriggers.core.ContextPlaceholderParser.init();
         ActionTriggerAPI.getRegistrar().registerActions(DefaultActionParsers.class);
 
         ActionTriggerAPI.getRegistrar().registerTriggers(this,

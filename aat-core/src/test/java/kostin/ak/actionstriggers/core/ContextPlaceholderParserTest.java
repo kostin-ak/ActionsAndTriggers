@@ -69,4 +69,41 @@ class ContextPlaceholderParserTest {
         assertEquals("Power: 75/100", rawResult);
         assertEquals("Percentage: 75%", propResult);
     }
+
+    @Test
+    @DisplayName("Should format player properties such as name, health, and combat_remaining correctly")
+    void testPlayerFormattersAndCombatRemaining() {
+        org.bukkit.entity.Player mockPlayer = org.mockito.Mockito.mock(org.bukkit.entity.Player.class);
+        org.mockito.Mockito.when(mockPlayer.getName()).thenReturn("kostin_ak");
+        org.mockito.Mockito.when(mockPlayer.getHealth()).thenReturn(20.0);
+        java.util.UUID uuid = java.util.UUID.randomUUID();
+        org.mockito.Mockito.when(mockPlayer.getUniqueId()).thenReturn(uuid);
+
+        kostin.ak.actionstriggers.core.combat.CombatTracker tracker = new kostin.ak.actionstriggers.core.combat.CombatTracker();
+        tracker.tag(mockPlayer, 8);
+
+        // Регистрируем кастомный форматтер с трекером
+        ContextPlaceholderParser.registerFormatter(org.bukkit.entity.Player.class, (p, prop) -> {
+            if (prop == null) return p.getName();
+            return switch (prop.toLowerCase()) {
+                case "name" -> p.getName();
+                case "uuid" -> p.getUniqueId().toString();
+                case "health" -> String.format(java.util.Locale.ROOT, "%.1f", p.getHealth());
+                case "combat_remaining", "combat_seconds", "combat_time", "combat" ->
+                        String.valueOf(tracker.getRemainingSeconds(p));
+                default -> p.getName();
+            };
+        });
+
+        ExecutionContext ctx = new ExecutionContext();
+        ctx.set(CoreKeys.PLAYER, mockPlayer);
+
+        String template = "Подождите {player.combat_remaining} сек. Игрок: {player.name}, Здоровье: {player.health}";
+        String result = ContextPlaceholderParser.resolve(template, ctx);
+
+        assertTrue(result.contains("Подождите 8 сек.") || result.contains("Подождите 7 сек."));
+        assertTrue(result.contains("Игрок: kostin_ak"));
+        assertTrue(result.contains("Здоровье: 20.0"));
+        assertFalse(result.contains("Подождите kostin_ak сек."), "combat_remaining must not fallback to player name");
+    }
 }

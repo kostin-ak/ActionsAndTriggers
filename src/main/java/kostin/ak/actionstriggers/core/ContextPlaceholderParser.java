@@ -40,8 +40,12 @@ public class ContextPlaceholderParser {
             return switch (prop.toLowerCase()) {
                 case "name" -> p.getName();
                 case "uuid" -> p.getUniqueId().toString();
-                case "health" -> String.format("%.1f", p.getHealth());
+                case "health" -> String.format(java.util.Locale.ROOT, "%.1f", p.getHealth());
                 case "combat_remaining" -> String.valueOf(kostin.ak.actionstriggers.ActionsTriggers.getCombatTracker().getRemainingSeconds(p));
+                case "group" -> kostin.ak.actionstriggers.core.hook.LuckPermsHook.getPrimaryGroup(p);
+                case "prefix" -> kostin.ak.actionstriggers.core.hook.LuckPermsHook.getPrefix(p);
+                case "suffix" -> kostin.ak.actionstriggers.core.hook.LuckPermsHook.getSuffix(p);
+                case "weight" -> String.valueOf(kostin.ak.actionstriggers.core.hook.LuckPermsHook.getWeight(p));
                 default -> p.getName();
             };
         });
@@ -61,9 +65,9 @@ public class ContextPlaceholderParser {
         registerFormatter(Location.class, (loc, prop) -> {
             if (prop == null) return loc.getBlockX() + ", " + loc.getBlockY() + ", " + loc.getBlockZ();
             return switch (prop.toLowerCase()) {
-                case "x" -> String.format("%.2f", loc.getX());
-                case "y" -> String.format("%.2f", loc.getY());
-                case "z" -> String.format("%.2f", loc.getZ());
+                case "x" -> String.format(java.util.Locale.ROOT, "%.2f", loc.getX());
+                case "y" -> String.format(java.util.Locale.ROOT, "%.2f", loc.getY());
+                case "z" -> String.format(java.util.Locale.ROOT, "%.2f", loc.getZ());
                 case "block_x" -> String.valueOf(loc.getBlockX());
                 case "block_y" -> String.valueOf(loc.getBlockY());
                 case "block_z" -> String.valueOf(loc.getBlockZ());

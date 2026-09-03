@@ -69,12 +69,16 @@ public class TriggerRegistry {
     }
 
     /**
-     * Полная очистка всех подписок на события.
+     * Быстрая проверка наличия активных слушателей для триггера.
+     * Позволяет событиям Bukkit выходить мгновенно без создания ExecutionContext и аллокаций.
      */
-    public void clearSubscriptions() {
-        subscriptions.clear();
+    public boolean hasSubscriptions(@NotNull NamespacedKey key) {
+        if (!globalListeners.isEmpty()) {
+            return true;
+        }
+        List<TriggerSubscription> subs = subscriptions.get(key);
+        return subs != null && !subs.isEmpty();
     }
-
 
     /**
      * Вызывает Триггер (бросает событие в шину).

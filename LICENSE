@@ -1,0 +1,29 @@
+# PolyForm Noncommercial License 1.0.0
+https://polyformproject.org/licenses/noncommercial/1.0.0/
+
+Copyright (c) 2026 Kostin AK. All rights reserved.
+
+## 1. Purpose & Core Terms
+This software is provided with open source code for inspection, personal use, community server deployment, and non-commercial development.
+
+The Licensor (Kostin AK) hereby grants you a worldwide, royalty-free, non-exclusive license to use, copy, modify, distribute, and create derivative works (forks) of this software, subject to the conditions and limitations below.
+
+## 2. Noncommercial Restriction (Commercial Rights Reserved Exclusively by Author)
+You may NOT exercise any of the rights granted to you under this license for any Commercial Purpose.
+Only the original author and copyright holder (Kostin AK) reserves the perpetual, exclusive right to sell, monetize, distribute commercial licenses, or offer commercial support for this software (including distribution via SpigotMC, BuiltByBit, Polymart, or private commercial agreements).
+
+"Commercial Purpose" means any use, distribution, or operation intended for or directed towards commercial advantage or monetary compensation, including but not limited to:
+- Selling, sublicensing, renting, or leasing the software or any derivative works (forks).
+- Bundling the software or derivative works into paid server setups, paid modpacks, or commercial hosting offerings.
+- Charging fees for access to the software or derivative works.
+
+## 3. Strict Attribution & Forking Rules
+Any redistribution of the software or any modified version (fork) must satisfy ALL of the following requirements:
+1. **Notice & Copyright**: You must retain this entire LICENSE text and all copyright, patent, trademark, and attribution notices without modification.
+2. **Prominent Author Credit**: You must prominently state in documentation, README files, and repository descriptions that the original software was created by **Kostin AK**, including a direct link to the official repository.
+3. **State of Changes**: You must include prominent notices stating that you changed the files and detailing the nature of the changes.
+4. **No Rebranding Abuse**: You may not use the original names ("ActionsAndTriggers", "AAT") or the author's name to endorse, promote, or rebrand any derivative work without prior written permission.
+5. **Inheritance of Terms**: Any fork or derivative work must be licensed under this identical PolyForm Noncommercial License 1.0.0. You may not apply more restrictive or alternative commercial terms to derivative works.
+
+## 4. Disclaimer of Warranty & Limitation of Liability
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

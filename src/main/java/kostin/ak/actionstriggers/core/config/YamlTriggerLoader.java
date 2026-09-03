@@ -61,6 +61,9 @@ public final class YamlTriggerLoader {
                     List<Action> actions = parser.parseActions(map.get("actions"));
                     ParsedTrigger parsedTrigger = parser.parseTrigger(plugin, map, context -> {
                         for (Action action : actions) {
+                            if (context.isCancelled()) {
+                                break;
+                            }
                             action.execute(context);
                         }
                     });

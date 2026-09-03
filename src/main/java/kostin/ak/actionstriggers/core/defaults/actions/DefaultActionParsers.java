@@ -739,4 +739,37 @@ public final class DefaultActionParsers implements IActionParsers {
             return true;
         };
     }
+
+    @ConfigAction("core:add_permission")
+    public static Action parseAddPermission(Map<String, Object> params) {
+        String perm = String.valueOf(params.getOrDefault("permission", ""));
+        return context -> {
+            Player p = context.get(CoreKeys.PLAYER);
+            if (p == null || perm.isEmpty()) return false;
+            kostin.ak.actionstriggers.core.hook.LuckPermsHook.addPermission(p, perm);
+            return true;
+        };
+    }
+
+    @ConfigAction("core:remove_permission")
+    public static Action parseRemovePermission(Map<String, Object> params) {
+        String perm = String.valueOf(params.getOrDefault("permission", ""));
+        return context -> {
+            Player p = context.get(CoreKeys.PLAYER);
+            if (p == null || perm.isEmpty()) return false;
+            kostin.ak.actionstriggers.core.hook.LuckPermsHook.removePermission(p, perm);
+            return true;
+        };
+    }
+
+    @ConfigAction("core:set_group")
+    public static Action parseSetGroup(Map<String, Object> params) {
+        String group = String.valueOf(params.getOrDefault("group", "default"));
+        return context -> {
+            Player p = context.get(CoreKeys.PLAYER);
+            if (p == null) return false;
+            kostin.ak.actionstriggers.core.hook.LuckPermsHook.setGroup(p, group);
+            return true;
+        };
+    }
 }

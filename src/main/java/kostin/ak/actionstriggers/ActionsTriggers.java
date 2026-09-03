@@ -75,6 +75,12 @@ public final class ActionsTriggers extends JavaPlugin {
             getLogger().info("ItemsAdder integration enabled!");
         }
 
+        // Интеграция с LuckPerms
+        kostin.ak.actionstriggers.core.hook.LuckPermsHook.initialize();
+        if (kostin.ak.actionstriggers.core.hook.LuckPermsHook.isEnabled()) {
+            getLogger().info("LuckPerms integration enabled!");
+        }
+
         // 4. Инициализация Revxrsal Commands
         CommandHandler handler = BukkitCommandHandler.create(this);
         handler.getAutoCompleter().registerSuggestion("actions", (args, sender, cmd) -> ActionTriggerAPI.getActions().asList());

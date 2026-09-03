@@ -86,6 +86,25 @@ public final class DefaultFilterParsers implements IFilterParsers {
         return Filters.permission(perm);
     }
 
+    @ConfigFilter("core:in_group")
+    public static Filter parseInGroup(Map<String, Object> params) {
+        String group = String.valueOf(params.getOrDefault("group", "default"));
+        return context -> {
+            Player p = context.get(CoreKeys.PLAYER);
+            if (p == null) return false;
+            if (kostin.ak.actionstriggers.core.hook.LuckPermsHook.isEnabled()) {
+                return kostin.ak.actionstriggers.core.hook.LuckPermsHook.inGroup(p, group);
+            }
+            return p.hasPermission("group." + group);
+        };
+    }
+
+    @ConfigFilter("core:not_in_group")
+    public static Filter parseNotInGroup(Map<String, Object> params) {
+        Filter inGroup = parseInGroup(params);
+        return context -> !inGroup.test(context);
+    }
+
     @ConfigFilter("core:chance")
     public static Filter parseChance(Map<String, Object> params) {
         double chance = 1.0;

@@ -1,5 +1,6 @@
 package kostin.ak.actionstriggers.api.trigger;
 
+import kostin.ak.actionstriggers.api.ActionTriggerAPI;
 import kostin.ak.actionstriggers.api.context.ContextKey;
 import kostin.ak.actionstriggers.api.context.ExecutionContext;
 import lombok.Getter;
@@ -28,12 +29,12 @@ public abstract class BukkitEventTrigger<T extends Event> extends Trigger implem
 
     protected ExecutionContext buildContext(T event) {
         ExecutionContext context = new ExecutionContext();
-        contextRules.forEach((key, extractor) -> {
-            Object value = extractor.apply(event);
+        for (Map.Entry<ContextKey<?>, Function<T, ?>> entry : contextRules.entrySet()) {
+            Object value = entry.getValue().apply(event);
             if (value != null) {
-                applyToContext(context, (ContextKey<Object>) key, value);
+                applyToContext(context, (ContextKey<Object>) entry.getKey(), value);
             }
-        });
+        }
         return context;
     }
 
@@ -42,6 +43,11 @@ public abstract class BukkitEventTrigger<T extends Event> extends Trigger implem
     }
 
     protected void handleEvent(T event) {
+        // Fast-exit: если нет подписчиков на этот триггер, не выделяем память и не извлекаем контекст
+        if (!ActionTriggerAPI.getTriggers().hasSubscriptions(getKey())) {
+            return;
+        }
+
         ExecutionContext context = buildContext(event);
         dispatch(context);
         if (context.isCancelled() && event instanceof Cancellable cancellable) {

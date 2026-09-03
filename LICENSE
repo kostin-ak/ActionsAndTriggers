@@ -1,29 +1,54 @@
 # PolyForm Noncommercial License 1.0.0
 https://polyformproject.org/licenses/noncommercial/1.0.0/
 
-Copyright (c) 2026 Kostin AK. All rights reserved.
+Copyright (c) 2026 Alex Kostin. All rights reserved.
 
 ## 1. Purpose & Core Terms
 This software is provided with open source code for inspection, personal use, community server deployment, and non-commercial development.
 
-The Licensor (Kostin AK) hereby grants you a worldwide, royalty-free, non-exclusive license to use, copy, modify, distribute, and create derivative works (forks) of this software, subject to the conditions and limitations below.
+The Licensor (Alex Kostin) hereby grants you a worldwide, royalty-free, non-exclusive license to use, copy, modify, distribute, and create derivative works (forks) of this software, subject to the conditions and limitations below.
 
-## 2. Noncommercial Restriction (Commercial Rights Reserved Exclusively by Author)
+## 2. Noncommercial Restriction & Binary Distribution Reservation
 You may NOT exercise any of the rights granted to you under this license for any Commercial Purpose.
-Only the original author and copyright holder (Kostin AK) reserves the perpetual, exclusive right to sell, monetize, distribute commercial licenses, or offer commercial support for this software (including distribution via SpigotMC, BuiltByBit, Polymart, or private commercial agreements).
+Only the original author and copyright holder (Alex Kostin) reserves the perpetual, exclusive right to sell, monetize, distribute commercial licenses, or offer commercial support for this software.
+
+- **Free Source Compilation**: You are permitted to inspect, fork, and compile the source code of this software free of charge via Gradle for personal evaluation, development, and non-commercial community servers.
+- **Pre-Compiled Binary Distribution Reserved**: The exclusive right to distribute, market, monetize, or charge fees for pre-compiled binary packages, official release JAR files (including distribution via SpigotMC, BuiltByBit, Polymart, Modrinth, or custom release portals), or turnkey server bundles is reserved exclusively by the author (**Alex Kostin**). Third parties are strictly prohibited from redistributing, hosting mirrors of, or reselling pre-compiled binary JAR releases of this software or its derivative works.
 
 "Commercial Purpose" means any use, distribution, or operation intended for or directed towards commercial advantage or monetary compensation, including but not limited to:
 - Selling, sublicensing, renting, or leasing the software or any derivative works (forks).
+- Running the software on commercial Minecraft networks with web stores, microtransactions, or paid access.
 - Bundling the software or derivative works into paid server setups, paid modpacks, or commercial hosting offerings.
-- Charging fees for access to the software or derivative works.
+- Charging fees for access to the software, pre-compiled binaries, or derivative works.
 
 ## 3. Strict Attribution & Forking Rules
-Any redistribution of the software or any modified version (fork) must satisfy ALL of the following requirements:
+Any redistribution of the software source or any modified version (fork) must satisfy ALL of the following requirements:
 1. **Notice & Copyright**: You must retain this entire LICENSE text and all copyright, patent, trademark, and attribution notices without modification.
-2. **Prominent Author Credit**: You must prominently state in documentation, README files, and repository descriptions that the original software was created by **Kostin AK**, including a direct link to the official repository.
+2. **Prominent Author Credit**: You must prominently state in documentation, README files, and repository descriptions that the original software was created by **Alex Kostin**, including a direct link to the official repository.
 3. **State of Changes**: You must include prominent notices stating that you changed the files and detailing the nature of the changes.
 4. **No Rebranding Abuse**: You may not use the original names ("ActionsAndTriggers", "AAT") or the author's name to endorse, promote, or rebrand any derivative work without prior written permission.
 5. **Inheritance of Terms**: Any fork or derivative work must be licensed under this identical PolyForm Noncommercial License 1.0.0. You may not apply more restrictive or alternative commercial terms to derivative works.
+
+## 3.1. API Linking & Addon Exception (Module `aat-api`)
+Plugins, mods, or third-party software that link against, compile against (`compileOnly`), or implement interfaces provided solely by the `aat-api` module (e.g. `ActionsAndTriggers-api.jar`) are NOT considered derivative works of the implementation core (`aat-core`).
+Third-party authors retain full copyright and ownership of their own addon code and are permitted to license, distribute, or operate their addon plugins under any license of their choice (open-source or proprietary), provided they do not distribute, modify, or bundle the proprietary internal implementation code of `aat-core`.
+
+## 3.2. Contributor Terms & Intellectual Property Assignment
+By submitting any contribution (including pull requests, code patches, bug fixes, enhancements, algorithms, configuration templates, or documentation) to this project or its repositories, you explicitly, unconditionally, and irrevocably agree that:
+1. **Assignment of Rights**: You assign and transfer to the original author (**Alex Kostin**) all copyright, title, interest, and intellectual property rights in and to your contribution. To the maximum extent permitted by applicable law, you grant Alex Kostin an exclusive, perpetual, irrevocable, worldwide, royalty-free, fully transferable, and sublicensable right to use, modify, sublicense, distribute, and commercialize your contribution under any terms and under any license (including closed-source proprietary commercial licenses, asset sales, and future versions) without restriction, payment, or accounting to you.
+2. **Sole Ownership Retained**: Submitting a contribution does NOT grant you any ownership, co-authorship, copyright, voting rights, profit share, or claims against Alex Kostin or the ActionsAndTriggers project.
+3. **Originality Warranty**: You represent and warrant that the contribution is your original creation, that you have full legal right to submit it under these terms, and that it does not infringe any third-party intellectual property or trade secrets.
+4. **No Contribution Without Consent**: If you do not agree to these terms, you are expressly prohibited from submitting any contributions, pull requests, or patches to this project.
+
+## 3.3. Dual-Licensing Model & Commercial Enterprise Licenses
+This project operates under a professional Dual-Licensing business model:
+1. **Community Edition (Non-Commercial)**: Free of charge under this PolyForm Noncommercial License 1.0.0 for personal evaluation, source compilation, private community servers without monetary transactions, and open educational use.
+2. **Commercial / Enterprise Edition**: Any use of ActionsAndTriggers on commercial Minecraft networks, servers with active monetization (web stores, ranks, microtransactions, donations), bundled hosting offerings, or commercial game modes requires a separate, legally binding **Commercial License** issued directly by the author (**Alex Kostin**).
+3. **Enterprise Support & Custom Engineering**: Customized action modules, private trigger integrations, custom GUI templates, and SLA support agreements are available directly from the copyright holder.
+
+For commercial licensing inquiries, custom builds, and enterprise support, contact:
+- **Author**: Alex Kostin
+- **Email**: `kostin.ak@mail.ru`
 
 ## 4. Disclaimer of Warranty & Limitation of Liability
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

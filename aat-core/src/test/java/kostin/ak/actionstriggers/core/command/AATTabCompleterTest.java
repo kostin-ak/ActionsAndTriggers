@@ -187,10 +187,12 @@ class AATTabCompleterTest {
         assertTrue(itemSuggestions.contains("context={item_in_hand_id=minecraft:diamond_sword"));
         assertTrue(itemSuggestions.contains("context={item_in_hand_id=minecraft:compass"));
 
-        // location
+        // location (поддерживает как с миром, так и без мира)
         List<String> locSuggestions = tabCompleter.complete(new String[]{"run", "core:message", "context={location="});
         assertTrue(locSuggestions.contains("context={location=~,~,~"));
         assertTrue(locSuggestions.contains("context={location=0,64,0"));
+        assertTrue(locSuggestions.contains("context={location=100,64,100"));
+        assertTrue(locSuggestions.contains("context={location=world,0,64,0"));
 
         // cause
         List<String> causeSuggestions = tabCompleter.complete(new String[]{"run", "core:message", "context={damage_cause="});

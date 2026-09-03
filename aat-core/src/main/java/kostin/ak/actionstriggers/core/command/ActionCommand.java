@@ -207,11 +207,18 @@ public class ActionCommand {
 
         Map<String, String> parsed = parseBlock(input, "context");
 
-        // 1. Сначала ищем и парсим location, чтобы он был доступен для привязки к block
+        // 1. Сначала ищем мир и location, чтобы они были согласованы
+        org.bukkit.World contextWorld = null;
+        if (parsed.containsKey("world")) {
+            contextWorld = Bukkit.getWorld(parsed.get("world"));
+        } else if (parsed.containsKey("world_name")) {
+            contextWorld = Bukkit.getWorld(parsed.get("world_name"));
+        }
+
         org.bukkit.Location customLoc = null;
         if (parsed.containsKey("location") || parsed.containsKey("loc")) {
             String locStr = parsed.getOrDefault("location", parsed.get("loc"));
-            customLoc = parseLocationString(locStr, baseLoc);
+            customLoc = parseLocationString(locStr, baseLoc, contextWorld);
             if (customLoc != null) {
                 ctx.set(CoreKeys.LOCATION, customLoc);
             }
@@ -279,12 +286,13 @@ public class ActionCommand {
         return ctx;
     }
 
-    private org.bukkit.Location parseLocationString(String input, org.bukkit.Location base) {
+    private org.bukkit.Location parseLocationString(String input, org.bukkit.Location base, org.bukkit.World contextWorld) {
         if (input == null || input.isBlank()) return null;
         String clean = input.replace("\"", "").replace("'", "");
         String[] parts = clean.contains(",") ? clean.split(",") : clean.split("\\s+");
         if (parts.length >= 3) {
-            org.bukkit.World world = base != null ? base.getWorld() : (Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().get(0));
+            org.bukkit.World world = contextWorld != null ? contextWorld
+                    : (base != null ? base.getWorld() : (Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().get(0)));
             int startIdx = 0;
             if (parts.length >= 4) {
                 org.bukkit.World w = Bukkit.getWorld(parts[0]);

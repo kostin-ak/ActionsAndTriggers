@@ -163,17 +163,38 @@ AATGui.builder("navigator")
 
 ---
 
-## 📚 Documentation Directory
+## 📚 Documentation & Ready-to-Use Examples
 
+- [📦 Production Examples Catalog](docs/examples/README.md) — 6 complete working scenarios from navigators to cryo fabricators.
 - [🏛️ Architecture & Lifecycle Guide](docs/en/ARCHITECTURE.md)
 - [🖥️ GUI Composite Widget Engine](docs/en/GUI_ENGINE.md)
+- [🎨 GUI Creation via YAML Tutorial](docs/en/CONFIG_GUI_TUTORIAL.md)
 - [⚡ Full Catalog of Triggers, Filters & Actions](docs/en/TRIGGERS_AND_ACTIONS.md)
+- [📜 Scripting Triggers via YAML Tutorial](docs/en/CONFIG_SCRIPTS_TUTORIAL.md)
 - [💻 Java & Kotlin Developer API Guide](docs/en/API_GUIDE.md)
 - [📊 Benchmark & Optimization Metrics](docs/en/BENCHMARK_REPORT.md)
 
 ---
 
+## 🔨 Building & Modular Artifacts
+
+The project offers dedicated Gradle build tasks:
+
+```bash
+# 1. Compile lightweight public API jar (for external plugin developers)
+./gradlew apiJar
+# Output: build/libs/ActionsAndTriggers-1.0-SNAPSHOT-api.jar (117 KB)
+
+# 2. Compile full server runtime jar (with shaded Lamp and engine internals)
+./gradlew shadowJar
+# Output: build/libs/ActionsAndTriggers-1.0-SNAPSHOT-all.jar (569 KB)
+```
+
+---
+
 ## ⚖️ License & Intellectual Property
 
-This project is open-source. All rights reserved by the original author.
-Forks and modifications are permitted strictly subject to preserving full attribution and original author credits. Commercial rights and distribution options are outlined in the licensing documentation.
+This project is licensed under the **[PolyForm Noncommercial License 1.0.0](LICENSE)**.
+- **Commercial Rights**: Permanently and exclusively reserved by the original author (**Kostin AK**). Nobody else may sell, monetize, or bundle this software commercially.
+- **Forking & Personal Use**: You are free to view source code, fork, modify, audit, and use it on non-commercial community servers.
+- **Strict Attribution**: All forks must preserve the original author credit (**Kostin AK**), license text, and a direct link to this official repository without rebranding abuse.

@@ -1,0 +1,62 @@
+# 🌟 Пример 05: Прогрессия игрока и мягкая интеграция LuckPerms
+
+## Описание сценария
+Автоматизация карьерной лестницы игрока на сервере без самописных Java-плагинов:
+1. **Первый вход игрока (`core:player_join`)**:
+   - Приветственный заголовок Title с MiniMessage-градиентом.
+   - Выдача стартового набора и атласа (`oraxen:astral_atlas`).
+   - Отображение текущей группы игрока в LuckPerms (`{player.group}`) и префикса (`{player.prefix}`).
+2. **Получение достижения (`core:player_advancement_done`)**:
+   - При получении достижения "Cover Me in Diamonds" (Алмазная броня) игрок автоматически повышается в группу `veteran` через действие `core:set_group`.
+   - Ему выдается пермишен `core:add_permission` на полет в лобби `lobby.fly`.
+   - Проигрывается салют и звуковой сигнал на весь сервер.
+
+---
+
+## Файлы конфигурации
+
+### `triggers/progression_and_luckperms.yml`
+```yaml
+triggers:
+  # 1. ВХОД ИГРОКА НА СЕРВЕР
+  - trigger: "core:player_join"
+    actions:
+      - action: "core:message"
+        type: "title"
+        text: "<gradient:#74B9FF:#0984E3>Добро пожаловать!</gradient>"
+        subtitle: "<gray>Ваш статус: <gold>{player.prefix}{player.group}</gold></gray>"
+      - action: "core:sound"
+        sound: "ui.toast.challenge_complete"
+        pitch: 1.2
+      - action: "core:give_item"
+        material: "oraxen:astral_atlas"
+        amount: 1
+        if_absent: true
+
+  # 2. АВТОПОВЫШЕНИЕ ПРИ ВЫПОЛНЕНИИ ДОСТИЖЕНИЯ
+  - trigger: "core:player_advancement_done"
+    conditions:
+      - type: "core:match"
+        template: "{advancement}"
+        value: "minecraft:story/shiny_gear"   # Алмазная броня
+      - type: "core:not_in_group"
+        group: "veteran"
+    actions:
+      # Повышение группы в LuckPerms
+      - action: "core:set_group"
+        group: "veteran"
+      - action: "core:add_permission"
+        permission: "lobby.fly"
+
+      # Эффекты праздника
+      - action: "core:firework"
+        power: 2
+        type: "BALL_LARGE"
+        colors: ["#74B9FF", "#FDCB6E", "#00CEC9"]
+      - action: "core:sound"
+        sound: "ui.toast.challenge_complete"
+        volume: 1.0
+        pitch: 1.0
+      - action: "core:message"
+        text: "<gradient:#FDCB6E:#E17055><bold>[ПОВЫШЕНИЕ]</bold> {player} получил ранг <gold>ВЕТЕРАН</gold> за создание алмазной экипировки!</gradient>"
+```

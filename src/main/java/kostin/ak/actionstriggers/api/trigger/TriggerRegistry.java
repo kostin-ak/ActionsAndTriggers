@@ -58,6 +58,23 @@ public class TriggerRegistry {
         globalListeners.remove(callback);
     }
 
+    /**
+     * Отписывает всех слушателей, зарегистрированных указанным плагином.
+     * Критически важно для предотвращения дублирования триггеров при /aat reload.
+     */
+    public void unsubscribeAll(@NotNull Plugin plugin) {
+        for (List<TriggerSubscription> list : subscriptions.values()) {
+            list.removeIf(sub -> sub.plugin().equals(plugin));
+        }
+    }
+
+    /**
+     * Полная очистка всех подписок на события.
+     */
+    public void clearSubscriptions() {
+        subscriptions.clear();
+    }
+
 
     /**
      * Вызывает Триггер (бросает событие в шину).

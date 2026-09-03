@@ -6,7 +6,11 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class OraxenItemProvider implements ItemProvider {
+
     @Override
     public @NotNull String getNamespace() {
         return "oraxen";
@@ -23,5 +27,10 @@ public class OraxenItemProvider implements ItemProvider {
     @Override
     public @Nullable String getId(@NotNull ItemStack item) {
         return OraxenItems.getIdByItem(item);
+    }
+
+    @Override
+    public @NotNull List<String> getAvailableIds() {
+        return new ArrayList<>(OraxenItems.getEntriesAsMap().keySet());
     }
 }

@@ -49,6 +49,9 @@ public final class CoreKeys {
     public static final ContextKey<String> CLICKED_BLOCK_ID = ContextKey.of("clicked_block_id", String.class);
     public static final ContextKey<String> MAIN_HAND_ITEM_ID = ContextKey.of("main_hand_item_id", String.class);
     public static final ContextKey<String> OFF_HAND_ITEM_ID = ContextKey.of("off_hand_item_id", String.class);
+    public static final ContextKey<String> FROM_WORLD = ContextKey.of("from_world", String.class);
+    public static final ContextKey<String> TO_WORLD = ContextKey.of("to_world", String.class);
+    public static final ContextKey<String> WORLD = ContextKey.of("world", String.class);
 
 
     public static enum ButtonType{

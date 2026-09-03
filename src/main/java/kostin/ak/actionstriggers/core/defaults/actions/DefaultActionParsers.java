@@ -20,6 +20,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 
 import java.util.Map;
@@ -185,14 +186,26 @@ public final class DefaultActionParsers implements IActionParsers {
     @ActionParam(key = CoreActionParams.MATERIAL, type = String.class, required = true, description = "Материал или ID предмета для выдачи (namespace:id). По умолчанию: minecraft:stone")
     @ActionParam(key = CoreActionParams.AMOUNT, type = Integer.class, description = "Количество выдаваемых предметов. По умолчанию: 1")
     public static Action parseGiveItem(Map<String, Object> params) {
+        boolean ifAbsent = Boolean.parseBoolean(String.valueOf(params.getOrDefault("if_absent", params.getOrDefault("unique", "false"))));
+
         return context -> {
             Player player = context.get(CoreKeys.PLAYER);
             if (player == null || !player.isOnline()) return false;
 
             ActionParameters actionParams = new ActionParameters(params, context);
-            // Заметь: теперь дефолтное значение с неймспейсом
-            String materialStr = actionParams.getString(CoreActionParams.MATERIAL, "minecraft:stone");
+            String rawMatKey = params.containsKey("item") ? "item" : CoreActionParams.MATERIAL;
+            String materialStr = actionParams.getString(rawMatKey, "minecraft:stone");
             int amount = actionParams.getInt(CoreActionParams.AMOUNT, 1);
+
+            if (ifAbsent) {
+                for (ItemStack is : player.getInventory().getContents()) {
+                    if (is == null || is.getType() == Material.AIR) continue;
+                    String fullId = ActionTriggerAPI.getItems().getFullId(is);
+                    if (fullId != null && fullId.equalsIgnoreCase(materialStr)) {
+                        return false; // Уже есть в инвентаре, пропускаем выдачу
+                    }
+                }
+            }
 
             // Магия! Используем наш новый Реестр. Он сам разберется, какой плагин дергать.
             ItemStack item = ActionTriggerAPI.getItems().resolveItem(materialStr);
@@ -402,6 +415,202 @@ public final class DefaultActionParsers implements IActionParsers {
                 return true;
             }
             return false;
+        };
+    }
+
+    @ConfigAction("core:open_gui")
+    @ActionParam(key = "gui", type = String.class, required = true, description = "Идентификатор GUI для открытия игроку")
+    public static Action parseOpenGui(Map<String, Object> params) {
+        String guiId = String.valueOf(params.getOrDefault("gui", params.getOrDefault("id", "")));
+        return context -> {
+            Player player = context.get(CoreKeys.PLAYER);
+            if (player == null || !player.isOnline()) return false;
+
+            if ("astral_atlas".equalsIgnoreCase(guiId) && kostin.ak.actionstriggers.ActionsTriggers.getCombatTracker().isInCombat(player)) {
+                int remaining = kostin.ak.actionstriggers.ActionsTriggers.getCombatTracker().getRemainingSeconds(player);
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 0.9f);
+                player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_FIRE_EXTINGUISH, 0.8f, 1.5f);
+                player.sendActionBar(MiniMessage.miniMessage().deserialize(
+                        "<red><bold>✖ Астральные потоки нестабильны в бою! Подождите " + remaining + " сек.</bold></red>"
+                ));
+                return false;
+            }
+
+            org.bukkit.block.Block block = context.get(CoreKeys.BLOCK);
+            return kostin.ak.actionstriggers.ActionsTriggers.getGuiRegistry().openGui(player, guiId, block);
+        };
+    }
+
+    @ConfigAction("core:close_gui")
+    public static Action parseCloseGui(Map<String, Object> params) {
+        return context -> {
+            Player player = context.get(CoreKeys.PLAYER);
+            if (player == null || !player.isOnline()) return false;
+            Bukkit.getScheduler().runTask(kostin.ak.actionstriggers.ActionsTriggers.getInstance(), (Runnable) player::closeInventory);
+            return true;
+        };
+    }
+
+    @ConfigAction("core:tag_combat")
+    public static Action parseTagCombat(Map<String, Object> params) {
+        int seconds = 15;
+        if (params.containsKey("seconds")) {
+            try {
+                seconds = Integer.parseInt(params.get("seconds").toString());
+            } catch (NumberFormatException ignored) {}
+        }
+        final int finalSeconds = seconds;
+        return context -> {
+            Player player = context.get(CoreKeys.PLAYER);
+            if (player == null || !player.isOnline()) return false;
+            kostin.ak.actionstriggers.ActionsTriggers.getCombatTracker().tag(player, finalSeconds);
+            return true;
+        };
+    }
+
+    @ConfigAction("core:untag_combat")
+    public static Action parseUntagCombat(Map<String, Object> params) {
+        return context -> {
+            Player player = context.get(CoreKeys.PLAYER);
+            if (player == null || !player.isOnline()) return false;
+            kostin.ak.actionstriggers.ActionsTriggers.getCombatTracker().untag(player);
+            return true;
+        };
+    }
+
+    @ConfigAction("core:cryo_freeze")
+    public static Action parseCryoFreeze(Map<String, Object> params) {
+        int waterSlot = params.containsKey("water_slot") ? Integer.parseInt(params.get("water_slot").toString()) : 10;
+        int crystalSlot = params.containsKey("crystal_slot") ? Integer.parseInt(params.get("crystal_slot").toString()) : 12;
+        int outputSlot = params.containsKey("output_slot") ? Integer.parseInt(params.get("output_slot").toString()) : 16;
+
+        return context -> {
+            Player player = context.get(CoreKeys.PLAYER);
+            if (player == null || !player.isOnline()) return false;
+
+            org.bukkit.inventory.InventoryView openView = player.getOpenInventory();
+            org.bukkit.inventory.Inventory topInv = openView.getTopInventory();
+            if (!(topInv.getHolder() instanceof kostin.ak.actionstriggers.api.gui.AATGuiHolder holder)) {
+                return false;
+            }
+
+            ItemStack waterItem = topInv.getItem(waterSlot);
+            if (waterItem == null || waterItem.getType() != Material.WATER_BUCKET) {
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>✖ Поместите Ведро с Водой в слот сырья (слот слева)!</red>"));
+                return false;
+            }
+
+            ItemStack crystalItem = topInv.getItem(crystalSlot);
+            String crystalId = crystalItem != null ? ActionTriggerAPI.getItems().getFullId(crystalItem) : "";
+            boolean isCrystal = crystalItem != null && (crystalId.contains("frost_crystal") || crystalItem.getType() == Material.AMETHYST_SHARD || crystalItem.getType() == Material.PRISMARINE_CRYSTALS);
+            if (!isCrystal) {
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>✖ Поместите Морозный Кристалл в слот катализатора!</red>"));
+                return false;
+            }
+
+            if (Boolean.TRUE.equals(holder.getSessionState().get("progress_running"))) {
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>✖ Станок уже выполняет заморозку! Дождитесь завершения.</red>"));
+                return false;
+            }
+
+            // Проверяем выбранный режим и длительность
+            String mode = holder.getSessionState().getOrDefault("fabricator_mode", "blue_ice").toString();
+            Material iceMat = Material.BLUE_ICE;
+            int iceAmount = 4;
+            int durationTicks = 160; // 8 секунд для Blue Ice
+
+            if (mode.equalsIgnoreCase("packed_ice")) {
+                iceMat = Material.PACKED_ICE;
+                iceAmount = 16;
+                durationTicks = 100; // 5 секунд для Packed Ice
+            } else if (mode.equalsIgnoreCase("ice")) {
+                iceMat = Material.ICE;
+                iceAmount = 32;
+                durationTicks = 60; // 3 секунды для обычного Ice
+            }
+
+            ItemStack currentOut = topInv.getItem(outputSlot);
+            if (currentOut != null && currentOut.getType() != Material.AIR) {
+                kostin.ak.actionstriggers.api.gui.widget.Widget outWidget = holder.getSlotWidgets().get(outputSlot);
+                boolean isPl = (outWidget instanceof kostin.ak.actionstriggers.api.gui.widget.impl.OutputSlotWidget osw && osw.isPlaceholder(currentOut));
+                if (!isPl) {
+                    player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_VILLAGER_NO, 1.0f, 1.0f);
+                    player.sendActionBar(MiniMessage.miniMessage().deserialize("<red>✖ Сначала заберите готовый лед из слота выхода!</red>"));
+                    return false;
+                }
+            }
+
+            // 1. Потребляем ингредиенты СРАЗУ (защита от дюпа)
+            if (waterItem.getAmount() > 1) {
+                waterItem.setAmount(waterItem.getAmount() - 1);
+                topInv.setItem(waterSlot, waterItem);
+                player.getInventory().addItem(new ItemStack(Material.BUCKET));
+            } else {
+                topInv.setItem(waterSlot, new ItemStack(Material.BUCKET));
+            }
+
+            if (crystalItem.getAmount() > 1) {
+                crystalItem.setAmount(crystalItem.getAmount() - 1);
+                topInv.setItem(crystalSlot, crystalItem);
+            } else {
+                topInv.setItem(crystalSlot, null);
+            }
+
+            // Стартовые звуки активации
+            player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_BEACON_ACTIVATE, 0.8f, 1.6f);
+            player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_BREWING_STAND_BREW, 1.0f, 0.9f);
+            player.sendActionBar(MiniMessage.miniMessage().deserialize("<gradient:#74B9FF:#0984E3>⚙ Криогенный цикл запущен...</gradient>"));
+
+            final Material finalIceMat = iceMat;
+            final int finalIceAmount = iceAmount;
+
+            Runnable onFinish = () -> {
+                // Выдаем лед в слот выдачи
+                if (player.isOnline() && player.getOpenInventory().getTopInventory().equals(topInv)) {
+                    topInv.setItem(outputSlot, new ItemStack(finalIceMat, finalIceAmount));
+                } else if (player.isOnline()) {
+                    player.getInventory().addItem(new ItemStack(finalIceMat, finalIceAmount));
+                } else if (holder.getBoundBlock() != null) {
+                    holder.getBoundBlock().getWorld().dropItemNaturally(
+                            holder.getBoundBlock().getLocation().add(0.5, 1.0, 0.5),
+                            new ItemStack(finalIceMat, finalIceAmount)
+                    );
+                }
+
+                // Эффекты завершения
+                if (player.isOnline()) {
+                    player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_GLASS_BREAK, 1.0f, 1.5f);
+                    player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_PLAYER_LEVELUP, 0.8f, 1.8f);
+                    player.sendActionBar(MiniMessage.miniMessage().deserialize("<gradient:#74B9FF:#0984E3>❄ Крио-заморозка завершена! Заберите лед.</gradient>"));
+                }
+                if (holder.getBoundBlock() != null) {
+                    holder.getBoundBlock().getWorld().spawnParticle(
+                            org.bukkit.Particle.SNOWFLAKE,
+                            holder.getBoundBlock().getLocation().add(0.5, 1.1, 0.5),
+                            30, 0.5, 0.5, 0.5, 0.05
+                    );
+                }
+            };
+
+            // Ищем ProgressBarWidget
+            kostin.ak.actionstriggers.api.gui.widget.impl.ProgressBarWidget pb = null;
+            for (kostin.ak.actionstriggers.api.gui.widget.Widget w : holder.getSlotWidgets().values()) {
+                if (w instanceof kostin.ak.actionstriggers.api.gui.widget.impl.ProgressBarWidget candidate) {
+                    pb = candidate;
+                    break;
+                }
+            }
+
+            if (pb != null) {
+                pb.startProcess(holder, durationTicks, onFinish);
+            } else {
+                onFinish.run();
+            }
+
+            return true;
         };
     }
 }

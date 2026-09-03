@@ -60,7 +60,17 @@ public class AATParser {
     // 2. ПАРСИНГ ЭКШЕНОВ (С ПРОКСИРОВАНИЕМ ИНЪЕКЦИЙ)
     // ========================================================================
 
-    public Action parseAction(@NotNull Map<String, Object> map) {
+    @SuppressWarnings("unchecked")
+    public Action parseAction(@NotNull Object actionConfig) {
+        Map<String, Object> map;
+        if (actionConfig instanceof org.bukkit.configuration.ConfigurationSection cs) {
+            map = cs.getValues(false);
+        } else if (actionConfig instanceof Map<?, ?> m) {
+            map = (Map<String, Object>) m;
+        } else {
+            throw new AATParseException("Входные данные экшена должны быть Map или ConfigurationSection, получено: " + actionConfig);
+        }
+
         String actionId = options.findKey(map, options.actionKeys);
 
         if (actionId == null) {
@@ -88,17 +98,18 @@ public class AATParser {
         return rawAction;
     }
 
-    @SuppressWarnings("unchecked")
     public List<Action> parseActions(@NotNull Object actionsConfig) {
-        if (!(actionsConfig instanceof List)) {
-            throw new AATParseException("Блок экшенов должен быть списком (List)!");
-        }
-
-        List<Map<String, Object>> mapList = (List<Map<String, Object>>) actionsConfig;
         List<Action> parsedActions = new ArrayList<>();
-
-        for (Map<String, Object> map : mapList) {
-            parsedActions.add(parseAction(map));
+        if (actionsConfig instanceof List<?> list) {
+            for (Object obj : list) {
+                if (obj != null) {
+                    parsedActions.add(parseAction(obj));
+                }
+            }
+        } else if (actionsConfig instanceof org.bukkit.configuration.ConfigurationSection || actionsConfig instanceof Map<?, ?>) {
+            parsedActions.add(parseAction(actionsConfig));
+        } else {
+            throw new AATParseException("Блок экшенов должен быть списком (List) или секцией, получено: " + actionsConfig.getClass().getName());
         }
 
         return parsedActions;
@@ -108,7 +119,17 @@ public class AATParser {
     // 3. ПАРСИНГ УСЛОВИЙ (ФИЛЬТРОВ)
     // ========================================================================
 
-    public Filter parseCondition(@NotNull Map<String, Object> map) {
+    @SuppressWarnings("unchecked")
+    public Filter parseCondition(@NotNull Object conditionConfig) {
+        Map<String, Object> map;
+        if (conditionConfig instanceof org.bukkit.configuration.ConfigurationSection cs) {
+            map = cs.getValues(false);
+        } else if (conditionConfig instanceof Map<?, ?> m) {
+            map = (Map<String, Object>) m;
+        } else {
+            throw new AATParseException("Входные данные условия должны быть Map или ConfigurationSection, получено: " + conditionConfig);
+        }
+
         String conditionId = options.findKey(map, options.conditionKeys);
         if (conditionId == null) {
             throw new AATParseException("В мапе условия не найден идентификатор! Ожидались ключи: " + options.conditionKeys);
@@ -121,18 +142,19 @@ public class AATParser {
         return ActionTriggerAPI.getFilters().create(key, map);
     }
 
-    @SuppressWarnings("unchecked")
     public Filter parseConditions(Object conditionsConfig) {
         if (conditionsConfig == null) return kostin.ak.actionstriggers.api.filter.Filters.alwaysTrue();
-        if (!(conditionsConfig instanceof List)) {
-            throw new AATParseException("Блок условий должен быть списком (List)!");
+        if (conditionsConfig instanceof org.bukkit.configuration.ConfigurationSection || conditionsConfig instanceof Map<?, ?>) {
+            return parseCondition(conditionsConfig);
+        }
+        if (!(conditionsConfig instanceof List<?> list)) {
+            throw new AATParseException("Блок условий должен быть списком (List) или секцией (Map), получено: " + conditionsConfig.getClass().getName());
         }
 
-        List<Map<String, Object>> mapList = (List<Map<String, Object>>) conditionsConfig;
-        if (mapList.isEmpty()) return kostin.ak.actionstriggers.api.filter.Filters.alwaysTrue();
+        if (list.isEmpty()) return kostin.ak.actionstriggers.api.filter.Filters.alwaysTrue();
 
         // Парсим каждый фильтр из списка
-        Filter[] parsedFilters = mapList.stream()
+        Filter[] parsedFilters = list.stream()
                 .map(this::parseCondition)
                 .toArray(Filter[]::new);
 

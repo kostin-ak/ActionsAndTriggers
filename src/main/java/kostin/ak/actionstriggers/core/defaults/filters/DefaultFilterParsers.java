@@ -42,6 +42,24 @@ public final class DefaultFilterParsers implements IFilterParsers {
         return Filters.alwaysTrue();
     }
 
+    @ConfigFilter("core:in_combat")
+    public static Filter parseInCombat(Map<String, Object> params) {
+        return context -> {
+            Player p = context.get(CoreKeys.PLAYER);
+            if (p == null) return false;
+            return kostin.ak.actionstriggers.ActionsTriggers.getCombatTracker().isInCombat(p);
+        };
+    }
+
+    @ConfigFilter("core:not_in_combat")
+    public static Filter parseNotInCombat(Map<String, Object> params) {
+        return context -> {
+            Player p = context.get(CoreKeys.PLAYER);
+            if (p == null) return true;
+            return !kostin.ak.actionstriggers.ActionsTriggers.getCombatTracker().isInCombat(p);
+        };
+    }
+
     @ConfigFilter("core:permission")
     public static Filter parsePermission(Map<String, Object> params) {
         String perm = String.valueOf(params.getOrDefault("permission", ""));
@@ -140,6 +158,12 @@ public final class DefaultFilterParsers implements IFilterParsers {
         return Filters.match(template, expected, ignoreCase);
     }
 
+    @ConfigFilter("core:mismatch")
+    public static Filter parseMismatch(Map<String, Object> params) {
+        Filter match = parseMatch(params);
+        return context -> !match.test(context);
+    }
+
     // ========================================================================
     // ЛОГИЧЕСКИЕ ОПЕРАТОРЫ
     // ========================================================================
@@ -206,6 +230,40 @@ public final class DefaultFilterParsers implements IFilterParsers {
 
             return targetMaterials.contains(currentId.toLowerCase());
         };
+    }
+
+    @ConfigFilter("core:has_item")
+    public static Filter parseHasItem(Map<String, Object> map) {
+        Object rawMat = map.containsKey(CoreActionParams.MATERIAL) ? map.get(CoreActionParams.MATERIAL) : map.get("item");
+        List<String> targetMaterials = extractStringList(rawMat);
+        int amount = 1;
+        if (map.containsKey("amount")) {
+            try {
+                amount = Integer.parseInt(map.get("amount").toString());
+            } catch (NumberFormatException ignored) {}
+        }
+        final int reqAmount = amount;
+
+        return context -> {
+            Player player = context.get(CoreKeys.PLAYER);
+            if (player == null || !player.isOnline()) return false;
+
+            int count = 0;
+            for (ItemStack is : player.getInventory().getContents()) {
+                if (is == null || is.getType() == Material.AIR) continue;
+                String fullId = ActionTriggerAPI.getItems().getFullId(is);
+                if (fullId != null && targetMaterials.contains(fullId.toLowerCase())) {
+                    count += is.getAmount();
+                }
+            }
+            return count >= reqAmount;
+        };
+    }
+
+    @ConfigFilter("core:has_not_item")
+    public static Filter parseHasNotItem(Map<String, Object> map) {
+        Filter hasItem = parseHasItem(map);
+        return context -> !hasItem.test(context);
     }
 
     /**

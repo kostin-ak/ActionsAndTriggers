@@ -59,4 +59,12 @@ public class BlockRegistry {
 
         return "minecraft:" + block.getType().name().toLowerCase();
     }
+
+    public java.util.Collection<BlockProvider> getProviders() {
+        return providers.values();
+    }
+
+    public BlockProvider getProvider(String namespace) {
+        return providers.get(namespace.toLowerCase());
+    }
 }

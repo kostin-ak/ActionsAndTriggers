@@ -1,10 +1,14 @@
 package kostin.ak.actionstriggers.api.provider.impl;
 
 import dev.lone.itemsadder.api.CustomStack;
+import dev.lone.itemsadder.api.ItemsAdder;
 import kostin.ak.actionstriggers.api.provider.ItemProvider;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ItemsAdderItemProvider implements ItemProvider {
 
@@ -15,16 +19,28 @@ public class ItemsAdderItemProvider implements ItemProvider {
 
     @Override
     public @Nullable ItemStack getItem(@NotNull String id) {
-        // Получаем объект CustomStack из ItemsAdder по его ID
         CustomStack stack = CustomStack.getInstance(id);
         return stack != null ? stack.getItemStack() : null;
     }
 
     @Override
     public @Nullable String getId(@NotNull ItemStack item) {
-        // Проверяем, является ли ванильный ItemStack кастомным предметом ItemsAdder
         CustomStack stack = CustomStack.byItemStack(item);
-        // getNamespacedID() вернет строку в формате "namespace:id" (например, "myitems:ruby_sword")
+        // Вернет локальный ID ItemsAdder (например: "myaddon:ruby_sword")
         return stack != null ? stack.getNamespacedID() : null;
+    }
+
+    @Override
+    public @NotNull List<String> getAvailableIds() {
+        List<String> ids = new ArrayList<>();
+        // Обязательная проверка на null, так как API ItemsAdder иногда возвращает null до полной загрузки
+        if (ItemsAdder.getAllItems() != null) {
+            for (CustomStack stack : ItemsAdder.getAllItems()) {
+                if (stack != null) {
+                    ids.add(stack.getNamespacedID());
+                }
+            }
+        }
+        return ids;
     }
 }

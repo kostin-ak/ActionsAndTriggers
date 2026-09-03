@@ -29,6 +29,7 @@ public class YamlTriggerLoader {
         if (files == null || files.length == 0) return;
 
         ActionTriggerAPI.getScripts().clear();
+        ActionTriggerAPI.getTriggers().unsubscribeAll(plugin);
 
         for (File file : files) {
             YamlConfiguration config = YamlConfiguration.loadConfiguration(file);

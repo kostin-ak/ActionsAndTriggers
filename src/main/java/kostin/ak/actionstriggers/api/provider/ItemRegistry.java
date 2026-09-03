@@ -61,4 +61,12 @@ public class ItemRegistry {
 
         return "minecraft:" + item.getType().name().toLowerCase();
     }
+
+    public java.util.Collection<ItemProvider> getProviders() {
+        return providers.values();
+    }
+
+    public ItemProvider getProvider(String namespace) {
+        return providers.get(namespace.toLowerCase());
+    }
 }

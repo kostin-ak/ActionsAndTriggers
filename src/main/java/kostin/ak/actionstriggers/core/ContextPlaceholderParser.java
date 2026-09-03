@@ -41,6 +41,7 @@ public class ContextPlaceholderParser {
                 case "name" -> p.getName();
                 case "uuid" -> p.getUniqueId().toString();
                 case "health" -> String.format("%.1f", p.getHealth());
+                case "combat_remaining" -> String.valueOf(kostin.ak.actionstriggers.ActionsTriggers.getCombatTracker().getRemainingSeconds(p));
                 default -> p.getName();
             };
         });
@@ -126,7 +127,12 @@ public class ContextPlaceholderParser {
         }
         matcher.appendTail(result);
 
-        return result.toString();
+        String parsed = result.toString();
+        Player player = context.get(CoreKeys.PLAYER);
+        if (player != null) {
+            parsed = kostin.ak.actionstriggers.core.hook.PapiHook.parse(player, parsed);
+        }
+        return parsed;
     }
 
     /**

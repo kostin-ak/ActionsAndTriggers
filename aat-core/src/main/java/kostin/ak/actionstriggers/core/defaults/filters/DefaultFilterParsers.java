@@ -80,6 +80,11 @@ public final class DefaultFilterParsers implements IFilterParsers {
         };
     }
 
+    @ConfigFilter("core:cooldown")
+    public static Filter parseCooldownAlias(Map<String, Object> params) {
+        return parseNotOnCooldown(params);
+    }
+
     @ConfigFilter("core:permission")
     public static Filter parsePermission(Map<String, Object> params) {
         String perm = String.valueOf(params.getOrDefault("permission", ""));

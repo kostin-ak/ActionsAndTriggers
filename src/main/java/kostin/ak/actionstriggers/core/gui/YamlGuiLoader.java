@@ -297,6 +297,31 @@ public class YamlGuiLoader {
                 return cycle;
             }
 
+            case "fluid_tank": {
+                int height = sec.getInt("height", 3);
+                String levelKey = sec.getString("level_key", "tank_level");
+                int maxLevel = sec.getInt("max_level", 100);
+                kostin.ak.actionstriggers.api.gui.widget.impl.FluidTankWidget tank =
+                        new kostin.ak.actionstriggers.api.gui.widget.impl.FluidTankWidget(x, y, height, levelKey, maxLevel);
+                tank.setCondition(condition);
+                if (sec.contains("filled_material")) tank.setFilledMaterial(sec.getString("filled_material"));
+                if (sec.contains("empty_material")) tank.setEmptyMaterial(sec.getString("empty_material"));
+                if (sec.contains("title")) tank.setTitle(sec.getString("title"));
+                return tank;
+            }
+
+            case "paged_list": {
+                int w = sec.getInt("width", 9);
+                int h = sec.getInt("height", 3);
+                kostin.ak.actionstriggers.api.gui.widget.impl.PagedListWidget paged =
+                        new kostin.ak.actionstriggers.api.gui.widget.impl.PagedListWidget(x, y, w, h);
+                paged.setCondition(condition);
+                paged.setPrevSlot(sec.getInt("prev_slot", -1));
+                paged.setNextSlot(sec.getInt("next_slot", -1));
+                if (sec.contains("session_key")) paged.setPageSessionKey(sec.getString("session_key"));
+                return paged;
+            }
+
             case "button":
             default: {
                 ButtonWidget button = new ButtonWidget(x, y);

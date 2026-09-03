@@ -109,4 +109,10 @@ public class GuiContext {
         pdc.set(nsk, PersistentDataType.INTEGER, value);
         saveBlockPdc();
     }
+
+    public void refreshGui() {
+        if (holder.getGuiDefinition() instanceof kostin.ak.actionstriggers.core.gui.GuiDefinition def && holder.getInventory() != null) {
+            kostin.ak.actionstriggers.ActionsTriggers.getGuiRegistry().renderGui(this, def, holder.getInventory());
+        }
+    }
 }

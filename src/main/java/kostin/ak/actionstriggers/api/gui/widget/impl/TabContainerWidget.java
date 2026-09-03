@@ -1,14 +1,10 @@
 package kostin.ak.actionstriggers.api.gui.widget.impl;
 
-import kostin.ak.actionstriggers.api.ActionTriggerAPI;
 import kostin.ak.actionstriggers.api.gui.ClickContext;
 import kostin.ak.actionstriggers.api.gui.GuiContext;
 import kostin.ak.actionstriggers.api.gui.widget.AbstractWidget;
 import kostin.ak.actionstriggers.api.gui.widget.Widget;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -18,140 +14,93 @@ import java.util.Map;
 
 /**
  * Контейнер вкладок (TabContainerWidget).
- * Позволяет переключать вкладки в одном инвентаре без мерцания и переоткрытия.
+ * Позволяет переключать визуальные страницы/вкладки в рамках одного GUI окна.
  */
 public class TabContainerWidget extends AbstractWidget {
 
-    public static class TabEntry {
-        private String id;
-        private int slot;
-        private String iconMaterial;
-        private String name;
-        private Widget content;
+    public record Tab(String id, ItemStack icon, List<Widget> widgets) {}
 
-        public TabEntry() {}
-
-        public String getId() { return id; }
-        public void setId(String id) { this.id = id; }
-        public int getSlot() { return slot; }
-        public void setSlot(int slot) { this.slot = slot; }
-        public String getIconMaterial() { return iconMaterial; }
-        public void setIconMaterial(String iconMaterial) { this.iconMaterial = iconMaterial; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public Widget getContent() { return content; }
-        public void setContent(Widget content) { this.content = content; }
-    }
-
-    private List<TabEntry> tabs = new ArrayList<>();
-    private String defaultTab;
-
-    private final Map<Integer, TabEntry> slotToTab = new HashMap<>();
+    private String activeTabKey = "active_tab";
+    private final List<Tab> tabs = new ArrayList<>();
+    private final Map<Integer, String> tabButtonSlots = new HashMap<>();
 
     public TabContainerWidget() {
         super(0, 0, 9, 6);
     }
 
-    private TabEntry getActiveTabEntry(GuiContext ctx) {
-        String active = ctx.getActiveTab();
-        if (active == null || active.isEmpty()) {
-            active = (defaultTab != null && !defaultTab.isEmpty()) ? defaultTab : (tabs.isEmpty() ? "" : tabs.get(0).getId());
-            ctx.setActiveTab(active);
-        }
-
-        for (TabEntry tab : tabs) {
-            if (tab.getId().equalsIgnoreCase(active)) {
-                return tab;
-            }
-        }
-        return tabs.isEmpty() ? null : tabs.get(0);
+    public void addTab(String id, int buttonSlot, ItemStack icon, List<Widget> widgets) {
+        tabs.add(new Tab(id, icon, widgets));
+        tabButtonSlots.put(buttonSlot, id);
     }
 
     @Override
     public void render(@NotNull GuiContext ctx, @NotNull Map<Integer, ItemStack> matrix) {
-        if (!isVisible(ctx) || tabs.isEmpty()) return;
+        if (!isVisible(ctx)) return;
 
-        slotToTab.clear();
-        TabEntry activeEntry = getActiveTabEntry(ctx);
-        MiniMessage mm = MiniMessage.miniMessage();
-
-        // 1. Отрисовываем кнопки вкладок
-        for (TabEntry tab : tabs) {
-            slotToTab.put(tab.getSlot(), tab);
-
-            ItemStack icon = ActionTriggerAPI.getItems().resolveItem(tab.getIconMaterial());
-            if (icon == null) icon = new ItemStack(Material.BOOK);
-            else icon = icon.clone();
-
-            ItemMeta meta = icon.getItemMeta();
-            if (meta != null) {
-                boolean isSelected = activeEntry != null && activeEntry.getId().equalsIgnoreCase(tab.getId());
-                String title = isSelected ? ("<green>▶ " + tab.getName() + " ◀</green>") : ("<gray>" + tab.getName() + "</gray>");
-                meta.displayName(mm.deserialize(title));
-                icon.setItemMeta(meta);
-            }
-
-            matrix.put(tab.getSlot(), icon);
+        String currentTab = getActiveTab(ctx);
+        if (currentTab == null && !tabs.isEmpty()) {
+            currentTab = tabs.get(0).id();
+            ctx.getHolder().getSessionState().put(activeTabKey, currentTab);
         }
 
-        // 2. Отрисовываем контент активной вкладки
-        if (activeEntry != null && activeEntry.getContent() != null) {
-            activeEntry.getContent().render(ctx, matrix);
+        // 1. Отрисовываем кнопки вкладок
+        for (Map.Entry<Integer, String> entry : tabButtonSlots.entrySet()) {
+            int slot = entry.getKey();
+            String tabId = entry.getValue();
+            for (Tab tab : tabs) {
+                if (tab.id().equalsIgnoreCase(tabId)) {
+                    matrix.put(slot, tab.icon());
+                    break;
+                }
+            }
+        }
+
+        // 2. Отрисовываем виджеты активной вкладки
+        for (Tab tab : tabs) {
+            if (tab.id().equalsIgnoreCase(currentTab)) {
+                for (Widget w : tab.widgets()) {
+                    w.render(ctx, matrix);
+                }
+                break;
+            }
         }
     }
 
     @Override
     public boolean handleClick(@NotNull ClickContext ctx) {
-        int slot = ctx.getSlot();
+        int clickedSlot = ctx.getSlot();
+        GuiContext gCtx = ctx.getGuiContext();
 
-        // Клик по кнопке вкладки
-        TabEntry clickedTab = slotToTab.get(slot);
-        if (clickedTab != null) {
-            if (!clickedTab.getId().equalsIgnoreCase(ctx.getGuiContext().getActiveTab())) {
-                ctx.getGuiContext().setActiveTab(clickedTab.getId());
-                ctx.playSound("ui.button.click", 1.0f, 1.0f);
-                refreshTabContent(ctx);
-            }
+        // Проверяем клик по переключателю вкладки
+        if (tabButtonSlots.containsKey(clickedSlot)) {
+            String newTab = tabButtonSlots.get(clickedSlot);
+            gCtx.getHolder().getSessionState().put(activeTabKey, newTab);
+            gCtx.refreshGui();
             return true;
         }
 
-        // Клик по контенту активной вкладки
-        TabEntry activeEntry = getActiveTabEntry(ctx.getGuiContext());
-        if (activeEntry != null && activeEntry.getContent() != null) {
-            if (activeEntry.getContent().occupiesSlot(slot)) {
-                return activeEntry.getContent().handleClick(ctx);
+        // Перенаправляем клик виджетам активной вкладки
+        String currentTab = getActiveTab(gCtx);
+        for (Tab tab : tabs) {
+            if (tab.id().equalsIgnoreCase(currentTab)) {
+                for (Widget w : tab.widgets()) {
+                    if (w.occupiesSlot(clickedSlot)) {
+                        return w.handleClick(ctx);
+                    }
+                }
+                break;
             }
         }
 
         return true;
     }
 
-    private void refreshTabContent(ClickContext ctx) {
-        Map<Integer, ItemStack> matrix = new HashMap<>();
-        render(ctx.getGuiContext(), matrix);
-
-        // Очищаем инвентарь и выставляем новое состояние
-        for (int i = 0; i < 54; i++) {
-            ctx.getEvent().getInventory().setItem(i, null);
-        }
-        for (Map.Entry<Integer, ItemStack> entry : matrix.entrySet()) {
-            ctx.getEvent().getInventory().setItem(entry.getKey(), entry.getValue());
-        }
+    private String getActiveTab(GuiContext ctx) {
+        Object val = ctx.getHolder().getSessionState().get(activeTabKey);
+        return val != null ? val.toString() : null;
     }
 
-    @Override
-    public boolean occupiesSlot(int slot) {
-        if (slotToTab.containsKey(slot)) return true;
-        TabEntry active = tabs.isEmpty() ? null : tabs.get(0);
-        if (active != null && active.getContent() != null) {
-            return active.getContent().occupiesSlot(slot);
-        }
-        return false;
-    }
-
-    public List<TabEntry> getTabs() { return tabs; }
-    public void setTabs(List<TabEntry> tabs) { this.tabs = tabs; }
-
-    public String getDefaultTab() { return defaultTab; }
-    public void setDefaultTab(String defaultTab) { this.defaultTab = defaultTab; }
+    public String getActiveTabKey() { return activeTabKey; }
+    public void setActiveTabKey(String activeTabKey) { this.activeTabKey = activeTabKey; }
+    public List<Tab> getTabs() { return tabs; }
 }

@@ -1,6 +1,6 @@
 # 📊 Core Performance Benchmark Report
 
-- **Timestamp**: 2026-09-03T23:29:17.423004500
+- **Timestamp**: 2026-09-03T23:35:12.398924700
 - **JVM Runtime**: Java 21.0.2 (Windows 11, amd64)
 - **Benchmark Iterations**: 100 000 operations per test
 
@@ -10,9 +10,9 @@
 
 | Component / Target Operation | Elapsed (ms) | Latency (ns/op) | Throughput (ops/sec) | Heap Churn (MB) |
 | :--- | :--- | :--- | :--- | :--- |
-| **ContextPlaceholderParser.resolve()** | 288,91 ms | 2889,1 ns | 346 124 op/s | ~3,52 MB |
-| **Regex Placeholder Extraction** | 123,13 ms | 1231,3 ns | 812 120 op/s | ~19,52 MB |
-| **ExecutionContext Alloc & Dispatch** | 12,72 ms | 127,2 ns | 7 863 427 op/s | ~22,50 MB |
+| **ContextPlaceholderParser.resolve()** | 300,08 ms | 3000,8 ns | 333 246 op/s | ~30,01 MB |
+| **Regex Placeholder Extraction** | 121,38 ms | 1213,8 ns | 823 880 op/s | ~97,01 MB |
+| **ExecutionContext Alloc & Dispatch** | 13,79 ms | 137,9 ns | 7 252 683 op/s | ~22,50 MB |
 
 ---
 

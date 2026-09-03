@@ -482,6 +482,7 @@ public final class DefaultActionParsers implements IActionParsers {
         int waterSlot = params.containsKey("water_slot") ? Integer.parseInt(params.get("water_slot").toString()) : 10;
         int crystalSlot = params.containsKey("crystal_slot") ? Integer.parseInt(params.get("crystal_slot").toString()) : 12;
         int outputSlot = params.containsKey("output_slot") ? Integer.parseInt(params.get("output_slot").toString()) : 16;
+        int upgradeSlot = params.containsKey("upgrade_slot") ? Integer.parseInt(params.get("upgrade_slot").toString()) : 24;
 
         return context -> {
             Player player = context.get(CoreKeys.PLAYER);
@@ -531,6 +532,27 @@ public final class DefaultActionParsers implements IActionParsers {
                 durationTicks = 60; // 3 секунды для обычного Ice
             }
 
+            // Проверяем наличие ускорителя
+            if (upgradeSlot >= 0 && upgradeSlot < topInv.getSize()) {
+                ItemStack upItem = topInv.getItem(upgradeSlot);
+                if (upItem != null && upItem.getType() != Material.AIR) {
+                    kostin.ak.actionstriggers.api.gui.widget.Widget upWidget = holder.getSlotWidgets().get(upgradeSlot);
+                    boolean isUpPl = (upWidget instanceof kostin.ak.actionstriggers.api.gui.widget.impl.InputSlotWidget isw && isw.isPlaceholder(upItem));
+                    if (!isUpPl) {
+                        String fullId = ActionTriggerAPI.getItems().getFullId(upItem).toLowerCase();
+                        double speedMultiplier = 1.0;
+                        if (fullId.contains("cryo_accelerator_t3") || fullId.contains("netherite") || fullId.contains("diamond")) {
+                            speedMultiplier = 0.25; // Tier 3 (-75%)
+                        } else if (fullId.contains("cryo_accelerator_t2") || fullId.contains("gold") || fullId.contains("emerald")) {
+                            speedMultiplier = 0.50; // Tier 2 (-50%)
+                        } else if (fullId.contains("cryo_accelerator_t1") || fullId.contains("iron") || fullId.contains("copper")) {
+                            speedMultiplier = 0.75; // Tier 1 (-25%)
+                        }
+                        durationTicks = Math.max(20, (int) (durationTicks * speedMultiplier));
+                    }
+                }
+            }
+
             ItemStack currentOut = topInv.getItem(outputSlot);
             if (currentOut != null && currentOut.getType() != Material.AIR) {
                 kostin.ak.actionstriggers.api.gui.widget.Widget outWidget = holder.getSlotWidgets().get(outputSlot);
@@ -571,7 +593,10 @@ public final class DefaultActionParsers implements IActionParsers {
                 if (player.isOnline() && player.getOpenInventory().getTopInventory().equals(topInv)) {
                     topInv.setItem(outputSlot, new ItemStack(finalIceMat, finalIceAmount));
                 } else if (player.isOnline()) {
-                    player.getInventory().addItem(new ItemStack(finalIceMat, finalIceAmount));
+                    var leftovers = player.getInventory().addItem(new ItemStack(finalIceMat, finalIceAmount));
+                    for (var drop : leftovers.values()) {
+                        player.getWorld().dropItemNaturally(player.getLocation(), drop);
+                    }
                 } else if (holder.getBoundBlock() != null) {
                     holder.getBoundBlock().getWorld().dropItemNaturally(
                             holder.getBoundBlock().getLocation().add(0.5, 1.0, 0.5),

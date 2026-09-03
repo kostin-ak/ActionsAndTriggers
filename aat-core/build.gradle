@@ -4,13 +4,15 @@ plugins {
     id 'jacoco'
 }
 
+def paperVersion = project.findProperty('paperVersion') ?: '1.21.5-R0.1-SNAPSHOT'
+
 dependencies {
     // Внутренняя зависимость от модуля API
     implementation project(':aat-api')
 
-    // Paper API
-    compileOnly("io.papermc.paper:paper-api:1.21.5-R0.1-SNAPSHOT")
-    testImplementation("io.papermc.paper:paper-api:1.21.5-R0.1-SNAPSHOT")
+    // Paper API (динамическая версия для тестирования совместимости 1.21.4 - 26.2)
+    compileOnly("io.papermc.paper:paper-api:${paperVersion}")
+    testImplementation("io.papermc.paper:paper-api:${paperVersion}")
 
     // Revxrsal Commands (Lamp)
     implementation("com.github.Revxrsal.Lamp:common:3.2.1")
@@ -47,6 +49,15 @@ shadowJar {
     destinationDirectory.set(file("${rootProject.projectDir}/build/libs"))
 }
 
+processResources {
+    def props = [version: project.version]
+    inputs.properties props
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
+    }
+}
+
 test {
     useJUnitPlatform()
     finalizedBy jacocoTestReport
@@ -59,3 +70,4 @@ jacocoTestReport {
         html.required = true
     }
 }
+

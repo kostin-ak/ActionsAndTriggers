@@ -1,59 +1,56 @@
-# ⚡ ActionsAndTriggers (AAT)
+# ActionsAndTriggers (AAT)
 
 <div align="center">
 
-[![Java](https://img.shields.io/badge/Java-21-orange.svg?style=flat-square&logo=openjdk)](https://openjdk.org/)
-[![Paper](https://img.shields.io/badge/Paper-1.21.4+-blue.svg?style=flat-square)](https://papermc.io/)
-[![Tests](https://img.shields.io/badge/Тесты-34%2F34%20Пройдено-brightgreen.svg?style=flat-square)](docs/ru/BENCHMARK_REPORT.md)
-[![Performance](https://img.shields.io/badge/Throughput-767k%20оп%2Fсек-purple.svg?style=flat-square)](docs/ru/BENCHMARK_REPORT.md)
+[![Java](https://img.shields.io/badge/Java-21+-orange.svg?style=flat-square&logo=openjdk)](https://openjdk.org/)
+[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.4%20--%2026.2-brightgreen.svg?style=flat-square)](https://papermc.io/)
+[![Platform](https://img.shields.io/badge/Платформа-Paper%20%2F%20Purpur-blue.svg?style=flat-square)](https://purpurmc.org/)
+[![License](https://img.shields.io/badge/Лицензия-PolyForm%20Noncommercial-yellow.svg?style=flat-square)](LICENSE)
 
-**Высокопроизводительный событийно-ориентированный движок скриптов, планировщика задач и компонентных GUI-интерфейсов для серверов Paper и Purpur.**
+**Модульный плагин скриптов, планировщика задач и графических меню для серверов Minecraft.**
 
-[🇬🇧 Read in English](README.md) • [📖 Портал документации](docs/README.md) • [⚡ Триггеры и Действия](docs/ru/TRIGGERS_AND_ACTIONS.md) • [🖥️ GUI-Движок](docs/ru/GUI_ENGINE.md)
+[🇬🇧 Read in English](README.md) • [📖 Портал документации](docs/README.md) • [Триггеры и Действия](docs/ru/TRIGGERS_AND_ACTIONS.md) • [GUI-Движок](docs/ru/GUI_ENGINE.md)
 
 </div>
 
 ---
 
-## 🌟 Почему ActionsAndTriggers?
+## Описание
 
-Современные серверы Minecraft перегружены десятками разрозненных плагинов: один отвечает за меню, второй — за команды по условиям, третий — за способности предметов, четвертый — за таймеры.
+**ActionsAndTriggers (AAT)** объединяет в единую систему настройку меню, событийные триггеры, цепочки команд, таймеры и управление ресурсами. Вместо установки нескольких отдельных плагинов для интерфейсов, кулдаунов и интерактивных предметов, AAT позволяет настраивать всё через понятные YAML-файлы или использовать Java API.
 
-**ActionsAndTriggers (AAT)** объединяет все эти механики в единую корпоративную экосистему:
-- 🚀 **Zero-Allocation на горячих путях**: Собственный линейный index-of сканер обеспечивает **ускорение резолва плейсхолдеров в 3.12x раза** и снижает выделение памяти в куче на **95.6%** по сравнению с регулярными выражениями.
-- 🎨 **Виджето-ориентированный GUI-движок**: Наглядные YAML-маски, анимированные 10 FPS прогресс-бары, вертикальные резервуары жидкостей, автопагинация, вкладки и поддержка бесшовных кастомных фонов со сдвигами глифов.
-- 🛡️ **100% Защита ресурсов от потери**: Слоты автоматически распаковываются из масок. При закрытии окон, получении урона или перезагрузке сервера предметы **никогда не пропадут** — они гарантированно возвращаются в инвентарь или сбрасываются под ноги.
-- ⏱️ **Встроенный планировщик и кулдауны**: Отложенные цепочки (`core:delay`), циклические повторы (`core:repeat`), именованные задачи (`core:schedule`) и персональные перезарядки способностей.
-- 🌐 **Чистые интеграции**: Прозрачная работа с **Oraxen**, **ItemsAdder** и **PlaceholderAPI** без жестких зависимостей и вылетов.
-- 🌍 **Полная интернационализация (i18n)**: Ноль захардкоженных строк. Централизованный словарь с автораспаковкой языковых бандлов (`messages_ru.yml`, `messages_en.yml`).
+### Основные возможности
+- **Событийные триггеры**: запуск действий по клику, поломке блока, получению урона, крафту, достижениям и таймерам.
+- **Планировщик и перезарядки**: задержки (`core:delay`), циклы со счетчиком (`core:repeat`), отложенные задачи (`core:schedule`) и персональные кулдауны игроков.
+- **Интерфейсы по маске**: визуальная разметка меню символами. Поддержка входных/выходных слотов, шкал прогресса, индикаторов жидкостей, вкладок и постраничных списков.
+- **Безопасность предметов**: все ресурсы во входных слотах привязаны к игроку. При закрытии меню, получении урона или перезагрузке сервера предметы возвращаются в инвентарь или сбрасываются под ноги, исключая дюпы и пропажу.
+- **Мягкие интеграции**: поддержка кастомных блоков и предметов из **Oraxen** и **ItemsAdder**, интеграция с **PlaceholderAPI** и **LuckPerms**.
+- **Локализация**: все сообщения и названия элементов вынесены в языковые файлы (`messages_ru.yml`, `messages_en.yml`).
 
 ---
 
-## 📊 Результаты бенчмарков производительности (Java 21)
+## 📋 Требования и совместимость
 
-Замеры проводились на **100 000 итераций** в изолированном тестовом стенде:
-
-| Исследуемый компонент / Сценарий | До оптимизации (Legacy Regex) | После оптимизации AAT | Прирост производительности |
-| :--- | :--- | :--- | :--- |
-| **`ContextPlaceholderParser.resolve()`** | 4 074.8 нс/оп | **1 303.5 нс/оп** | **⚡ 3.12x быстрее (+212.6%)** |
-| **`Нагрузка памяти Regex (Matcher Churn)`** | 57.47 МБ | **2.51 МБ** | **⚡ 95.6% сокращение памяти** |
-| **`ExecutionContext Dispatch`** | 140.2 нс/оп | **93.1 нс/оп** | **⚡ 1.51x быстрее (+50.6%)** |
-
-> Полный отчет замеров и профилирования доступен в [BENCHMARK_REPORT.md](docs/ru/BENCHMARK_REPORT.md).
+| Компонент | Требование | Примечание |
+| :--- | :--- | :--- |
+| **Версия Minecraft** | **1.21.4 — 26.2** | Протестировано на стабильных релизах Paper и Purpur |
+| **Ядро сервера** | **Paper**, **Purpur** | Необходимы для работы современной системы компонентов Adventure и асинхронных событий |
+| **Среда Java** | **Java 21+** | Для серверов 26.2 рекомендуется Java 25+ |
+| **Опциональные плагины** | **PlaceholderAPI**, **LuckPerms**, **Oraxen**, **ItemsAdder** | Подключаются автоматически при наличии на сервере |
 
 ---
 
 ## 🛠️ Быстрый старт
 
 ### 1. Установка
-1. Поместите `ActionsAndTriggers.jar` в папку `plugins/` вашего сервера.
-2. Убедитесь, что сервер работает на **Paper** или **Purpur** с **Java 21+**.
-3. Запустите сервер. Плагин автоматически создаст рабочие папки, конфиги и файлы локализации.
+1. Поместите файл `ActionsAndTriggers.jar` в папку `plugins/` вашего сервера.
+2. Убедитесь, что сервер запущен на **Paper** или **Purpur** с **Java 21+**.
+3. Запустите сервер для автоматического создания конфигурационных файлов и словарей локализации.
 
 ### 2. Пример триггера (`plugins/ActionsAndTriggers/triggers/navigation.yml`)
 ```yaml
 triggers:
-  # Открытие Атласа по ПКМ вне боя
+  # Открытие меню по ПКМ, если игрок не находится в бою
   - trigger: "core:player_interact"
     conditions:
       - type: "core:match"
@@ -78,13 +75,13 @@ triggers:
         sound: "entity.villager.no"
       - action: "core:message"
         type: "actionbar"
-        text: "<red><bold>Связь разорвана в бою! Подождите {player.combat_remaining} сек.</bold></red>"
+        text: "<red>Нельзя открывать во время боя! Подождите {player.combat_remaining} сек.</red>"
 ```
 
-### 3. Пример GUI станка с ускорителем (`plugins/ActionsAndTriggers/guis/ice_fabricator.yml`)
+### 3. Пример интерфейса станка (`plugins/ActionsAndTriggers/guis/ice_fabricator.yml`)
 ```yaml
 id: ice_fabricator_gui
-title: "<gradient:#74B9FF:#0984E3>❄ Криогенный Ледогенератор</gradient>"
+title: "<gradient:#74B9FF:#0984E3>Криогенный Ледогенератор</gradient>"
 rows: 3
 
 mask:
@@ -99,18 +96,18 @@ mask:
       type: input_slot
       allowed_items: ["minecraft:water_bucket"]
       placeholder_material: "minecraft:bucket"
-      placeholder_name: "<aqua>💧 Ведро с водой</aqua>"
+      placeholder_name: "<aqua>Слот для ведра с водой</aqua>"
     "C":
       type: input_slot
       allowed_items: ["oraxen:frost_crystal", "minecraft:amethyst_shard"]
       placeholder_material: "minecraft:amethyst_shard"
-      placeholder_name: "<gradient:#E0C3FC:#8EC5FC>❄ Морозный кристалл</gradient>"
+      placeholder_name: "<gradient:#E0C3FC:#8EC5FC>Слот катализатора</gradient>"
     ">":
       type: progress_bar
       idle_material: "minecraft:spectral_arrow"
-      idle_name: "<aqua>⚡ Запустить заморозку</aqua>"
+      idle_name: "<aqua>Запустить заморозку</aqua>"
       running_material: "minecraft:clock"
-      running_name: "<gradient:#74B9FF:#0984E3>❄ Заморозка: {percent}%</gradient>"
+      running_name: "<gradient:#74B9FF:#0984E3>Заморозка: {percent}%</gradient>"
       on_click:
         - action: "core:cryo_freeze"
           water_slot: 10
@@ -123,7 +120,7 @@ mask:
       type: input_slot
       allowed_items: ["oraxen:cryo_accelerator_t1", "minecraft:netherite_ingot"]
       placeholder_material: "minecraft:redstone_torch"
-      placeholder_name: "<gradient:#FFA07A:#FF6347>⚡ Модуль Ускорения</gradient>"
+      placeholder_name: "<gradient:#FFA07A:#FF6347>Слот ускорителя</gradient>"
     "X":
       type: button
       material: "minecraft:barrier"
@@ -134,13 +131,13 @@ mask:
 
 ---
 
-## 💻 Fluent API для разработчиков (Java / Kotlin)
+## 💻 API для разработчиков (Java / Kotlin)
 
-Создавайте интерфейсы прямо из кода ваших собственных плагинов:
+Сторонние плагины могут взаимодействовать с AAT через публичный модуль `:aat-api`:
 
 ```java
 AATGui.builder("navigator")
-    .title(MiniMessage.miniMessage().deserialize("<gradient:#70E1F5:#FFD194>Навигатор</gradient>"))
+    .title(MiniMessage.miniMessage().deserialize("<gradient:#70E1F5:#FFD194>Навигатор миров</gradient>"))
     .rows(3)
     .mask(Widgets.mask()
         .pattern(
@@ -150,7 +147,7 @@ AATGui.builder("navigator")
         )
         .filler('#', Material.GRAY_STAINED_GLASS_PANE)
         .button('S', Material.SPRUCE_SAPLING, b -> b
-            .name(Component.text("Выживание", NamedTextColor.GREEN))
+            .name(Component.text("Дикий мир", NamedTextColor.GREEN))
             .onClick(ctx -> ctx.getPlayer().performCommand("mv tp world"))
         )
         .button('X', Material.BARRIER, b -> b
@@ -163,53 +160,48 @@ AATGui.builder("navigator")
 
 ---
 
-## 📚 Разделы документации и Каталог примеров
+## 📚 Документация и примеры
 
-- [📦 Каталог готовых примеров (Examples)](docs/examples/README.md) — 6 подробных рабочих сценариев: от навигации до криогенного фабрикатора.
-- [🏛️ Архитектура и жизненный цикл ядра](docs/ru/ARCHITECTURE.md)
-- [🖥️ Виджето-ориентированный GUI-движок](docs/ru/GUI_ENGINE.md)
-- [🎨 Руководство по созданию GUI из YAML](docs/ru/CONFIG_GUI_TUTORIAL.md)
-- [⚡ Полный реестр триггеров, фильтров и действий](docs/ru/TRIGGERS_AND_ACTIONS.md)
-- [📜 Руководство по скриптингу триггеров из YAML](docs/ru/CONFIG_SCRIPTS_TUTORIAL.md)
-- [💻 Руководство для Java и Kotlin разработчиков (API)](docs/ru/API_GUIDE.md)
-- [📊 Отчет замеров производительности и оптимизации](docs/ru/BENCHMARK_REPORT.md)
+- [Каталог готовых примеров](docs/examples/README.md) — 6 рабочих сценариев (навигация, легендарное оружие, генераторы ресурсов, прогрессия).
+- [Архитектура плагина](docs/ru/ARCHITECTURE.md) — обзор подсистем и жизненного цикла.
+- [Руководство по GUI-движку](docs/ru/GUI_ENGINE.md) — виды виджетов, маски и возврат предметов.
+- [Создание GUI в YAML](docs/ru/CONFIG_GUI_TUTORIAL.md) — пошаговое руководство по настройке меню.
+- [Реестр триггеров и действий](docs/ru/TRIGGERS_AND_ACTIONS.md) — полный список встроенных компонентов и параметров.
+- [Скриптинг триггеров в YAML](docs/ru/CONFIG_SCRIPTS_TUTORIAL.md) — руководство по написанию механик.
+- [Руководство по API](docs/ru/API_GUIDE.md) — регистрация кастомных действий и триггеров из кода.
 
 ---
 
-## 🔨 Сборка и Модульная архитектура
+## 🔨 Сборка проекта
 
-Проект разделен на независимые модули по золотому стандарту индустрии:
-- **`:aat-api`**: Полностью изолированный модуль публичного API (интерфейсы, контексты, виджеты, билдеры). Имеет НОЛЬ зависимостей от реализации ядра.
-- **`:aat-core`**: Серверная реализация плагина, затенение команд (Lamp), загрузчик YAML, станки и мягкие интеграции (`LuckPerms`, `Oraxen`, `ItemsAdder`).
+Проект разделен на два независимых Gradle-модуля:
+- **`:aat-api`**: публичные интерфейсы и билдеры без зависимостей от реализации ядра.
+- **`:aat-core`**: реализация плагина, обработка команд и хуки сторонних плагинов.
 
 ```bash
-# 1. Собрать чистый легковесный API jar (для сторонних разработчиков)
+# Сборка публичного API jar
 ./gradlew apiJar
-# Результат: build/libs/ActionsAndTriggers-1.0-SNAPSHOT-api.jar (117 КБ)
+# Результат: build/libs/ActionsAndTriggers-1.0-SNAPSHOT-api.jar
 
-# 2. Собрать полный плагин с ядром для сервера (с затенением зависимостей)
+# Сборка готового плагина для сервера
 ./gradlew shadowJar
-# Результат: build/libs/ActionsAndTriggers-1.0-SNAPSHOT-all.jar (569 КБ)
+# Результат: build/libs/ActionsAndTriggers-1.0-SNAPSHOT-all.jar
 ```
 
 ---
 
-## ⚖️ Двойное лицензирование (Dual-Licensing), Интеллектуальная собственность и Enterprise
+## ⚖️ Лицензирование и условия использования
 
-Проект работает по профессиональной бизнес-модели **Двойного лицензирования (Dual-Licensing)**:
+1. **Некоммерческое использование (Community)**:
+   - Исходный код доступен по лицензии **[PolyForm Noncommercial License 1.0.0](LICENSE)**.
+   - Бесплатно для некоммерческих серверов, локального тестирования и образовательных целей.
+   - Сборка из исходного кода бесплатна для всех (`./gradlew build`).
+   - Распространение готовых скомпилированных сборок третьими лицами запрещено.
+   - Плагины-аддоны, использующие модуль `:aat-api`, могут распространяться под любой лицензией.
 
-1. **Бесплатная редакция для сообщества (Community Edition)**:
-   - Распространяется под лицензией **[PolyForm Noncommercial License 1.0.0](LICENSE)**.
-   - Бесплатно для личного использования, изучения, тестирования и некоммерческих серверов без монетизации.
-   - **Бесплатная самостоятельная сборка**: Любой разработчик или владелец сервера может бесплатно клонировать репозиторий и собрать плагин из исходного кода через Gradle (`./gradlew build`).
-   - **Официальные готовые сборки (Pre-compiled Releases)**: Распространение и продажа готовых скомпилированных JAR-файлов на торговых площадках (SpigotMC, BuiltByBit, Polymart и др.) закреплены исключительно за автором (**Костиным Александром**). Распространение готовых бинарных файлов третьими лицами запрещено.
-   - **Форки и авторство**: Разрешено форкать и дорабатывать для некоммерческих целей со строгим сохранением указания оригинального автора (**Костин Александр**).
-   - **Исключение для аддонов**: Сторонние плагины, использующие только модуль `:aat-api`, могут распространяться под любой лицензией.
+2. **Коммерческое использование**:
+   - Использование на коммерческих серверах с монетизацией требует приобретения **Коммерческой лицензии** у правообладателя (**Костин Александр**).
+   - Почта для связи: `kostin.ak@mail.ru`.
 
-2. **Коммерческая редакция (Commercial & Enterprise Edition)**:
-   - Использование плагина на коммерческих серверах (с автодонатом, магазином предметов, платными привилегиями или платным входом) требует официальной **Коммерческой Лицензии**, выдаваемой напрямую автором (**Костиным Александром**).
-   - **Платная поддержка и кастомные разработки**: Написание уникальных экшенов под ваш проект, приватных триггеров и SLA-поддержка доступны напрямую от автора.
-   - **Контакты для приобретения лицензии**: `kostin.ak@mail.ru`.
-
-3. **Вклад сторонних разработчиков (Contributions & CLA)**:
-   - Любые предложения изменений (Pull Requests, патчи, исправления) безотзывно передают исключительные авторские права автору (**Костину Александру**) согласно [CONTRIBUTING.md](CONTRIBUTING.md) и разделу 3.2 [LICENSE](LICENSE). Контрибуция не дает прав совладения или претензий на прибыль.
+3. **Контрибьюция**:
+   - Все пул-реквесты принимаются на условиях полной передачи авторских прав правообладателю (**Костин Александр**) согласно [CONTRIBUTING.md](CONTRIBUTING.md) и разделу 3.2 лицензии [LICENSE](LICENSE).

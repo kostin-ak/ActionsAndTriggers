@@ -84,5 +84,5 @@ Abstracts game logic from specific third-party item plugin implementations:
 
 ## 4. Lifecycle, Reliability & Performance
 - **Hot Reload (`/aat reload`)**: Flushes internal registries, reloads language files, and recompiles script trees without requiring server restarts.
-- **Graceful Shutdown**: `onDisable()` stops background schedulers, unregisters listeners, and cancels ticking tasks cleanly.
-- **Zero-Allocation Hot Paths**: Replacing regex evaluation with index-of scanning delivers **3.12x faster resolution** and reduces heap churn by **95.6%**.
+- **Linear Token Parsing**: String placeholders and templates use linear scanning to resolve values without creating regex matcher objects.
+

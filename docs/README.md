@@ -11,8 +11,7 @@ Welcome to the **ActionsAndTriggers (AAT)** documentation portal. Please choose 
 4. [Triggers, Filters & Actions Catalog](en/TRIGGERS_AND_ACTIONS.md) — Complete catalog of all 21 triggers, conditions, and core actions.
 5. [Scripting Triggers via YAML Tutorial](en/CONFIG_SCRIPTS_TUTORIAL.md) — Step-by-step tutorial for writing event-driven scripts in YAML.
 6. [Developer API Guide](en/API_GUIDE.md) — Fluent API reference for Java and Kotlin plugin developers.
-7. [Benchmark & Optimization Report](en/BENCHMARK_REPORT.md) — Calibration benchmarks, memory profiling, and 3.12x speedup data.
-8. [Ready-to-Use Examples Directory](examples/README.md) — 6 complete production-ready examples from navigators to industrial fabricators.
+7. [Ready-to-Use Examples Directory](examples/README.md) — 6 complete production-ready examples from navigators to industrial fabricators.
 
 ---
 
@@ -23,5 +22,4 @@ Welcome to the **ActionsAndTriggers (AAT)** documentation portal. Please choose 
 4. [Триггеры, Фильтры и Действия](ru/TRIGGERS_AND_ACTIONS.md) — Полный реестр всех 21 триггеров, условий и экшенов ядра.
 5. [Руководство по скриптингу триггеров из YAML](ru/CONFIG_SCRIPTS_TUTORIAL.md) — Пошаговое руководство по написанию скриптов и способностей в YAML.
 6. [Руководство для разработчиков (API)](ru/API_GUIDE.md) — Fluent API для разработчиков плагинов на Java и Kotlin.
-7. [Отчет о бенчмарках и оптимизации](ru/BENCHMARK_REPORT.md) — Метрики калиброванного бенчмарка, профилирование памяти и ускорение в 3.12x.
-8. [Каталог готовых практических примеров](examples/README.md) — 6 подробных рабочих сценариев: от навигации до криогенного фабрикатора.
+7. [Каталог готовых практических примеров](examples/README.md) — 6 подробных рабочих сценариев: от навигации до криогенного фабрикатора.

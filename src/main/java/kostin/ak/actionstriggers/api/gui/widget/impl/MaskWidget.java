@@ -75,9 +75,12 @@ public class MaskWidget extends AbstractWidget {
         return true;
     }
 
-    @Override
-    public boolean occupiesSlot(int slot) {
-        return slotToWidget.containsKey(slot);
+    public Widget getWidgetAt(int slot) {
+        return slotToWidget.get(slot);
+    }
+
+    public Map<Integer, Widget> getSlotToWidget() {
+        return slotToWidget;
     }
 
     public List<String> getPattern() { return pattern; }

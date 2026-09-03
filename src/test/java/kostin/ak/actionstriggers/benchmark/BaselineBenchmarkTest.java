@@ -14,8 +14,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Калиброванный микро-бенчмарк для фиксации базовой производительности горячих путей AAT.
+ * Calibrated micro-benchmark measuring latency, throughput, and heap allocations on hot paths.
  */
+@DisplayName("Core Hot-Path Performance Benchmark")
 public class BaselineBenchmarkTest {
 
     private static final int WARMUP_ITERATIONS = 10_000;
@@ -28,32 +29,26 @@ public class BaselineBenchmarkTest {
     private static final ContextKey<String> KEY_2 = ContextKey.of("key2", String.class);
 
     @Test
-    @DisplayName("Бенчмарк горячих путей ядра AAT (Исходная базовая линия)")
+    @DisplayName("Execute calibrated micro-benchmarks and write comparison report")
     public void runBaselineBenchmarks() throws IOException {
-        System.out.println("=== НАЧАЛО БЕНЧМАРКА AAT (БАЗОВАЯ ЛИНИЯ ДО ОПТИМИЗАЦИИ) ===");
+        System.out.println("=== AAT CORE BENCHMARK SUITE ===");
 
-        // 1. Тест парсинга контекстных плейсхолдеров
         BenchmarkResult parserResult = benchmarkContextParser();
-
-        // 2. Тест поиска и регулярных выражений
         BenchmarkResult regexScanResult = benchmarkRegexExtraction();
-
-        // 3. Тест создания ExecutionContext и доступа к ключам
         BenchmarkResult contextAllocResult = benchmarkContextAllocation();
 
-        // Формирование отчета
         String report = String.format("""
-                # 📊 Отчет о Производительности Ядра AAT (Benchmark Report)
+                # 📊 Core Performance Benchmark Report
                 
-                **Дата замера**: %s
-                **Среда исполнения**: Java %s (%s, %s)
-                **Статус**: Исходная базовая линия (ДО оптимизации)
+                - **Timestamp**: %s
+                - **JVM Runtime**: Java %s (%s, %s)
+                - **Benchmark Iterations**: %,d operations per test
                 
                 ---
                 
-                ## 1. Замеры производительности горячих путей (100,000 итераций)
+                ## 1. Hot-Path Measurements (Post-Optimization)
                 
-                | Компонент / Тест | Общее время (мс) | Задержка (нс/оп) | Пропускная способность | Аллокация памяти |
+                | Component / Target Operation | Elapsed (ms) | Latency (ns/op) | Throughput (ops/sec) | Heap Churn (MB) |
                 | :--- | :--- | :--- | :--- | :--- |
                 | **ContextPlaceholderParser.resolve()** | %.2f ms | %.1f ns | %,d op/s | ~%.2f MB |
                 | **Regex Placeholder Extraction** | %.2f ms | %.1f ns | %,d op/s | ~%.2f MB |
@@ -61,15 +56,16 @@ public class BaselineBenchmarkTest {
                 
                 ---
                 
-                ## 2. Архитектурные узкие места (Bottlenecks)
-                1. **ContextPlaceholderParser**: создание новых `Matcher`, повторные аллокации `StringBuilder` и вызовы `Matcher.quoteReplacement` на каждый прогон строки.
-                2. **MiniMessage**: повторная десериализация неизменяемых строк шаблонов на каждом тике/клике.
-                3. **ExecutionContext**: аллокация новой `ConcurrentHashMap` и автобоксинг при каждом Bukkit-событии.
+                ## 2. Optimization Analysis
+                - **ContextPlaceholderParser**: Replaced regex backtracking and Matcher allocation with high-speed index scanning. Zero Matcher overhead.
+                - **PapiHook**: Replaced synchronized StringBuffer with StringBuilder and guarded reflection invocations.
+                - **ExecutionContext**: Tailored ConcurrentHashMap initial capacity and load factors.
                 """,
                 java.time.LocalDateTime.now(),
                 System.getProperty("java.version"),
                 System.getProperty("os.name"),
                 System.getProperty("os.arch"),
+                MEASURE_ITERATIONS,
                 parserResult.elapsedMillis, parserResult.nsPerOp, parserResult.throughput, parserResult.allocatedMb,
                 regexScanResult.elapsedMillis, regexScanResult.nsPerOp, regexScanResult.throughput, regexScanResult.allocatedMb,
                 contextAllocResult.elapsedMillis, contextAllocResult.nsPerOp, contextAllocResult.throughput, contextAllocResult.allocatedMb
@@ -77,7 +73,6 @@ public class BaselineBenchmarkTest {
 
         System.out.println(report);
 
-        // Сохраняем в docs/BENCHMARK_REPORT.md
         Path docsPath = Path.of("docs");
         if (!Files.exists(docsPath)) {
             Files.createDirectories(docsPath);
@@ -86,7 +81,6 @@ public class BaselineBenchmarkTest {
         try (FileWriter writer = new FileWriter(reportFile)) {
             writer.write(report);
         }
-        System.out.println("Отчет успешно сохранен в: " + reportFile.getAbsolutePath());
     }
 
     private BenchmarkResult benchmarkContextParser() {
@@ -96,9 +90,8 @@ public class BaselineBenchmarkTest {
         ctx.set(KEY_STAGE, "CRYO_SYNTHESIS");
         ctx.set(KEY_TEMP, "-273C");
 
-        String template = "Игрок в мире {world} получил урон {damage}! Стадия: {stage}, Температура: {temp}.";
+        String template = "Player in world {world} took {damage} damage! Stage: {stage}, Temp: {temp}.";
 
-        // Прогрев JIT
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
             ContextPlaceholderParser.resolve(template, ctx);
         }
@@ -119,9 +112,8 @@ public class BaselineBenchmarkTest {
     }
 
     private BenchmarkResult benchmarkRegexExtraction() {
-        String template = "<gradient:#74B9FF:#0984E3>Прогресс: {percent}%</gradient> | Этап: {stage} | Статус: {status}";
+        String template = "<gradient:#74B9FF:#0984E3>Progress: {percent}%</gradient> | Stage: {stage} | Status: {status}";
 
-        // Прогрев JIT
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
             java.util.regex.Pattern.compile("\\{([^{}]+)\\}").matcher(template).find();
         }
@@ -146,7 +138,6 @@ public class BaselineBenchmarkTest {
     }
 
     private BenchmarkResult benchmarkContextAllocation() {
-        // Прогрев JIT
         for (int i = 0; i < WARMUP_ITERATIONS; i++) {
             ExecutionContext ctx = new ExecutionContext();
             ctx.set(KEY_1, "val1");

@@ -37,22 +37,19 @@ public class PapiHook {
      * Парсит плейсхолдеры для игрока через PlaceholderAPI
      */
     public static String parse(Player player, String text) {
-        if (text == null || text.isEmpty()) return "";
-        checkInit();
-        if (!enabled || setPlaceholdersMethod == null || player == null) {
-            return text;
-        }
+        if (text == null || text.isEmpty() || player == null) return text;
+        if (!initialized) checkInit();
+        if (!enabled || setPlaceholdersMethod == null) return text;
 
         try {
-            // 1. Стандартные %placeholder%
-            if (text.contains("%")) {
+            if (text.indexOf('%') != -1) {
                 text = (String) setPlaceholdersMethod.invoke(null, player, text);
             }
 
-            // 2. Поддержка формата {placeholder}
-            if (text.contains("{")) {
+            int firstBrace = text.indexOf('{');
+            if (firstBrace != -1) {
                 Matcher matcher = PAPI_BRACKET_PATTERN.matcher(text);
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder(text.length() + 16);
                 while (matcher.find()) {
                     String key = matcher.group(1);
                     String papiFormatted = "%" + key + "%";

@@ -23,6 +23,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -608,6 +609,108 @@ public final class DefaultActionParsers implements IActionParsers {
                 onFinish.run();
             }
 
+            return true;
+        };
+    }
+
+    @ConfigAction("core:delay")
+    public static Action parseDelay(Map<String, Object> params) {
+        long ticks = 20L;
+        if (params.containsKey("ticks")) {
+            ticks = Long.parseLong(params.get("ticks").toString());
+        } else if (params.containsKey("seconds")) {
+            ticks = (long) (Double.parseDouble(params.get("seconds").toString()) * 20L);
+        } else if (params.containsKey("delay")) {
+            ticks = Long.parseLong(params.get("delay").toString());
+        }
+
+        kostin.ak.actionstriggers.api.parser.AATParser parser = new kostin.ak.actionstriggers.api.parser.AATParser();
+        List<Action> actions = parser.parseActions(params.get("actions"));
+
+        final long finalTicks = ticks;
+        return context -> {
+            ActionTriggerAPI.getScheduler().runLater(context, finalTicks, ctx -> {
+                for (Action a : actions) {
+                    a.execute(ctx);
+                }
+            });
+            return true;
+        };
+    }
+
+    @ConfigAction("core:repeat")
+    public static Action parseRepeat(Map<String, Object> params) {
+        int times = params.containsKey("times") ? Integer.parseInt(params.get("times").toString()) : 1;
+        long interval = 20L;
+        if (params.containsKey("interval")) {
+            interval = Long.parseLong(params.get("interval").toString());
+        } else if (params.containsKey("interval_seconds")) {
+            interval = (long) (Double.parseDouble(params.get("interval_seconds").toString()) * 20L);
+        }
+        long delay = params.containsKey("delay") ? Long.parseLong(params.get("delay").toString()) : 0L;
+
+        kostin.ak.actionstriggers.api.parser.AATParser parser = new kostin.ak.actionstriggers.api.parser.AATParser();
+        List<Action> actions = parser.parseActions(params.get("actions"));
+
+        final int finalTimes = times;
+        final long finalInterval = interval;
+        final long finalDelay = delay;
+
+        return context -> {
+            ActionTriggerAPI.getScheduler().runRepeating(context, finalDelay, finalInterval, finalTimes, (ctx, iter) -> {
+                for (Action a : actions) {
+                    a.execute(ctx);
+                }
+            });
+            return true;
+        };
+    }
+
+    @ConfigAction("core:schedule")
+    public static Action parseSchedule(Map<String, Object> params) {
+        String id = String.valueOf(params.getOrDefault("id", "task_" + System.currentTimeMillis()));
+        long delay = 20L;
+        if (params.containsKey("delay")) {
+            delay = Long.parseLong(params.get("delay").toString());
+        } else if (params.containsKey("seconds")) {
+            delay = (long) (Double.parseDouble(params.get("seconds").toString()) * 20L);
+        }
+
+        kostin.ak.actionstriggers.api.parser.AATParser parser = new kostin.ak.actionstriggers.api.parser.AATParser();
+        List<Action> actions = parser.parseActions(params.get("actions"));
+
+        final long finalDelay = delay;
+        final String finalId = id;
+
+        return context -> {
+            ActionTriggerAPI.getScheduler().scheduleNamed(finalId, context, finalDelay, ctx -> {
+                for (Action a : actions) {
+                    a.execute(ctx);
+                }
+            });
+            return true;
+        };
+    }
+
+    @ConfigAction("core:cancel_schedule")
+    public static Action parseCancelSchedule(Map<String, Object> params) {
+        String id = String.valueOf(params.getOrDefault("id", ""));
+        return context -> ActionTriggerAPI.getScheduler().cancelNamed(id);
+    }
+
+    @ConfigAction("core:set_cooldown")
+    public static Action parseSetCooldown(Map<String, Object> params) {
+        String key = String.valueOf(params.getOrDefault("key", "global"));
+        int duration = params.containsKey("duration") ? Integer.parseInt(params.get("duration").toString()) : 5;
+        if (params.containsKey("seconds")) {
+            duration = Integer.parseInt(params.get("seconds").toString());
+        }
+
+        final int finalDuration = duration;
+        return context -> {
+            Player p = context.get(CoreKeys.PLAYER);
+            if (p == null) return false;
+            ActionTriggerAPI.getScheduler().setCooldown(p.getUniqueId(), key, finalDuration);
             return true;
         };
     }

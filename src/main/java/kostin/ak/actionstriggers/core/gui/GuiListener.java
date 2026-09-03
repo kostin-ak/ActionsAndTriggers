@@ -98,8 +98,10 @@ public class GuiListener implements Listener {
                 }
             }
 
-            // 1. Возврат ресурсов из слотов ввода (InputSlotWidget) и авто-забор готовой продукции (OutputSlotWidget)
+            // 1. Возврат ресурсов из слотов ввода и выдачи (с поддержкой масок)
             org.bukkit.inventory.Inventory inv = event.getInventory();
+            boolean returnedAny = false;
+
             for (int slot = 0; slot < inv.getSize(); slot++) {
                 Widget widget = holder.getSlotWidgets().get(slot);
 
@@ -110,6 +112,14 @@ public class GuiListener implements Listener {
                             widget = w;
                             break;
                         }
+                    }
+                }
+
+                // Дополнительная распаковка для MaskWidget
+                if (widget instanceof kostin.ak.actionstriggers.api.gui.widget.impl.MaskWidget mask) {
+                    Widget inner = mask.getWidgetAt(slot);
+                    if (inner != null) {
+                        widget = inner;
                     }
                 }
 
@@ -124,6 +134,7 @@ public class GuiListener implements Listener {
                         for (org.bukkit.inventory.ItemStack drop : leftovers.values()) {
                             player.getWorld().dropItemNaturally(player.getLocation(), drop);
                         }
+                        returnedAny = true;
                     }
                 } else if (widget instanceof kostin.ak.actionstriggers.api.gui.widget.impl.OutputSlotWidget outputWidget) {
                     org.bukkit.inventory.ItemStack item = inv.getItem(slot);
@@ -136,9 +147,13 @@ public class GuiListener implements Listener {
                         for (org.bukkit.inventory.ItemStack drop : leftovers.values()) {
                             player.getWorld().dropItemNaturally(player.getLocation(), drop);
                         }
-                        player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_ITEM_PICKUP, 0.8f, 1.2f);
+                        returnedAny = true;
                     }
                 }
+            }
+
+            if (returnedAny) {
+                player.playSound(player.getLocation(), org.bukkit.Sound.ENTITY_ITEM_PICKUP, 0.8f, 1.2f);
             }
         }
     }

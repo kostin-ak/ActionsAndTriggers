@@ -57,11 +57,15 @@ public class CombatTracker {
         combatExpirations.remove(player.getUniqueId());
     }
 
-    /**
-     * Очищает устаревшие записи.
-     */
     public void cleanup() {
         long now = System.currentTimeMillis();
         combatExpirations.entrySet().removeIf(entry -> now >= entry.getValue());
+    }
+
+    /**
+     * Полностью сбрасывает состояние боевого режима для всех игроков.
+     */
+    public void clear() {
+        combatExpirations.clear();
     }
 }

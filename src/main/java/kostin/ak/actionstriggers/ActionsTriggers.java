@@ -54,6 +54,10 @@ public final class ActionsTriggers extends JavaPlugin {
                 new PlayerDropItemTrigger(), new BlockDamageTrigger(), new PlayerAdvancementDoneTrigger(),
                 new PlayerToggleFlightTrigger(), new PlayerWorldChangeTrigger());
 
+        periodicTrigger = new kostin.ak.actionstriggers.core.defaults.triggers.PeriodicIntervalTrigger();
+        periodicTrigger.start(this);
+        ActionTriggerAPI.getRegistrar().registerTriggers(this, periodicTrigger);
+
         ActionTriggerAPI.getRegistrar().registerFilters(DefaultFilterParsers.class);
 
         ActionTriggerAPI.getRegistrar().registerItemProvider(new VanillaItemProvider());
@@ -133,8 +137,13 @@ public final class ActionsTriggers extends JavaPlugin {
         return COMBAT_TRACKER;
     }
 
+    private kostin.ak.actionstriggers.core.defaults.triggers.PeriodicIntervalTrigger periodicTrigger;
+
     @Override
     public void onDisable() {
+        if (periodicTrigger != null) {
+            periodicTrigger.stop();
+        }
         Bukkit.getScheduler().cancelTasks(this);
         ActionTriggerAPI.getScripts().clear();
         ActionTriggerAPI.getTriggers().unsubscribeAll(this);

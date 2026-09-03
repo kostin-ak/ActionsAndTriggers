@@ -85,9 +85,9 @@ public class ContextPlaceholderParser {
             return item.getType().name();
         });
 
-        // Для Дробных чисел (чтобы урон 4.5000001 выводился как 4.5)
-        registerFormatter(Double.class, (d, prop) -> String.format("%.1f", d));
-        registerFormatter(Float.class, (f, prop) -> String.format("%.1f", f));
+        // Для Дробных чисел с точкой независимо от системной локали
+        registerFormatter(Double.class, (d, prop) -> String.format(java.util.Locale.ROOT, "%.1f", d));
+        registerFormatter(Float.class, (f, prop) -> String.format(java.util.Locale.ROOT, "%.1f", f));
 
         // Для Enum (Например, DamageCause или Action)
         registerFormatter(Enum.class, (e, prop) -> e.name());
@@ -105,31 +105,42 @@ public class ContextPlaceholderParser {
      */
     @NotNull
     public static String resolve(@NotNull String template, @NotNull ExecutionContext context) {
-        if (!template.contains("{")) return template;
+        int firstBrace = template.indexOf('{');
+        if (firstBrace == -1) return template;
 
-        Matcher matcher = PLACEHOLDER_PATTERN.matcher(template);
-        StringBuilder result = new StringBuilder();
+        int len = template.length();
+        StringBuilder result = new StringBuilder(len + 32);
+        int cursor = 0;
 
-        while (matcher.find()) {
-            String keyStr = matcher.group(1);
-            String propStr = matcher.group(2);
+        while (cursor < len) {
+            int openIdx = template.indexOf('{', cursor);
+            if (openIdx == -1) {
+                result.append(template, cursor, len);
+                break;
+            }
+
+            int closeIdx = template.indexOf('}', openIdx + 1);
+            if (closeIdx == -1) {
+                result.append(template, cursor, len);
+                break;
+            }
+
+            result.append(template, cursor, openIdx);
+            String token = template.substring(openIdx + 1, closeIdx);
+            int dotIdx = token.indexOf('.');
+            String keyStr = dotIdx == -1 ? token : token.substring(0, dotIdx);
+            String propStr = dotIdx == -1 ? null : token.substring(dotIdx + 1);
 
             Object rawValue = context.getRaw(keyStr);
-
             if (rawValue != null) {
-                String replacement = formatValue(rawValue, propStr);
-                // Matcher.quoteReplacement защищает от ошибок, если в строке есть знаки $ или \
-                matcher.appendReplacement(result, Matcher.quoteReplacement(replacement));
-            } else {
-                // ИЗМЕНЕНИЕ: Заменяем отсутствующие ключи на пустую строку, чтобы не ломать логику фильтров и чат
-                matcher.appendReplacement(result, "");
+                result.append(formatValue(rawValue, propStr));
             }
+            cursor = closeIdx + 1;
         }
-        matcher.appendTail(result);
 
         String parsed = result.toString();
         Player player = context.get(CoreKeys.PLAYER);
-        if (player != null) {
+        if (player != null && kostin.ak.actionstriggers.core.hook.PapiHook.isEnabled()) {
             parsed = kostin.ak.actionstriggers.core.hook.PapiHook.parse(player, parsed);
         }
         return parsed;

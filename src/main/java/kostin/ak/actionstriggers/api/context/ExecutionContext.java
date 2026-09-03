@@ -18,20 +18,17 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ExecutionContext implements Cloneable {
 
-    // Используем ConcurrentHashMap для потокобезопасности (отложенные экшены, async ивенты)
     private final Map<String, Object> data;
     private boolean cancelled;
 
     public ExecutionContext() {
-        this.data = new ConcurrentHashMap<>();
+        this.data = new ConcurrentHashMap<>(8, 0.75f, 1);
         this.cancelled = false;
     }
 
-    /**
-     * Приватный конструктор для клонирования контекста.
-     */
     private ExecutionContext(@NotNull Map<String, Object> existingData, boolean cancelled) {
-        this.data = new ConcurrentHashMap<>(existingData);
+        this.data = new ConcurrentHashMap<>(Math.max(8, existingData.size() + 2), 0.75f, 1);
+        this.data.putAll(existingData);
         this.cancelled = cancelled;
     }
 
@@ -76,11 +73,21 @@ public class ExecutionContext implements Cloneable {
         return key.getType().isInstance(obj);
     }
 
+    @NotNull
+    public <T> T getOrDefault(@NotNull ContextKey<T> key, @NotNull T defaultValue) {
+        T val = get(key);
+        return val != null ? val : defaultValue;
+    }
+
     /**
      * Запрашивает отмену родительского Bukkit Event'а.
      */
     public void cancel() {
         this.cancelled = true;
+    }
+
+    public void setCancelled(boolean cancelled) {
+        this.cancelled = cancelled;
     }
 
     public boolean isCancelled() {

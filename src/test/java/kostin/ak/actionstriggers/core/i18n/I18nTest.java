@@ -1,6 +1,5 @@
 package kostin.ak.actionstriggers.core.i18n;
 
-import net.kyori.adventure.text.Component;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -8,30 +7,29 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@DisplayName("I18n Localization Service Tests")
 class I18nTest {
 
     @Test
-    @DisplayName("Проверка fallback при отсутствии инициализации")
+    @DisplayName("Should return raw key as fallback when not initialized")
     void testFallbackWithoutInit() {
         String key = "commands.reload.success";
         assertEquals(key, I18n.get(key));
     }
 
     @Test
-    @DisplayName("Проверка параметризованной подстановки аргументов")
+    @DisplayName("Should replace parameters correctly in template string")
     void testParameterReplacement() {
-        // Симулируем ключ с плейсхолдерами
         Map<String, String> params = Map.of("time", "42", "triggers", "10", "guis", "2");
-        String template = "Успешно перезагружено за {time} мс! ({triggers} триггеров, {guis} интерфейсов)";
+        String template = "Reloaded in {time} ms! ({triggers} triggers, {guis} guis)";
 
-        // Тестируем логику параметризации
         String result = template;
         for (Map.Entry<String, String> e : params.entrySet()) {
             result = result.replace("{" + e.getKey() + "}", e.getValue());
         }
 
-        assertTrue(result.contains("42 мс"));
-        assertTrue(result.contains("10 триггеров"));
-        assertTrue(result.contains("2 интерфейсов"));
+        assertTrue(result.contains("42 ms"));
+        assertTrue(result.contains("10 triggers"));
+        assertTrue(result.contains("2 guis"));
     }
 }

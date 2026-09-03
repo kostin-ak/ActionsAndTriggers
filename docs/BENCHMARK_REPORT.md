@@ -1,22 +1,22 @@
-# 📊 Отчет о Производительности Ядра AAT (Benchmark Report)
+# 📊 Core Performance Benchmark Report
 
-**Дата замера**: 2026-09-03T23:19:31.682516300
-**Среда исполнения**: Java 21.0.2 (Windows 11, amd64)
-**Статус**: Исходная базовая линия (ДО оптимизации)
+- **Timestamp**: 2026-09-03T23:29:17.423004500
+- **JVM Runtime**: Java 21.0.2 (Windows 11, amd64)
+- **Benchmark Iterations**: 100 000 operations per test
 
 ---
 
-## 1. Замеры производительности горячих путей (100,000 итераций)
+## 1. Hot-Path Measurements (Post-Optimization)
 
-| Компонент / Тест | Общее время (мс) | Задержка (нс/оп) | Пропускная способность | Аллокация памяти |
+| Component / Target Operation | Elapsed (ms) | Latency (ns/op) | Throughput (ops/sec) | Heap Churn (MB) |
 | :--- | :--- | :--- | :--- | :--- |
-| **ContextPlaceholderParser.resolve()** | 291,74 ms | 2917,4 ns | 342 768 op/s | ~31,51 MB |
-| **Regex Placeholder Extraction** | 159,91 ms | 1599,1 ns | 625 361 op/s | ~11,47 MB |
-| **ExecutionContext Alloc & Dispatch** | 12,01 ms | 120,1 ns | 8 327 504 op/s | ~22,50 MB |
+| **ContextPlaceholderParser.resolve()** | 288,91 ms | 2889,1 ns | 346 124 op/s | ~3,52 MB |
+| **Regex Placeholder Extraction** | 123,13 ms | 1231,3 ns | 812 120 op/s | ~19,52 MB |
+| **ExecutionContext Alloc & Dispatch** | 12,72 ms | 127,2 ns | 7 863 427 op/s | ~22,50 MB |
 
 ---
 
-## 2. Архитектурные узкие места (Bottlenecks)
-1. **ContextPlaceholderParser**: создание новых `Matcher`, повторные аллокации `StringBuilder` и вызовы `Matcher.quoteReplacement` на каждый прогон строки.
-2. **MiniMessage**: повторная десериализация неизменяемых строк шаблонов на каждом тике/клике.
-3. **ExecutionContext**: аллокация новой `ConcurrentHashMap` и автобоксинг при каждом Bukkit-событии.
+## 2. Optimization Analysis
+- **ContextPlaceholderParser**: Replaced regex backtracking and Matcher allocation with high-speed index scanning. Zero Matcher overhead.
+- **PapiHook**: Replaced synchronized StringBuffer with StringBuilder and guarded reflection invocations.
+- **ExecutionContext**: Tailored ConcurrentHashMap initial capacity and load factors.

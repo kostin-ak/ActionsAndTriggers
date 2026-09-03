@@ -60,6 +60,26 @@ public final class DefaultFilterParsers implements IFilterParsers {
         };
     }
 
+    @ConfigFilter("core:on_cooldown")
+    public static Filter parseOnCooldown(Map<String, Object> params) {
+        String key = String.valueOf(params.getOrDefault("key", "global"));
+        return context -> {
+            Player p = context.get(CoreKeys.PLAYER);
+            if (p == null) return false;
+            return ActionTriggerAPI.getScheduler().isOnCooldown(p.getUniqueId(), key);
+        };
+    }
+
+    @ConfigFilter("core:not_on_cooldown")
+    public static Filter parseNotOnCooldown(Map<String, Object> params) {
+        String key = String.valueOf(params.getOrDefault("key", "global"));
+        return context -> {
+            Player p = context.get(CoreKeys.PLAYER);
+            if (p == null) return true;
+            return !ActionTriggerAPI.getScheduler().isOnCooldown(p.getUniqueId(), key);
+        };
+    }
+
     @ConfigFilter("core:permission")
     public static Filter parsePermission(Map<String, Object> params) {
         String perm = String.valueOf(params.getOrDefault("permission", ""));

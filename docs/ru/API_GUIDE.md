@@ -1,4 +1,4 @@
-# 💻 AAT Java & Kotlin API Guide
+# 💻 Руководство разработчика: AAT Java & Kotlin API
 
 ## 1. Введение
 В дополнение к декларативным YAML-конфигурациям, **ActionsAndTriggers** предоставляет мощный **Fluent API** для создания GUI-интерфейсов, регистрации кастомных виджетов, триггеров и действий напрямую из кода плагинов на Java и Kotlin.
@@ -77,7 +77,6 @@ public class PlayerShopMenu {
         AATGui.builder("shop")
             .title(ctx -> "<gold>Магазин</gold> <gray>(Стр. " + ctx.getPage() + "/" + ctx.getMaxPages() + ")</gray>")
             .rows(6)
-            // Зона пагинации: со 2-го по 5-й ряд (слоты X=1..7, Y=1..4)
             .pagedList(Widgets.pagedList()
                 .bounds(1, 1, 7, 4)
                 .items(offers, (offer, builder) -> {
@@ -140,21 +139,14 @@ public class MachineGui {
 public class MyCustomRadarWidget extends AbstractWidget {
 
     @Override
-    public void render(GuiContext ctx, SlotMatrix matrix) {
-        // Отрисовка предметов в переданную матрицу слотов
-        matrix.set(getLocalX(), getLocalY(), createRadarIcon(ctx));
+    public void render(GuiContext ctx, Map<Integer, ItemStack> matrix) {
+        matrix.put(getY() * 9 + getX(), createRadarIcon(ctx));
     }
 
     @Override
     public boolean handleClick(ClickContext ctx) {
-        // Обработка клика
         ctx.getPlayer().sendMessage("Радар активирован!");
         return true; // отменить событие клика (не давать забрать предмет)
     }
 }
 ```
-Затем зарегистрировать виджет в фабрике:
-```java
-ActionTriggerAPI.getGuiRegistry().registerWidgetType("radar", MyCustomRadarWidget::new);
-```
-Теперь этот виджет можно использовать **и в Java-коде, и в YAML-конфигурациях**!

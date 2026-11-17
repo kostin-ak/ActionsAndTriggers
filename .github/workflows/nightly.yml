@@ -98,7 +98,7 @@ jobs:
 
       - name: Run smoke test
         run: |
-          JAR=$(ls ActionsAndTriggers-*-all.jar | head -n 1)
+          JAR=$(find . -name 'ActionsAndTriggers-*-all.jar' | head -n 1)
           echo "Testing $JAR"
           bash scripts/smoke-test.sh server "$JAR"
 

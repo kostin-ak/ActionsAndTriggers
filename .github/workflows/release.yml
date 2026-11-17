@@ -106,7 +106,7 @@ jobs:
 
       - name: Run smoke test
         run: |
-          JAR=$(ls ActionsAndTriggers-*-all.jar | head -n 1)
+          JAR=$(find . -name 'ActionsAndTriggers-*-all.jar' | head -n 1)
           echo "Testing $JAR"
           bash scripts/smoke-test.sh server "$JAR"
 
@@ -126,7 +126,7 @@ jobs:
           body_path: release_body.md
           prerelease: ${{ contains(github.ref_name, '-') }}
           files: |
-            ActionsAndTriggers-*-all.jar
-            ActionsAndTriggers-*-api.jar
-            checksums.sha256
+            build/libs/ActionsAndTriggers-*-all.jar
+            build/libs/ActionsAndTriggers-*-api.jar
+            build/libs/checksums.sha256
           fail_on_unmatched_files: true

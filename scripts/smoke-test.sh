@@ -50,8 +50,8 @@ fail=0
 for expected in \
   'Actions&Triggers initialized successfully' \
   'core:command' \
-  'core:player_interact' \
-  'core:advancement_done'
+  'core:message' \
+  'core:cryo_freeze'
 do
   if ! grep -q "$expected" server.log; then
     echo "::error::Missing expected log line: $expected"

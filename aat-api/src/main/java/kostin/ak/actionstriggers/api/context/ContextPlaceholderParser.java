@@ -155,10 +155,16 @@ public class ContextPlaceholderParser {
         PlaceholderFormatter<Object> formatter = (PlaceholderFormatter<Object>) formatters.get(clazz);
 
         if (formatter == null) {
-            for (Map.Entry<Class<?>, PlaceholderFormatter<?>> entry : formatters.entrySet()) {
-                if (entry.getKey().isAssignableFrom(clazz)) {
-                    formatter = (PlaceholderFormatter<Object>) entry.getValue();
-                    break;
+            // Pick the most specific registered type; ConcurrentHashMap iteration is unordered,
+            // so a plain "first assignable match" can return Entity instead of Player.
+            Class<?> bestType = null;
+            for (Class<?> candidate : formatters.keySet()) {
+                if (!candidate.isAssignableFrom(clazz)) {
+                    continue;
+                }
+                if (bestType == null || bestType.isAssignableFrom(candidate)) {
+                    bestType = candidate;
+                    formatter = (PlaceholderFormatter<Object>) formatters.get(candidate);
                 }
             }
         }

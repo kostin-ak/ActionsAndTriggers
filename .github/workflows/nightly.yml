@@ -130,9 +130,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh release view nightly --json assets --jq '.assets[].name' 2>/dev/null \
+          gh release view nightly -R "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name' 2>/dev/null \
             | while read -r asset; do
-                [ -n "$asset" ] && gh release delete-asset nightly "$asset" -y
+                [ -n "$asset" ] && gh release delete-asset nightly "$asset" -R "$GITHUB_REPOSITORY" -y
               done || true
 
       - name: Publish nightly

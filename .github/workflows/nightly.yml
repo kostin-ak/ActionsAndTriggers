@@ -133,7 +133,7 @@ jobs:
           name: "Nightly build 🌙"
           prerelease: true
           body: |
-            Automated development build from the `${{ github.ref_name }}` branch head.
+            Automated development build from the latest `master` commit.
 
             **Version:** `${{ needs.build.outputs.version }}`
             **Commit:** `${{ github.sha }}`

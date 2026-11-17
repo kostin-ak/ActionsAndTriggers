@@ -1,25 +1,27 @@
 # 📚 ActionsAndTriggers Documentation / Документация
 
-Welcome to the **ActionsAndTriggers (AAT)** documentation portal. Please choose your preferred language:
+Welcome to the **ActionsAndTriggers (AAT)** documentation portal. The reference pages are generated from the current source tree; if a page and the code disagree, the code wins.
 
 ---
 
 ### 🇬🇧 English Documentation
-1. [Core Architecture](en/ARCHITECTURE.md) — Architectural overview, lifecycle, and subsystem interactions.
-2. [GUI Engine Guide](en/GUI_ENGINE.md) — Comprehensive guide to the composite widget engine, masks, and item safety.
-3. [GUI Creation via YAML Tutorial](en/CONFIG_GUI_TUTORIAL.md) — Step-by-step tutorial for building menus and machines purely from YAML.
-4. [Triggers, Filters & Actions Catalog](en/TRIGGERS_AND_ACTIONS.md) — Complete catalog of all 21 triggers, conditions, and core actions.
-5. [Scripting Triggers via YAML Tutorial](en/CONFIG_SCRIPTS_TUTORIAL.md) — Step-by-step tutorial for writing event-driven scripts in YAML.
-6. [Developer API Guide](en/API_GUIDE.md) — Fluent API reference for Java and Kotlin plugin developers.
-7. [Ready-to-Use Examples Directory](examples/README.md) — 6 complete production-ready examples from navigators to industrial fabricators.
+1. [Core Architecture](en/ARCHITECTURE.md) — Module layout, runtime pipeline, lifecycle, and subsystem behaviour.
+2. [GUI Engine Guide](en/GUI_ENGINE.md) — Widget types, masks, session/PDC state, and item-safety rules that actually apply.
+3. [GUI Creation via YAML Tutorial](en/CONFIG_GUI_TUTORIAL.md) — Step-by-step tutorial for building menus and machines from YAML.
+4. [Triggers, Filters & Actions Catalog](en/TRIGGERS_AND_ACTIONS.md) — Exact list of the 21 triggers, all filters and all actions with their real parameters.
+5. [Scripting Triggers via YAML Tutorial](en/CONFIG_SCRIPTS_TUTORIAL.md) — Practical guide with correct IDs, types, and placeholder rules.
+6. [Developer API Guide](en/API_GUIDE.md) — Compiling examples for custom actions, filters, triggers, GUIs, and widgets.
+7. [Ready-to-Use Examples Directory](examples/README.md) — 6 configuration scenarios with their current limitations called out.
+8. [Known Issues & Gap Analysis](en/POTENTIAL_ISSUES.md) — Documented data-loss risks, broken YAML features, API inconsistencies, and a suggested work order.
 
 ---
 
 ### 🇷🇺 Документация на русском языке
-1. [Архитектура ядра](ru/ARCHITECTURE.md) — Архитектурный обзор, жизненный цикл и взаимодействие подсистем.
-2. [Руководство по GUI движку](ru/GUI_ENGINE.md) — Исчерпывающее руководство по виджетам, маскам и защите ресурсов.
-3. [Руководство по созданию GUI из YAML](ru/CONFIG_GUI_TUTORIAL.md) — Пошаговое руководство по созданию меню и станков без Java-кода.
-4. [Триггеры, Фильтры и Действия](ru/TRIGGERS_AND_ACTIONS.md) — Полный реестр всех 21 триггеров, условий и экшенов ядра.
-5. [Руководство по скриптингу триггеров из YAML](ru/CONFIG_SCRIPTS_TUTORIAL.md) — Пошаговое руководство по написанию скриптов и способностей в YAML.
-6. [Руководство для разработчиков (API)](ru/API_GUIDE.md) — Fluent API для разработчиков плагинов на Java и Kotlin.
-7. [Каталог готовых практических примеров](examples/README.md) — 6 подробных рабочих сценариев: от навигации до криогенного фабрикатора.
+1. [Архитектура ядра](ru/ARCHITECTURE.md) — Структура модулей, рантайм-пайплайн, жизненный цикл и поведение подсистем.
+2. [Руководство по GUI-движку](ru/GUI_ENGINE.md) — Типы виджетов, маски, состояние сессии/PDC и реально действующие правила сохранности предметов.
+3. [Создание GUI в YAML](ru/CONFIG_GUI_TUTORIAL.md) — Пошаговое руководство по меню и станкам без Java-кода.
+4. [Триггеры, Фильтры и Действия](ru/TRIGGERS_AND_ACTIONS.md) — Точный список 21 триггера, всех фильтров и действий с реальными параметрами.
+5. [Скриптинг триггеров в YAML](ru/CONFIG_SCRIPTS_TUTORIAL.md) — Практическое руководство с правильными ID, типами и правилами плейсхолдеров.
+6. [Руководство для разработчиков (API)](ru/API_GUIDE.md) — Компилируемые примеры кастомных действий, фильтров, триггеров, GUI и виджетов.
+7. [Каталог примеров](examples/README.md) — 6 сценариев конфигурации с явно указанными текущими ограничениями.
+8. [Известные проблемы](ru/POTENTIAL_ISSUES.md) — Зафиксированные риски потери данных, нерабочие YAML-функции, несогласованность API и предлагаемый порядок работ.

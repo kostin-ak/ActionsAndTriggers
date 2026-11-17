@@ -1,8 +1,6 @@
 id: world_navigator
 title: "<gradient:#70E1F5:#FFD194>❖ Навигатор Миров ❖</gradient>"
 rows: 3
-allow_combat: false
-close_on_damage: true
 
 mask:
   pattern:

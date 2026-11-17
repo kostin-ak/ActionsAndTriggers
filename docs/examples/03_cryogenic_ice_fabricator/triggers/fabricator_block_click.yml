@@ -1,10 +1,10 @@
 triggers:
-  # Открытие фабрикатора при клике по блоку синего льда с шифтом
+  # Открытие фабрикатора при клике по блоку синего льда
   - trigger: "core:player_interact"
     conditions:
       - type: "core:match"
-        template: "{block_type}"
-        value: "BLUE_ICE"
+        template: "{clicked_block_id}"
+        value: "minecraft:blue_ice"
       - type: "core:not_in_combat"
     actions:
       - action: "core:open_gui"

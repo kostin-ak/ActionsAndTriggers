@@ -1,181 +1,127 @@
-# 🎨 Comprehensive Guide: Assembling GUIs via YAML
+# 🎨 Guide: Assembling GUIs in YAML
 
-## 1. Introduction & Concept
-With **ActionsAndTriggers (AAT)**, custom menus and complex machinery interfaces require zero Java code. Every interface—from a world navigator to an animated industrial synthesizer with multi-tier upgrades—is configured via declarative YAML files located in `plugins/ActionsAndTriggers/guis/*.yml`.
+## 1. Concept
 
-### Key Architectural Advantages:
-- **Visual Pattern Masks**: No manual slot math (0..53). You draw the interface layout using standard `9xN` characters.
-- **Guaranteed Item & Resource Safety**: Real player items placed in input or output slots will never vanish. Upon inventory close, damage, disconnect, or server reload, all items are safely returned to player inventories or dropped at their feet if full.
-- **Seamless Resourcepack Alignment**: Full support for MiniMessage font glyph shifts (`<shift:-8><glyph:custom_gui><shift:-164>`) and physically transparent slots (`transparent_slot`) to blend with Oraxen and ItemsAdder custom container textures.
+Menus and machine panels are declared in `plugins/ActionsAndTriggers/guis/*.yml`; no Java is required for the types supported by `YamlGuiLoader`.
 
----
+- **Masks**: draw the layout with 9×N characters and map each character to a widget. The loader also accepts a flat `items` (or `widgets`) section with explicit `slot`/`x`/`y`.
+- **Material IDs**: `minecraft:`, `oraxen:` and `itemsadder:` are resolved through `ItemRegistry`.
+- **Title glyphs**: MiniMessage, including `<shift:...>` and `<glyph:...>`. When Oraxen is absent the loader strips `<glyph:...>` and `<shift:...>` tags from the title.
+- **Item safety**: real items in `input_slot`/`output_slot` are returned to the player when the inventory closes. There is no AAT handler for server shutdown or plugin disable, so this guarantee does not extend to restarts.
 
-## 2. Anatomy of a GUI Configuration File
-
-Every file in `guis/` (e.g. `guis/custom_bench.yml`) adheres to this structure:
+## 2. File anatomy
 
 ```yaml
-id: custom_bench        # Unique identifier used by core:open_gui
-title: "<gradient:#FFA07A:#FF6347>❖ Engineer Workbench ❖</gradient>" # MiniMessage header
-rows: 3                 # Height: 1 to 6 rows
+id: custom_bench
+title: "<gradient:#FFA07A:#FF6347>❖ Engineer Workbench ❖</gradient>"
+rows: 3
 
-allow_combat: false     # Prohibit opening while tagged in combat
-close_on_damage: true   # Immediately close when player receives damage
+on_open:
+  - action: "core:sound"
+    sound: "block.anvil.use"
 
 mask:
   pattern:
-    - "#########"       # Row 1 (slots 0..8)
-    - "#I#+#C#=#"       # Row 2 (slots 9..17)
-    - "####X####"       # Row 3 (slots 18..26)
+    - "#########"
+    - "#I#+#C#=#"
+    - "####X####"
   components:
     "#":
       type: slot_cover
       material: "minecraft:gray_stained_glass_pane"
-      name: " "
     "X":
       type: button
       material: "minecraft:barrier"
-      name: "<red>Close Window</red>"
+      name: "<red>Close</red>"
       on_click:
         - action: "core:close_gui"
 ```
 
----
+`rows` is clamped to 1..6. `on_close` is parsed but never executed by the current listener; `target_block` is stored but not read by any runtime code. `allow_combat` and `close_on_damage` are ignored — see section 6.
 
-## 3. Deep Dive into Widget Types
+## 3. Widget types available in YAML
 
-### 3.1. Decorative Panels & Fillers
+### 3.1. Decoration
 
-#### `slot_cover` (Physical Filler Item)
-Places a physical item (typically stained glass), strips lore, and cancels clicks.
-```yaml
-"#":
-  type: slot_cover
-  material: "minecraft:black_stained_glass_pane"
-  name: " "
-```
+`slot_cover` (aliases `cover`, `blank`) places a physical item and blocks clicks. Fields: `material`/`item`, `fallback`. `transparent_slot` (alias `invisible_slot`) leaves the slot physically empty and still blocks clicks; `transparent: true` has the same effect on any cover.
 
-#### `transparent_slot` (Invisible Slot for Backgrounds)
-Physically empty slot (`Material.AIR`), letting custom chest art shine through unobstructed while completely blocking clicks and drags.
-```yaml
-".":
-  type: transparent_slot
-```
+`filler` places one item into many slots at once: `material`/`item`, `name`, `slots` (list) or `x`/`y`.
 
----
+### 3.2. Buttons
 
-### 3.2. Interactive Buttons
-
-#### `button` (Standard Action Button)
-Executes an `on_click` action pipeline when clicked.
 ```yaml
 "B":
   type: button
-  material: "oraxen:astral_atlas"    # Accepts oraxen:id, itemsadder:id, and minecraft:id
+  material: "oraxen:astral_atlas"
   name: "<gold>Teleport to Sanctuary</gold>"
   lore:
-    - "<gray>Click to return to</gray>"
-    - "<yellow>the safe zone.</yellow>"
-  on_click:
+    - "<gray>Click to return</gray>"
+  amount: 1
+  custom_model_data: 0
+  on_click:            # "actions" is accepted as an alias
     - action: "core:command"
       command: "spawn"
       as_console: false
-    - action: "core:sound"
-      sound: "entity.enderman.teleport"
-      volume: 1.0
-      pitch: 1.2
 ```
 
-#### `cycle_button` (Multi-State Toggle)
-Cycles through states sequentially on click, storing state in `session_key`.
-```yaml
-"M":
-  type: cycle_button
-  session_key: "machine_speed"
-  states:
-    - id: "eco"
-      material: "minecraft:lime_dye"
-      name: "<green>Mode: ECO (-50% energy)</green>"
-    - id: "normal"
-      material: "minecraft:yellow_dye"
-      name: "<yellow>Mode: STANDARD</yellow>"
-    - id: "turbo"
-      material: "minecraft:red_dye"
-      name: "<red>Mode: TURBO (+100% speed)</red>"
-```
+An unknown `type` is treated as `button`, which makes typos in widget types hard to notice.
 
----
+`cycle_button` rotates through `states`; each state has `id`, `material`/`item`, `name`, `lore`, `actions`. The current id is stored in `session_key` or `persistent_key` (PDC of the bound tile block).
 
-### 3.3. Industrial Machine Slots (Item Safety)
+`toggle` is a boolean switch with `session_key`/`persistent_key`, `default`, `on_state` and `off_state` (each with `material`, `name`, `lore`) and `on_change` actions.
 
-#### `input_slot` (Material & Ingot Input)
-Restricts insertion to items in `allowed_items`. When empty, renders an interactive ghost placeholder tagged with PDC `actionstriggers:gui_placeholder`.
+### 3.3. Machine slots
+
 ```yaml
 "W":
   type: input_slot
   allowed_items:
     - "minecraft:water_bucket"
   placeholder_material: "minecraft:bucket"
-  placeholder_name: "<aqua>💧 Insert Water Bucket</aqua>"
+  placeholder_name: "<aqua>Insert Water Bucket</aqua>"
   placeholder_lore:
-    - "<gray>Required to cool the machine.</gray>"
+    - "<gray>Required for cooling.</gray>"
 ```
 
-#### `output_slot` (Product Extraction)
-Extraction-only slot. Placing items inside is strictly disallowed.
-```yaml
-"O":
-  type: output_slot
-```
+`input_slot` accepts only `allowed_items` (an empty list accepts anything) and calls `on_insert`/`on_extract`. Placeholders carry the PDC tag `actionstriggers:gui_placeholder` and cannot be taken.
 
----
+`output_slot` is take-only, supports the same placeholder fields and an `on_take` hook. Inserting items and taking the placeholder are blocked.
 
-### 3.4. Gauges & Dynamic Indicators
+Shift-click from the player inventory is always cancelled, so items cannot be shift-inserted into a machine slot; they must be placed with a normal click.
 
-#### `progress_bar` (Animated Process Bar)
-Animates continuous operations at 10 FPS with support for `{percent}`, `{stage}`, and `{temp}` placeholders.
-```yaml
-">":
-  type: progress_bar
-  idle_material: "minecraft:spectral_arrow"
-  idle_name: "<aqua>⚡ Click to Start Freezing</aqua>"
-  running_material: "minecraft:clock"
-  running_name: "<gradient:#74B9FF:#0984E3>⚙ Freezing: {percent}%</gradient>"
-  bar_length: 10
-  filled_color: "#74B9FF"
-  empty_color: "#636E72"
-  on_click:
-    - action: "core:cryo_freeze"
-      water_slot: 10
-      crystal_slot: 12
-      output_slot: 16
-      upgrade_slot: 24
-```
+### 3.4. Indicators
 
-#### `fluid_tank` (Vertical Fluid Level Gauge)
-Renders liquid levels as a vertical column filled from bottom to top.
-```yaml
-"T":
-  type: fluid_tank
-  level_key: "coolant_level"
-  max_level: 100
-  filled_material: "minecraft:water_bucket"
-  empty_material: "minecraft:bucket"
-  title: "<aqua>Coolant Tank: {level}/{max}</aqua>"
-```
+`progress_bar` shows an idle and a running state. It supports `{percent}`, `{bar}`, `{stage}`, `{temp}`, `{status}` and PAPI in its texts. The process itself is started from Java (the built-in machine actions call `startProcess`); `on_click` runs your action list, which is where `core:cryo_freeze` is normally used.
 
----
+`fluid_tank` draws a vertical column, filling bottom-up. It reads a **numeric** value from the GUI session under `level_key`; the title is rendered verbatim (no `{level}`/`{max}` substitution). YAML cannot put a number into the session, so a tank declared only in YAML will show 0 unless a plugin writes that session value.
 
-## 4. Complete Real-World Example: Advanced Cryogenic Fabricator
+`paged_list` has no item source in YAML; it is always empty unless populated from Java.
 
-Here is the production-ready configuration for an ice synthesizer featuring Tier 1-3 accelerator modules:
+`tab_container` is not supported by the loader: `type: tab_container` becomes a button. Tabs must be assembled from Java.
+
+## 4. Widget fields reference
+
+| Type | Fields |
+| :--- | :--- |
+| `slot_cover`, `cover`, `blank`, `transparent_slot`, `invisible_slot` | `material`, `item`, `fallback`, `transparent` |
+| `filler` | `material`, `item`, `name`, `slots` |
+| `button` (and unknown types) | `material`, `item`, `name`, `lore`, `amount`, `custom_model_data`, `actions`, `on_click` |
+| `input_slot` | `allowed_items`, `placeholder_material`, `placeholder_name`, `placeholder_lore`, `on_insert`, `on_extract` |
+| `output_slot` | `placeholder_material`, `placeholder_name`, `placeholder_lore`, `on_take` |
+| `progress_bar` | `idle_material`, `idle_name`, `idle_lore`, `running_material`, `running_name`, `running_lore`, `bar_length`, `filled_color`, `empty_color`, `on_click` |
+| `toggle` | `persistent_key`, `session_key`, `default`, `on_state`, `off_state`, `on_change` |
+| `cycle_button` | `persistent_key`, `session_key`, `states` |
+| `fluid_tank` | `height`, `level_key`, `max_level`, `filled_material`, `empty_material`, `title` |
+| `paged_list` | `width`, `height`, `prev_slot`, `next_slot`, `session_key` |
+
+Every widget also accepts `slot` or `x`/`y`, and `condition`/`conditions` (a filter tree evaluated with the player and the bound block in context).
+
+## 5. Complete working example: cryogenic fabricator
 
 ```yaml
 id: ice_fabricator_gui
 title: "<shift:-8><glyph:ice_fabricator_bg><shift:-164><gradient:#74B9FF:#0984E3>❄ Cryogenic Fabricator ❄</gradient>"
 rows: 3
-allow_combat: false
-close_on_damage: true
 
 mask:
   pattern:
@@ -227,6 +173,9 @@ mask:
         - id: "packed_ice"
           material: "minecraft:packed_ice"
           name: "<gradient:#A0E7E5:#B4F8C8>Mode: Packed Ice</gradient>"
+        - id: "ice"
+          material: "minecraft:ice"
+          name: "<aqua>Mode: Normal Ice</aqua>"
 
     "S":
       type: button
@@ -247,10 +196,6 @@ mask:
         - "minecraft:netherite_ingot"
       placeholder_material: "minecraft:redstone_torch"
       placeholder_name: "<gradient:#FFA07A:#FF6347>⚡ Upgrade Module (T1-T3)</gradient>"
-      placeholder_lore:
-        - "<gray>T1 (-25%): Copper / Iron</gray>"
-        - "<gray>T2 (-50%): Gold / Emerald</gray>"
-        - "<gray>T3 (-75%): Diamond / Netherite</gray>"
 
     "X":
       type: button
@@ -259,3 +204,14 @@ mask:
       on_click:
         - action: "core:close_gui"
 ```
+
+Slot numbers passed to `core:cryo_freeze` are absolute inventory slots. In this mask, water is at 10, catalyst at 12, output at 16 and the upgrade slot at 24.
+
+## 6. Limits you should know before designing a menu
+
+- **No GUI combat flags.** `allow_combat`/`close_on_damage` are not read. Gate the opening trigger with `core:not_in_combat` and the combat action instead. Only the hard-coded `astral_atlas` GUI is force-closed on damage.
+- **No `on_close` execution.** Put cleanup into the action that closes the menu, or into the player-quit trigger.
+- **No item recovery on shutdown.** Ask players to close machines before a restart, or add your own shutdown handler.
+- **Mask cells are single-slot.** A multi-cell widget used inside a mask is rendered once per cell and only its first item is placed. Use `items`/`widgets` with `x`/`y` for tanks and lists.
+- **Slots not covered by a mask are still protected** from taking and placing because the listener cancels clicks on slots with no visible widget. Covering them is a visual choice, not a security requirement.
+- **`persistent_key` requires a bound block.** PDC is available only when `core:open_gui` was executed with a block in context and that block is a tile entity.

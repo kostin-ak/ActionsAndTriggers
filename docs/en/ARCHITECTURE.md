@@ -1,88 +1,98 @@
 # 🏛️ ActionsAndTriggers (AAT) Core Architecture
 
-## 1. Introduction & Mission
-**ActionsAndTriggers (AAT)** is a high-performance, modular enterprise framework designed for Paper and Purpur Minecraft servers (`>= 1.21.4` and `26.2+`). It unifies Bukkit events, declarative action pipelines, a modern widget-oriented GUI engine, and task scheduling into a single cohesive ecosystem.
+## 1. Mission and stack
 
-The framework operates purely on the **Paper API** without any brittle Net Minecraft Server (NMS) dependencies, ensuring clean binary and logical compatibility across server updates.
+**ActionsAndTriggers (AAT)** is a Paper/Purpur plugin that turns Bukkit events into declarative pipelines (trigger → filters → actions) and adds a widget-based inventory GUI engine with a scheduler, cooldowns and combat tagging.
 
----
+- Java 21, Gradle multi-module build.
+- Compiled against `io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT` (`paperVersion` Gradle property, default 1.21.4). Release artifacts are built against the minimum supported API; a compile matrix also checks 1.21.5, 1.21.8 and 1.21.11.
+- Pure Bukkit/Paper API, no NMS.
+- Optional soft dependencies: Oraxen, ItemsAdder, PlaceholderAPI, LuckPerms.
 
-## 2. Core Architectural Entities
+## 2. Module layout
+
+| Module | Contents |
+| :--- | :--- |
+| `:aat-api` | Public contracts (`Action`, `Filter`, `Trigger`), registries, `ActionTriggerAPI`, `ExecutionContext`/`CoreKeys`, `ActionScheduler`, `Registrar`, GUI classes and widgets, provider interfaces, `PapiHook`. |
+| `:aat-core` | Plugin entry point `ActionsTriggers`, `AATParser`, `YamlTriggerLoader`, `YamlGuiLoader`, `GuiRegistry`/`GuiListener`, default actions/filters/triggers, `I18n`, `CombatTracker`, hooks, Lamp commands. Also contains `api.parser` and `api.provider.impl` packages (parser and Oraxen/ItemsAdder providers), so the API jar is not a complete standalone toolkit. |
+
+Build outputs: `apiJar` (thin API jar) and `shadowJar` (shaded plugin, Lamp relocated to `kostin.ak.actionstriggers.libs.revxrsal`). `deployToPlugins` copies the shaded jar into a hard-coded local server directory and is part of the root `build` task.
+
+## 3. Runtime pipeline
 
 ```mermaid
-graph TD
-    Trigger[Event / Trigger] --> Context[ExecutionContext]
-    Context --> FilterPipeline[Filter & Condition Pipeline]
-    FilterPipeline -->|Success| ActionPipeline[Action Pipeline]
-    ActionPipeline --> ItemRegistry[Item Registry]
-    ActionPipeline --> BlockRegistry[Block Registry]
-    ActionPipeline --> GuiEngine[Widget GUI Engine]
-    ActionPipeline --> CombatTracker[Combat Tracker]
-    ActionPipeline --> Scheduler[Action Scheduler & Cooldowns]
-    
-    ItemRegistry --> VanillaItem[Vanilla Provider]
-    ItemRegistry --> OraxenItem[Oraxen Provider]
-    ItemRegistry --> IAItem[ItemsAdder Provider]
-    
-    BlockRegistry --> VanillaBlock[Vanilla Provider]
-    BlockRegistry --> OraxenBlock[Oraxen Provider]
-    BlockRegistry --> IABlock[ItemsAdder Provider]
-    
-    GuiEngine --> PapiHook[PapiHook Soft-Dependency]
-    ActionPipeline --> PapiHook
-    ActionPipeline --> I18n[I18n Localization]
+graph LR
+    Event[Bukkit event] --> Trigger[Trigger]
+    Trigger --> Context[ExecutionContext]
+    Context --> Filters[Filter chain]
+    Filters -->|pass| Actions[Action chain]
+    Actions --> Scheduler[ActionScheduler]
+    Actions --> Items[ItemRegistry / BlockRegistry]
+    Actions --> Gui[GuiRegistry]
+    Actions --> Combat[CombatTracker]
+    Actions --> Perms[LuckPermsHook]
 ```
 
-### 2.1. Isolated Execution Context (`ExecutionContext`)
-`ExecutionContext` is a lightweight, immutable-by-contract data carrier spawned by triggers and routed through condition and action pipelines:
-- Carries strongly-typed keys (`CoreKeys`):
-  - `PLAYER`: Interacting player (`Player`).
-  - `LOCATION`: Event location (`Location`).
-  - `BLOCK`: Interacted block (`Block`).
-  - `ITEM_IN_HAND_ID`: Namespaced item identifier in hand (`String`).
-  - `WORLD`, `FROM_WORLD`, `TO_WORLD`: World names and transitions.
-  - `DAMAGE`, `DAMAGE_CAUSE`, `DAMAGER`: Combat damage attributes.
-  - `CANCEL_CONSUMER`: Thread-safe lambda to cancel the underlying Bukkit event.
-- Provides deep-cloning support for scheduled and asynchronous task isolation.
+1. `ActionsTriggers#onEnable` creates the registries and the scheduler, calls `ActionTriggerAPI#init`, registers default actions, filters and triggers, initialises hooks and commands, then loads `triggers/` and `guis/`.
+2. A Bukkit event listener derived from `BukkitEventTrigger` performs a fast-exit check (`TriggerRegistry#hasSubscriptions`) and only then builds an `ExecutionContext` from the declared `ContextKey` extractors.
+3. `TriggerRegistry#dispatch` runs global debug listeners, then each subscription whose filter passes.
+4. `YamlTriggerLoader` builds one callback per script entry that executes the parsed actions in order and stops when the context is cancelled.
+5. `BukkitEventTrigger` cancels the underlying event if the context was cancelled and the event is `Cancellable`.
 
-### 2.2. Item and Block Providers (`ItemRegistry`, `BlockRegistry`)
-Abstracts game logic from specific third-party item plugin implementations:
-- Identifier format: `<namespace>:<id>`.
-  - `minecraft:diamond_sword` $\rightarrow$ Handled by `VanillaItemProvider`.
-  - `oraxen:astral_atlas` $\rightarrow$ Handled by `OraxenItemProvider`.
-  - `itemsadder:ruby_sword` $\rightarrow$ Handled by `ItemsAdderItemProvider`.
-- Seamlessly resolves custom blocks, CustomModelData, and persistent NBT tags.
+## 4. Execution context
 
----
+`ExecutionContext` is a `ConcurrentHashMap`-backed bag of typed values with a `cancelled` flag.
 
-## 3. Key Core Subsystems
+- Keys are `ContextKey<T>` instances compared by `id` + `type`; reading with the wrong type returns `null`.
+- `CoreKeys` defines the shared keys: `PLAYER`, `LOCATION`, `BLOCK`, `BLOCK_MATERIAL`, `ENTITY`, `ITEM`, `ITEM_IN_HAND`, `ITEM_IN_HAND_ID`, `ITEM_ID`, `BLOCK_ID`, `CLICKED_BLOCK_ID`, `MESSAGE`, `DAMAGE`, `DAMAGE_CAUSE`, `DAMAGER`, `DAMAGE_SOURCE`, `ITEM_DROPS`, `KILLER`, `LEVEL`, `WORLD`, `WORLD_NAME`, `FROM_WORLD`, `TO_WORLD`, `HAS_BLOCK`, `IS_FLYING`, `ADVANCEMENT_KEY`, `ACTION`, `BUTTON_TYPE`.
+- `clone()` produces an independent copy, which the scheduler uses for delayed and repeating work.
+- The exact keys each trigger provides are listed in `docs/en/TRIGGERS_AND_ACTIONS.md`. There is no `CANCEL_CONSUMER`: cancellation is the `cancelled` flag.
 
-### 3.1. Internationalization & Localization (`I18n`)
-- Thread-safe dictionary backed by `ConcurrentHashMap`.
-- Automatic extraction of language bundles (`messages_en.yml`, `messages_ru.yml`) to `plugins/ActionsAndTriggers/lang/`.
-- Configurable via `language` property in `config.yml`.
-- Native MiniMessage formatting and dynamic parameter interpolation across all system messages.
+## 5. Subsystems
 
-### 3.2. Combat Tracker (`CombatTracker` & `CombatListener`)
-- Centralized tracking of player combat states across multiple damage sources (PvP, mobs, arrows, fire, lava, falling).
-- Configurable duration via `combat.duration_seconds`.
-- GUI integration: menus can declare `allow_combat: false` and `close_on_damage: true` to prevent exploit-based GUI stalling in combat.
+### 5.1. Actions, filters and parsing
 
-### 3.3. Task Scheduler & Cooldowns (`ActionScheduler`)
-- Delayed action chains (`core:delay`) with isolated context cloning.
-- Repeating action loops (`core:repeat`) with dynamic iteration counters (`{iteration}`).
-- Named schedulers (`core:schedule`) with cancellation support (`core:cancel_schedule`).
-- Per-player ability cooldowns (`core:set_cooldown`, `core:on_cooldown`, `core:not_on_cooldown`).
-- Heartbeat core trigger (`core:interval`) ticking every second for automated mechanics.
+- `ActionRegistry` and `FilterRegistry` scan classes for `@ConfigAction` / `@ConfigFilter` static factories and cache `@ActionParam` metadata for `/aat list` and `/aat get params`.
+- `AATParser` (in `:aat-core`) parses single actions, lists of actions, conditions, `inject_context` blocks and whole trigger definitions. `ParserOptions` defines the accepted keys (`action`/`action_type`/`id`, `type`/`condition`/`id`, `trigger`/`event`/`type`, `inject_context`).
+- Unknown action or filter IDs throw `IllegalArgumentException` during loading; the loader logs the file and continues with the next trigger.
 
-### 3.4. Widget-Oriented GUI Engine (`GuiEngine`)
-- Comprehensive widget library: `ButtonWidget`, `CycleButtonWidget`, `SlotCoverWidget`, `InputSlotWidget`, `OutputSlotWidget`, `ProgressBarWidget`, `FluidTankWidget`, `PagedListWidget`, `TabContainerWidget`.
-- Visual mask templating (`MaskWidget`) with automatic recursive child slot unrolling.
-- Guaranteed item safety: closing a menu automatically returns real items to the player's inventory or safely drops them on the ground if full.
+### 5.2. Scheduler and cooldowns
 
----
+`ActionScheduler` wraps the Bukkit scheduler: `runLater`, `runRepeating` (iteration counter in `{iteration}`), `runRepeatingTask`, named `scheduleNamed`/`cancelNamed`, and per-player cooldowns keyed by `UUID + key`.
 
-## 4. Lifecycle, Reliability & Performance
-- **Hot Reload (`/aat reload`)**: Flushes internal registries, reloads language files, and recompiles script trees without requiring server restarts.
-- **Linear Token Parsing**: String placeholders and templates use linear scanning to resolve values without creating regex matcher objects.
+All of it is in-memory. Named tasks and cooldowns are lost on restart; `cancelAll()` is available but the plugin does not call it in `onDisable` (it calls `Bukkit.getScheduler().cancelTasks(plugin)`).
 
+### 5.3. Combat tracker
+
+`CombatTracker` stores an expiry timestamp per player. `CombatListener` tags attackers and victims on `EntityDamageByEntityEvent` and any player damage on `EntityDamageEvent`, in survival/adventure only, with a fixed 15-second duration.
+
+`config.yml` contains `combat.duration_seconds` and `combat.close_gui_on_damage`, but neither value is read anywhere: the duration is the constructor default 15, and damage only force-closes a GUI whose id is exactly `astral_atlas` (hard-coded in `CombatListener#checkAndCloseAtlas`).
+
+### 5.4. Item and block providers
+
+`ItemRegistry` and `BlockRegistry` resolve `<namespace>:<id>` strings. Vanilla items are always registered; Oraxen and ItemsAdder providers are registered conditionally in `onEnable`.
+
+There is **no vanilla `BlockProvider`**. `BlockRegistry#getFullId` falls back to `minecraft:<lowercase material name>`, so vanilla block IDs still resolve, but `BlockRegistry#placeBlock` cannot place vanilla blocks through a provider.
+
+### 5.5. GUI engine
+
+`GuiRegistry` owns GUI definitions by id, opens inventories backed by `AATGuiHolder`, renders widgets into a slot matrix and re-renders on refresh. `GuiListener` cancels clicks/drags on non-widget slots and returns items from input/output slots on `InventoryCloseEvent`. Details and limitations: `docs/en/GUI_ENGINE.md`.
+
+### 5.6. Localization
+
+`I18n` loads `lang/messages_<language>.yml` into a `ConcurrentHashMap`, supports `{param}` interpolation and caches `Component`s. The active language comes from `config.yml` `language`.
+
+Localization covers loader logs, combat messages and the built-in machine messages. Many command replies, tab-completion hints, machine status strings and action defaults are hard-coded Russian/English text in `ActionCommand`, `AATTabCompleter`, `DefaultActionParsers` and `ProgressBarWidget`.
+
+### 5.7. Commands and debugging
+
+Lamp (`revxrsal.commands`) provides `/aat` (`/actionapi` alias) with `run`, `trigger`, `debug`, `list`, `guis`, `get`, `reload`, `providers`, `provider_items`, `hand`, `search`, `open`. Permission: `actionstriggers.admin`.
+
+`/aat reload` reloads `config.yml`, the language bundle, all triggers (unsubscribing this plugin first) and all GUIs. It does not reload the Gradle-loaded classpath, obviously, and it does not re-register actions/filters/providers.
+
+## 6. Lifecycle and failure behaviour
+
+- `onDisable` stops the heartbeat, cancels Bukkit tasks for the plugin, clears the script registry, unsubscribes all triggers and clears the GUI registry.
+- Open machine inventories are not iterated on disable, so items inside them are not returned by AAT at shutdown.
+- Exceptions inside a subscription or an action callback are caught by `TriggerRegistry` and logged; one broken script does not stop the others.
+- `ActionTriggerAPI` throws until `init` has been called, so plugins that load before AAT must defer their registration.

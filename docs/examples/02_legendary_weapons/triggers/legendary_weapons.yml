@@ -70,10 +70,10 @@ triggers:
         dy: 0.8
         dz: 0.3
       - action: "core:push"
-        dy: 0.4
+        y: 0.4
       - action: "core:potion_effect"
         effect: "SPEED"
-        duration: 3
+        duration: 60
         amplifier: 2
       - action: "core:message"
         type: "actionbar"

@@ -6,10 +6,10 @@
    - Приветственный заголовок Title с MiniMessage-градиентом.
    - Выдача стартового набора и атласа (`oraxen:astral_atlas`).
    - Отображение текущей группы игрока в LuckPerms (`{player.group}`) и префикса (`{player.prefix}`).
-2. **Получение достижения (`core:player_advancement_done`)**:
+2. **Получение достижения (`core:advancement_done`)**:
    - При получении достижения "Cover Me in Diamonds" (Алмазная броня) игрок автоматически повышается в группу `veteran` через действие `core:set_group`.
    - Ему выдается пермишен `core:add_permission` на полет в лобби `lobby.fly`.
-   - Проигрывается салют и звуковой сигнал на весь сервер.
+   - Проигрывается салют (жёстко заданный эффект `core:firework`: цвет, тип и trail не настраиваются) и звуковой сигнал.
 
 ---
 
@@ -34,10 +34,10 @@ triggers:
         if_absent: true
 
   # 2. АВТОПОВЫШЕНИЕ ПРИ ВЫПОЛНЕНИИ ДОСТИЖЕНИЯ
-  - trigger: "core:player_advancement_done"
+  - trigger: "core:advancement_done"
     conditions:
       - type: "core:match"
-        template: "{advancement}"
+        template: "{advancement_key}"
         value: "minecraft:story/shiny_gear"   # Алмазная броня
       - type: "core:not_in_group"
         group: "veteran"
@@ -51,8 +51,6 @@ triggers:
       # Эффекты праздника
       - action: "core:firework"
         power: 2
-        type: "BALL_LARGE"
-        colors: ["#74B9FF", "#FDCB6E", "#00CEC9"]
       - action: "core:sound"
         sound: "ui.toast.challenge_complete"
         volume: 1.0

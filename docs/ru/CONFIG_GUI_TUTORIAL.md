@@ -1,181 +1,127 @@
-# 🎨 Полное практическое руководство: Создание GUI через YAML
+# 🎨 Руководство: Создание GUI в YAML
 
-## 1. Введение и концепция
-В **ActionsAndTriggers (AAT)** интерфейсы не требуют написания Java-кода. Любое меню (от простого навигатора миров до сложного промышленного станка с анимациями и слотами улучшений) полностью настраивается в файлах `plugins/ActionsAndTriggers/guis/*.yml`.
+## 1. Концепция
 
-### Преимущества декларативных GUI:
-- **Разметка через маски (Masks)**: Вместо высчитывания номеров слотов (0..53) вы рисуете интерфейс символами `9xN`.
-- **Гарантированная сохранность предметов**: Реальные предметы из слотов ввода/выдачи никогда не пропадают при выходе, уроне или перезагрузке сервера.
-- **Поддержка кастомных текстур**: Поддержка сдвигов шрифтов MiniMessage (`<shift:-8><glyph:custom_gui><shift:-164>`) и прозрачных слотов (`transparent_slot`) для идеального совмещения с ресурспаками Oraxen и ItemsAdder.
+Меню и панели станков описываются в `plugins/ActionsAndTriggers/guis/*.yml`; для типов, которые поддерживает `YamlGuiLoader`, Java не нужна.
 
----
+- **Маски**: рисуйте раскладку символами 9×N и сопоставляйте каждый символ виджету. Загрузчик принимает и плоскую секцию `items` (или `widgets`) с явными `slot`/`x`/`y`.
+- **ID материалов**: `minecraft:`, `oraxen:` и `itemsadder:` разрешаются через `ItemRegistry`.
+- **Глифы в заголовке**: MiniMessage, включая `<shift:...>` и `<glyph:...>`. Если Oraxen не установлен, загрузчик вырезает теги `<glyph:...>` и `<shift:...>` из заголовка.
+- **Сохранность предметов**: реальные предметы из `input_slot`/`output_slot` возвращаются игроку при закрытии инвентаря. Обработчика остановки сервера и выключения плагина у AAT нет, поэтому на рестарты эта гарантия не распространяется.
 
-## 2. Базовая анатомия файла GUI
-
-Каждый файл в папке `guis/` (например, `guis/custom_bench.yml`) имеет базовую структуру:
+## 2. Анатомия файла
 
 ```yaml
-id: custom_bench        # Уникальный идентификатор для вызова (core:open_gui)
-title: "<gradient:#FFA07A:#FF6347>❖ Верстак Инженера ❖</gradient>" # Заголовок окна (MiniMessage)
-rows: 3                 # Высота окна: от 1 до 6 рядов
+id: custom_bench
+title: "<gradient:#FFA07A:#FF6347>❖ Верстак Инженера ❖</gradient>"
+rows: 3
 
-allow_combat: false     # Запретить открытие в бою (по умолчанию false)
-close_on_damage: true   # Закрывать меню мгновенно при получении урона
+on_open:
+  - action: "core:sound"
+    sound: "block.anvil.use"
 
 mask:
   pattern:
-    - "#########"       # Ряд 1 (слоты 0..8)
-    - "#I#+#C#=#"       # Ряд 2 (слоты 9..17)
-    - "####X####"       # Ряд 3 (слоты 18..26)
+    - "#########"
+    - "#I#+#C#=#"
+    - "####X####"
   components:
     "#":
       type: slot_cover
       material: "minecraft:gray_stained_glass_pane"
-      name: " "
     "X":
       type: button
       material: "minecraft:barrier"
-      name: "<red>Закрыть окно</red>"
+      name: "<red>Закрыть</red>"
       on_click:
         - action: "core:close_gui"
 ```
 
----
+`rows` ограничивается диапазоном 1..6. `on_close` парсится, но текущий слушатель его не выполняет; `target_block` сохраняется, но рантайм это поле не читает. `allow_combat` и `close_on_damage` игнорируются — см. раздел 6.
 
-## 3. Подробный разбор всех типов виджетов
+## 3. Типы виджетов, доступные из YAML
 
-### 3.1. Декоративные панели и Заглушки
+### 3.1. Декор
 
-#### `slot_cover` (Физическая панель-заполнитель)
-Размещает физический предмет (обычно стекло), очищает лор и блокирует любые клики.
-```yaml
-"#":
-  type: slot_cover
-  material: "minecraft:black_stained_glass_pane"
-  name: " "
-```
+`slot_cover` (алиасы `cover`, `blank`) ставит физический предмет и блокирует клики. Поля: `material`/`item`, `fallback`. `transparent_slot` (алиас `invisible_slot`) оставляет слот физически пустым и тоже блокирует клики; `transparent: true` даёт тот же эффект для любой заглушки.
 
-#### `transparent_slot` (Прозрачный слот под текстуры)
-Физически пустой слот (`Material.AIR`), через который полностью видна фоновая текстура сундука. Все клики, перемещения предметов и Shift-клики блокируются ядром.
-```yaml
-".":
-  type: transparent_slot
-```
+`filler` кладёт один предмет сразу в несколько слотов: `material`/`item`, `name`, `slots` (список) или `x`/`y`.
 
----
+### 3.2. Кнопки
 
-### 3.2. Интерактивные Кнопки
-
-#### `button` (Обычная кнопка)
-Выполняет цепочку действий `on_click` при нажатии игроком.
 ```yaml
 "B":
   type: button
-  material: "oraxen:astral_atlas"    # Поддерживаются oraxen:id, itemsadder:id и minecraft:id
-  name: "<gold>Телепорт в Лобби</gold>"
+  material: "oraxen:astral_atlas"
+  name: "<gold>Телепорт в Убежище</gold>"
   lore:
     - "<gray>Нажмите, чтобы вернуться</gray>"
-    - "<yellow>в безопасную зону.</yellow>"
-  on_click:
+  amount: 1
+  custom_model_data: 0
+  on_click:            # "actions" принимается как алиас
     - action: "core:command"
       command: "spawn"
       as_console: false
-    - action: "core:sound"
-      sound: "entity.enderman.teleport"
-      volume: 1.0
-      pitch: 1.2
 ```
 
-#### `cycle_button` (Циклический переключатель режимов)
-Переключает список состояний по кругу. Текущее значение сохраняется в `session_key` меню.
-```yaml
-"M":
-  type: cycle_button
-  session_key: "machine_speed"
-  states:
-    - id: "eco"
-      material: "minecraft:lime_dye"
-      name: "<green>Режим: ЭКО (-50% энергии)</green>"
-    - id: "normal"
-      material: "minecraft:yellow_dye"
-      name: "<yellow>Режим: СТАНДАРТ</yellow>"
-    - id: "turbo"
-      material: "minecraft:red_dye"
-      name: "<red>Режим: ТУРБО (+100% скорость)</red>"
-```
+Неизвестный `type` трактуется как `button`, поэтому опечатку в типе виджета легко не заметить.
 
----
+`cycle_button` перебирает `states`; у каждого состояния есть `id`, `material`/`item`, `name`, `lore`, `actions`. Текущий id хранится в `session_key` или `persistent_key` (PDC привязанного tile-блока).
 
-### 3.3. Производственные слоты станка (Item Safety)
+`toggle` — булев переключатель с `session_key`/`persistent_key`, `default`, `on_state` и `off_state` (у каждого `material`, `name`, `lore`) и действиями `on_change`.
 
-#### `input_slot` (Слот загрузки сырья и катализаторов)
-Позволяет игроку класть разрешенные предметы. В пустом состоянии отображает интерактивный фантомный образец (`placeholder`), защищенный от дюпа тегом PDC `actionstriggers:gui_placeholder`.
+### 3.3. Слоты станка
+
 ```yaml
 "W":
   type: input_slot
   allowed_items:
     - "minecraft:water_bucket"
   placeholder_material: "minecraft:bucket"
-  placeholder_name: "<aqua>💧 Поместите ведро с водой</aqua>"
+  placeholder_name: "<aqua>Поместите ведро с водой</aqua>"
   placeholder_lore:
-    - "<gray>Необходимо для охлаждения станка.</gray>"
+    - "<gray>Нужно для охлаждения.</gray>"
 ```
 
-#### `output_slot` (Слот выдачи готовой продукции)
-Слот, доступный **только для извлечения**. Положить туда предмет невозможно.
-```yaml
-"O":
-  type: output_slot
-```
+`input_slot` принимает только `allowed_items` (пустой список — любые) и вызывает `on_insert`/`on_extract`. Плейсхолдеры несут PDC-тег `actionstriggers:gui_placeholder` и не забираются.
 
----
+`output_slot` работает только на извлечение, поддерживает те же поля плейсхолдера и хук `on_take`. Вставка предметов и забирание плейсхолдера блокируются.
 
-### 3.4. Динамические индикаторы и шкалы
+Shift-клик из инвентаря игрока отменяется всегда, поэтому shift-вставка в слот станка невозможна; предметы кладутся обычным кликом.
 
-#### `progress_bar` (Анимированный индикатор процесса)
-Отображает процесс выполнения станочной операции с частотой 10 FPS и поддержкой плейсхолдеров `{percent}`, `{stage}`, `{temp}`.
-```yaml
-">":
-  type: progress_bar
-  idle_material: "minecraft:spectral_arrow"
-  idle_name: "<aqua>⚡ Нажмите для запуска синтеза</aqua>"
-  running_material: "minecraft:clock"
-  running_name: "<gradient:#74B9FF:#0984E3>⚙ Синтез: {percent}%</gradient>"
-  bar_length: 10
-  filled_color: "#74B9FF"
-  empty_color: "#636E72"
-  on_click:
-    - action: "core:cryo_freeze"
-      water_slot: 10
-      crystal_slot: 12
-      output_slot: 16
-      upgrade_slot: 24
-```
+### 3.4. Индикаторы
 
-#### `fluid_tank` (Вертикальный резервуар жидкостей)
-Отображает уровень жидкости или хладагента в виде вертикального столбца слотов, заполняющегося снизу вверх.
-```yaml
-"T":
-  type: fluid_tank
-  level_key: "coolant_level"  # ключ сессии
-  max_level: 100
-  filled_material: "minecraft:water_bucket"
-  empty_material: "minecraft:bucket"
-  title: "<aqua>Уровень Хладагента: {level}/{max}</aqua>"
-```
+`progress_bar` показывает состояние ожидания и состояние выполнения. Поддерживает `{percent}`, `{bar}`, `{stage}`, `{temp}`, `{status}` и PAPI в текстах. Сам процесс запускается из Java (встроенные станочные действия вызывают `startProcess`); `on_click` выполняет ваш список действий, где обычно и стоит `core:cryo_freeze`.
 
----
+`fluid_tank` рисует вертикальный столбец, заполняя его снизу вверх. Читает **числовое** значение из сессии GUI по ключу `level_key`; заголовок рендерится как есть (подстановок `{level}`/`{max}` нет). YAML не умеет положить число в сессию, поэтому резервуар, объявленный только в YAML, показывает 0, пока плагин не запишет это значение.
 
-## 4. Комплексный пример: Высокотехнологичный Фабрикатор
+`paged_list` не имеет источника предметов в YAML; список всегда пуст, если не заполнен из Java.
 
-Ниже представлен полноценный рабочий конфиг криогенного ледогенератора со слотом ускорителя (Tier 1-3):
+`tab_container` загрузчиком не поддерживается: `type: tab_container` превращается в кнопку. Вкладки собираются из Java.
+
+## 4. Справочник полей виджетов
+
+| Тип | Поля |
+| :--- | :--- |
+| `slot_cover`, `cover`, `blank`, `transparent_slot`, `invisible_slot` | `material`, `item`, `fallback`, `transparent` |
+| `filler` | `material`, `item`, `name`, `slots` |
+| `button` (и неизвестные типы) | `material`, `item`, `name`, `lore`, `amount`, `custom_model_data`, `actions`, `on_click` |
+| `input_slot` | `allowed_items`, `placeholder_material`, `placeholder_name`, `placeholder_lore`, `on_insert`, `on_extract` |
+| `output_slot` | `placeholder_material`, `placeholder_name`, `placeholder_lore`, `on_take` |
+| `progress_bar` | `idle_material`, `idle_name`, `idle_lore`, `running_material`, `running_name`, `running_lore`, `bar_length`, `filled_color`, `empty_color`, `on_click` |
+| `toggle` | `persistent_key`, `session_key`, `default`, `on_state`, `off_state`, `on_change` |
+| `cycle_button` | `persistent_key`, `session_key`, `states` |
+| `fluid_tank` | `height`, `level_key`, `max_level`, `filled_material`, `empty_material`, `title` |
+| `paged_list` | `width`, `height`, `prev_slot`, `next_slot`, `session_key` |
+
+Любой виджет также принимает `slot` или `x`/`y` и `condition`/`conditions` (дерево фильтров, вычисляемое с игроком и привязанным блоком в контексте).
+
+## 5. Полный рабочий пример: криогенный фабрикатор
 
 ```yaml
 id: ice_fabricator_gui
-title: "<shift:-8><glyph:ice_fabricator_bg><shift:-164><gradient:#74B9FF:#0984E3>❄ Криогенный Ледогенератор ❄</gradient>"
+title: "<shift:-8><glyph:ice_fabricator_bg><shift:-164><gradient:#74B9FF:#0984E3>❄ Криогенный Фабрикатор ❄</gradient>"
 rows: 3
-allow_combat: false
-close_on_damage: true
 
 mask:
   pattern:
@@ -204,7 +150,7 @@ mask:
     ">":
       type: progress_bar
       idle_material: "minecraft:spectral_arrow"
-      idle_name: "<aqua>⚡ Запустить Заморозку</aqua>"
+      idle_name: "<aqua>⚡ Запустить Процесс</aqua>"
       running_material: "minecraft:clock"
       running_name: "<gradient:#74B9FF:#0984E3>❄ Заморозка: {percent}%</gradient>"
       on_click:
@@ -227,6 +173,9 @@ mask:
         - id: "packed_ice"
           material: "minecraft:packed_ice"
           name: "<gradient:#A0E7E5:#B4F8C8>Режим: Плотный Лёд</gradient>"
+        - id: "ice"
+          material: "minecraft:ice"
+          name: "<aqua>Режим: Обычный Лёд</aqua>"
 
     "S":
       type: button
@@ -246,16 +195,23 @@ mask:
         - "minecraft:diamond"
         - "minecraft:netherite_ingot"
       placeholder_material: "minecraft:redstone_torch"
-      placeholder_name: "<gradient:#FFA07A:#FF6347>⚡ Слот Ускорителя (T1-T3)</gradient>"
-      placeholder_lore:
-        - "<gray>T1 (-25%): Медь / Железо</gray>"
-        - "<gray>T2 (-50%): Золото / Изумруд</gray>"
-        - "<gray>T3 (-75%): Алмаз / Незерит</gray>"
+      placeholder_name: "<gradient:#FFA07A:#FF6347>⚡ Модуль Ускорения (T1-T3)</gradient>"
 
     "X":
       type: button
       material: "minecraft:barrier"
-      name: "<red>Закрыть панель</red>"
+      name: "<red>Закрыть</red>"
       on_click:
         - action: "core:close_gui"
 ```
+
+Номера слотов, передаваемые в `core:cryo_freeze`, — абсолютные слоты инвентаря. В этой маске вода находится в 10, катализатор в 12, выход в 16, слот ускорителя в 24.
+
+## 6. Ограничения, которые стоит учесть до проектирования меню
+
+- **Флагов боя у GUI нет.** `allow_combat`/`close_on_damage` не читаются. Ограничивайте открытие условием `core:not_in_combat` в триггере. Принудительно закрывается только жёстко зашитый GUI `astral_atlas`.
+- **`on_close` не выполняется.** Очистку делайте в действии, которое закрывает меню, или в триггере выхода игрока.
+- **Нет восстановления предметов при остановке.** Просите игроков закрывать станки перед рестартом либо добавьте свой обработчик остановки.
+- **Ячейка маски — один слот.** Многослотовый виджет внутри маски рендерится на каждую ячейку, и берётся только его первый предмет. Для резервуаров и списков используйте `items`/`widgets` с `x`/`y`.
+- **Слоты вне маски всё равно защищены** от взятия и размещения: слушатель отменяет клики по слотам без видимого виджета. Закрывать их декором — вопрос внешнего вида, а не безопасности.
+- **`persistent_key` требует привязанного блока.** PDC доступен, только если `core:open_gui` выполнился с блоком в контексте и этот блок — tile-сущность.

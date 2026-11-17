@@ -2,8 +2,8 @@ triggers:
   - trigger: "core:player_interact"
     conditions:
       - type: "core:match"
-        template: "{block_type}"
-        value: "DISPENSER"
+        template: "{clicked_block_id}"
+        value: "minecraft:dispenser"
       - type: "core:not_in_combat"
     actions:
       - action: "core:open_gui"

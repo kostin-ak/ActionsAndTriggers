@@ -1,27 +1,29 @@
-# ⚡ Полное руководство: Скриптинг Триггеров и Действий через YAML
+# ⚡ Руководство: Скриптинг триггеров и действий в YAML
 
 ## 1. Введение
-В **ActionsAndTriggers (AAT)** любая игровая логика (способности оружия, интерактивные предметы, реакция на смерть мобов, периодические генераторы ресурсов, защита от открытия меню в бою) описывается в файлах `plugins/ActionsAndTriggers/triggers/*.yml`.
 
-### Конвейер обработки (Pipeline):
+Игровая логика (способности оружия, интерактивные предметы, реакции на мобов, периодические генераторы, ограничения в бою) описывается в `plugins/ActionsAndTriggers/triggers/*.yml`. Файлы читает `YamlTriggerLoader` при старте и по `/aat reload`.
+
+Пайплайн:
+
 ```
-Bukkit Event / Heartbeat ──> ExecutionContext ──> Filter Pipeline ──(Все true?)──> Action Pipeline
+Событие Bukkit / heartbeat ──> ExecutionContext ──> условия (И) ──> действия (по порядку)
 ```
 
----
+Неизвестный ID триггера **не** сообщается в рантайме: подписка сохраняется и никогда не вызывается. Неизвестные ID действий и фильтров падают при загрузке и логируются с именем файла.
 
-## 2. Анатомия файла скрипта (`triggers/*.yml`)
+## 2. Анатомия файла скрипта
 
 ```yaml
 triggers:
-  - trigger: "core:player_interact"  # Идентификатор триггера события
-    conditions:                      # Список условий (выполняются как логическое "И")
+  - trigger: "core:player_interact"
+    conditions:
       - type: "core:match"
         template: "{item_in_hand_id}"
         value: "oraxen:lightning_wand"
       - type: "core:not_on_cooldown"
         key: "wand_strike"
-    actions:                         # Список действий (выполняются по порядку)
+    actions:
       - action: "core:set_cooldown"
         key: "wand_strike"
         duration: 5
@@ -32,96 +34,45 @@ triggers:
         as_console: true
 ```
 
----
+Список условий объединяется логическим И. Для вложенности используйте `core:and`, `core:or` и `core:not`.
 
-## 3. Подробный справочник условий (Filters & Conditions)
+## 3. Условия
 
-### 3.1. Логические операторы
-- **`core:and`**: Вложенный список условий. Истинно, если все условия истинны.
+Полные таблицы параметров — в `TRIGGERS_AND_ACTIONS.md`. Практические правила:
+
+- **Сравнение строк**: `core:match` раскрывает `{...}` в `template` и сравнивает с `value` (`ignore_case` по умолчанию `true`). `core:mismatch` — отрицание.
+- **Вхождение в список**: у `core:in` параметры `key` и `values`, а не `template`/`list`:
   ```yaml
-  - type: "core:and"
-    conditions:
-      - type: "core:permission"
-        permission: "vip.access"
-      - type: "core:not_in_combat"
+  - type: "core:in"
+    key: "world"
+    values: ["world", "world_nether"]
   ```
-- **`core:or`**: Вложенный список условий. Истинно, если хотя бы одно истинно.
-- **`core:not`**: Инвертирует вложенное условие.
-  ```yaml
-  - type: "core:not"
-    condition:
-      type: "core:in_combat"
-  ```
-- **`core:chance`**: Проверка вероятности (от 0.0 до 1.0 или `percent: 1..100`).
-  ```yaml
-  - type: "core:chance"
-    percent: 25   # 25% шанс срабатывания
-  ```
+- **Точное равенство**: `core:eq` сравнивает сырое значение контекста, поэтому `String` и целое число из YAML никогда не совпадут. Для ID это почти всегда не то, что нужно; предпочитайте `core:match`.
+- **Числа**: есть только `core:gt` и `core:lt`, оба читают ключ как `Double`. `{damage}` подходит, `{level}` (Integer) — нет. Фильтра `core:numeric` не существует.
+- **Шанс**: `core:chance` принимает `chance` от `0.0` до `1.0`. Параметра `percent` нет; пишите `chance: 0.25`.
+- **Права и группы**: `core:permission`, `core:in_group`, `core:not_in_group` (`group` по умолчанию `default`; без LuckPerms проверяется право `group.<name>`).
+- **Бой и кулдауны**: `core:in_combat`, `core:not_in_combat`, `core:on_cooldown`, `core:not_on_cooldown` (`key` по умолчанию `global`). `core:cooldown` — алиас `core:not_on_cooldown`, а не проверка активного кулдауна.
+- **Предметы и блоки**: `core:check_item` и `core:check_block` сравнивают полные ID (`oraxen:frost_crystal`, `minecraft:blue_ice`) с `context_key` (по умолчанию `item_in_hand_id` и `block_id`). `core:has_item` считает предметы в инвентаре и принимает `material`/`item` и необязательный `amount`.
+- **Логика**: `core:and`/`core:or` принимают `conditions`, `core:not` — одну мапу `condition`.
+- **Остальное**: `core:always_true`, `core:has`, `core:regex`, `core:looking_at`, `core:looking_at_water`.
 
-### 3.2. Боевой режим и Кулдауны
-- **`core:in_combat`**: Игрок получал или наносил урон за последние $N$ секунд.
-- **`core:not_in_combat`**: Игрок в безопасности.
-- **`core:on_cooldown`**: У игрока активна перезарядка способности `key: "name"`.
-- **`core:not_on_cooldown`**: Перезарядка завершилась.
+## 4. Действия
 
-### 3.3. Права и Группы LuckPerms (Мягкая интеграция)
-- **`core:permission`**: Проверка права у игрока (`permission: "custom.perm"`).
-- **`core:in_group`**: Проверка группы LuckPerms (`group: "admin"`).
-- **`core:not_in_group`**: Проверка отсутствия группы.
+- **Таймеры**: `core:delay` (`ticks`/`seconds`), `core:repeat` (`times`, `interval` в тиках, `delay`, даёт `{iteration}`), `core:schedule` (`id`, `delay`), `core:cancel_schedule` (`id`), `core:set_cooldown` (`key`, `duration` в секундах).
+- **GUI**: `core:open_gui` (`gui`), `core:close_gui`.
+- **Станки**: `core:cryo_freeze`, `core:magma_smelt`, `core:alchemical_distill` — серверные механики, требующие открытого AAT GUI с `progress_bar`. Номера слотов настраиваются, но по умолчанию фиксированы.
+- **Бой**: `core:tag_combat` (`seconds`), `core:untag_combat`.
+- **Отклик и управление**: `core:command` (`command`, `as_console`), `core:message` (`text`, `type` = `chat`/`actionbar`/`title`, `subtitle`), `core:sound` (`sound`, `volume`, `pitch`), `core:cancel_event`.
+- **Игрок и мир**: `core:give_item` (`material`/`item`, `amount`, `if_absent`), `core:damage` (`amount`), `core:kill`, `core:potion_effect` (`effect`, `duration` в тиках, `amplifier`, `particles`), `core:teleport` (`x`, `y`, `z`, `yaw`, `pitch`, `world`), `core:push` (`x`, `y`, `z`, `add`), `core:spawn_entity` (`entity`, `x`, `y`, `z`), `core:grant_advancement` (`advancement`).
+- **Визуал**: `core:particle` (`particle`, `count`, `dx`/`dy`/`dz` как смещения, `spread_x`/`spread_y`/`spread_z`, `speed`), `core:firework` (только `power`).
+- **LuckPerms**: `core:add_permission`, `core:remove_permission`, `core:set_group`.
 
-### 3.4. Сравнения строк и чисел
-- **`core:match`**: Сравнение плейсхолдера (`template: "{item_in_hand_id}", value: "oraxen:astral_atlas"`).
-- **`core:in`**: Проверка вхождения в список (`template: "{world}", list: ["world", "world_nether"]`).
-- **`core:numeric`**: Числовое сравнение (`template: "{player.health}", op: "<=", value: 6.0`). Доступные операторы: `==`, `!=`, `>`, `>=`, `<`, `<=`.
-
----
-
-## 4. Подробный справочник действий (Actions)
-
-### 4.1. Таймеры, Задержки и Циклы
-- **`core:delay`**: Задержка перед следующими действиями с изоляцией контекста.
-  ```yaml
-  - action: "core:delay"
-    seconds: 3
-    actions:
-      - action: "core:message"
-        text: "<green>Зарядка завершена!</green>"
-  ```
-- **`core:repeat`**: Циклическое повторение $N$ раз с шагом в тиках.
-  ```yaml
-  - action: "core:repeat"
-    times: 5
-    interval: 10   # каждые 0.5 секунды
-    actions:
-      - action: "core:sound"
-        sound: "block.note_block.harp"
-      - action: "core:message"
-        type: "actionbar"
-        text: "<yellow>Пульсация {iteration}/5</yellow>"
-  ```
-- **`core:schedule`** и **`core:cancel_schedule`**: Запуск и отмена именованных задач по ID.
-- **`core:set_cooldown`**: Установка перезарядки (`key: "ability", duration: 10`).
-
-### 4.2. Права и Группы LuckPerms
-- **`core:add_permission`**: Выдача пермишена (`permission: "essentials.fly"`).
-- **`core:remove_permission`**: Снятие пермишена.
-- **`core:set_group`**: Смена основной группы (`group: "vip"`).
-
-### 4.3. Базовые действия
-- **`core:open_gui`**: Открытие интерфейса (`gui: "ice_fabricator_gui"`).
-- **`core:close_gui`**: Закрытие меню.
-- **`core:message`**: Сообщение (`type: chat/actionbar/title`, `text: "..."`, `subtitle: "..."`).
-- **`core:sound`**: Звуковой эффект (`sound: "...", volume: 1.0, pitch: 1.0`).
-- **`core:command`**: Консольная или пользовательская команда (`command: "...", as_console: true`).
-- **`core:particle`**: Частицы (`particle: "FLAME", count: 20, speed: 0.1`).
-- **`core:teleport`**: Телепортация (`world: "lobby", x: 0.5, y: 100, z: 0.5`).
-- **`core:cancel_event`**: Отмена базового события Bukkit (например, предотвратить поломку блока или клик).
-
----
+Два параметра читаются один раз при парсинге скрипта, а не при каждом выполнении: `core:command#as_console` и `core:message#type`. Они не могут зависеть от контекста.
 
 ## 5. Практические примеры
 
-### Пример 1: Посох Телепортации с проверкой боя и кулдауна
+### 5.1. Посох телепортации с проверками боя и кулдауна
+
 ```yaml
 triggers:
   - trigger: "core:player_interact"
@@ -142,13 +93,35 @@ triggers:
         particle: "PORTAL"
         count: 50
       - action: "core:push"
-        dy: 0.5
+        x: 0.0
+        y: 0.5
+        z: 0.0
       - action: "core:message"
         type: "actionbar"
-        text: "<purple>⚡ Скачок в пространстве!</purple>"
+        text: "<purple>⚡ Скачок выполнен!</purple>"
 ```
 
-### Пример 2: Автоматический генератор (тикер `core:interval`)
+`core:push` читает `x`/`y`/`z`, а не `dx`/`dy`/`dz`.
+
+### 5.2. Сообщение о перезарядке
+
+```yaml
+triggers:
+  - trigger: "core:player_interact"
+    conditions:
+      - type: "core:match"
+        template: "{item_in_hand_id}"
+        value: "oraxen:blink_staff"
+      - type: "core:on_cooldown"
+        key: "blink"
+    actions:
+      - action: "core:message"
+        type: "actionbar"
+        text: "<gray>Перезарядка...</gray>"
+```
+
+### 5.3. Генератор на фоновом таймере
+
 ```yaml
 triggers:
   - trigger: "core:interval"
@@ -160,3 +133,36 @@ triggers:
         dy: 0.5
         dz: 0.2
 ```
+
+В контексте таймера нет игрока. Любое действие, которому нужен `{player}` (`core:message`, `core:particle`, `core:push`, …), вернёт `false` и ничего не сделает.
+
+### 5.4. Взаимодействие с блоком по полному ID
+
+```yaml
+triggers:
+  - trigger: "core:player_interact"
+    conditions:
+      - type: "core:has"
+        key: "block"
+      - type: "core:match"
+        template: "{clicked_block_id}"
+        value: "minecraft:blue_ice"
+      - type: "core:not_in_combat"
+    actions:
+      - action: "core:open_gui"
+        gui: "ice_fabricator_gui"
+```
+
+`core:player_interact` даёт `{clicked_block_id}` (а не `{block_id}`) и `{block_material}`. Вариант с материалом даёт `BLUE_ICE`, вариант с id — `minecraft:blue_ice`; для `core:check_block` понадобился бы `context_key: "clicked_block_id"`, потому что по умолчанию он читает `block_id`. Держитесь одного стиля.
+
+## 6. Поведение плейсхолдеров, которое нужно знать
+
+- Неизвестные токены удаляются, а не сохраняются. Опечатка вроде `{block_type}` превращается в пустую строку, и условие может молча никогда не проходить.
+- `{player}` — имя игрока; поддерживаются `{player.name}`, `{player.uuid}`, `{player.health}`, `{player.combat_remaining}`, `{player.group}`, `{player.prefix}`.
+- `{location.x}`/`y`/`z` и `{location.world}` работают для ключей локации; `{item.type}`/`{item.amount}` — для предметов.
+- Синтаксис PAPI `%placeholder%` работает в текстах действий при установленном PlaceholderAPI. Скобочный синтаксис `{placeholder}` пробуется через PAPI только если у AAT нет контекстного ключа с таким именем; нераскрытые скобки остаются как есть.
+- `core:repeat` задаёт `{iteration}`; `core:interval` задаёт `{tick}`.
+
+## 7. Перезагрузка
+
+`/aat reload` заново читает `triggers/` и `guis/`, перезагружает языковой файл и сначала отписывает все скрипты AAT. Действия, фильтры и провайдеры регистрируются один раз при старте и не пересканируются, поэтому новое кастомное действие требует перезапуска.

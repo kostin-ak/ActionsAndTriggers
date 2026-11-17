@@ -1,27 +1,29 @@
-# ⚡ Comprehensive Guide: Scripting Triggers & Actions via YAML
+# ⚡ Guide: Scripting Triggers and Actions in YAML
 
 ## 1. Introduction
-With **ActionsAndTriggers (AAT)**, all gameplay logic (weapon abilities, interactive quest items, mob drop mechanics, periodic resource generators, combat interrupters) is defined via YAML files located in `plugins/ActionsAndTriggers/triggers/*.yml`.
 
-### Execution Pipeline:
+Gameplay logic (weapon abilities, interactive items, mob reactions, periodic generators, combat restrictions) lives in `plugins/ActionsAndTriggers/triggers/*.yml`. Files are read by `YamlTriggerLoader` at startup and on `/aat reload`.
+
+Pipeline:
+
 ```
-Bukkit Event / Heartbeat ──> ExecutionContext ──> Filter Pipeline ──(All match?)──> Action Pipeline
+Bukkit event / heartbeat ──> ExecutionContext ──> conditions (AND) ──> actions (sequential)
 ```
 
----
+An unknown trigger, action or filter ID is **not** reported at runtime for triggers: the subscription is stored and never dispatched. Unknown action or filter IDs fail during load and are logged with the file name.
 
-## 2. Anatomy of a Script File (`triggers/*.yml`)
+## 2. Anatomy of a script file
 
 ```yaml
 triggers:
-  - trigger: "core:player_interact"  # Trigger event identifier
-    conditions:                      # Condition list (evaluated as logical AND)
+  - trigger: "core:player_interact"
+    conditions:
       - type: "core:match"
         template: "{item_in_hand_id}"
         value: "oraxen:lightning_wand"
       - type: "core:not_on_cooldown"
         key: "wand_strike"
-    actions:                         # Action list (executed sequentially)
+    actions:
       - action: "core:set_cooldown"
         key: "wand_strike"
         duration: 5
@@ -32,96 +34,45 @@ triggers:
         as_console: true
 ```
 
----
+The list of conditions is combined with logical AND. Use `core:and`, `core:or` and `core:not` for nesting.
 
-## 3. Complete Reference: Filters & Conditions
+## 3. Conditions
 
-### 3.1. Logical Operators
-- **`core:and`**: Nested list of conditions. Evaluates to true only if all pass.
+Full parameter tables are in `TRIGGERS_AND_ACTIONS.md`. The practical rules:
+
+- **String matching**: `core:match` resolves `{...}` in `template` and compares it to `value` (`ignore_case` defaults to `true`). `core:mismatch` is its negation.
+- **Membership**: `core:in` uses `key` and `values`, not `template`/`list`:
   ```yaml
-  - type: "core:and"
-    conditions:
-      - type: "core:permission"
-        permission: "vip.access"
-      - type: "core:not_in_combat"
+  - type: "core:in"
+    key: "world"
+    values: ["world", "world_nether"]
   ```
-- **`core:or`**: Evaluates to true if at least one nested condition passes.
-- **`core:not`**: Inverts the child condition.
-  ```yaml
-  - type: "core:not"
-    condition:
-      type: "core:in_combat"
-  ```
-- **`core:chance`**: Probability gate (from 0.0 to 1.0, or `percent: 1..100`).
-  ```yaml
-  - type: "core:chance"
-    percent: 25   # 25% chance
-  ```
+- **Exact equality**: `core:eq` compares the raw context value, so a `String` value and an `Integer` YAML scalar never match. It is rarely what you want for IDs; prefer `core:match`.
+- **Numbers**: only `core:gt` and `core:lt` exist, and both read the key as `Double`. `{damage}` works; `{level}` (Integer) does not. There is no `core:numeric`.
+- **Chance**: `core:chance` accepts `chance` from `0.0` to `1.0`. There is no `percent` parameter; write `chance: 0.25`.
+- **Permissions and groups**: `core:permission`, `core:in_group`, `core:not_in_group` (`group` defaults to `default`; without LuckPerms the group check becomes the `group.<name>` permission).
+- **Combat and cooldowns**: `core:in_combat`, `core:not_in_combat`, `core:on_cooldown`, `core:not_on_cooldown` (`key` defaults to `global`). `core:cooldown` is an alias of `core:not_on_cooldown`, not a check for an active cooldown.
+- **Items and blocks**: `core:check_item` and `core:check_block` compare full IDs (`oraxen:frost_crystal`, `minecraft:blue_ice`) against `context_key` (defaults `item_in_hand_id` and `block_id`). `core:has_item` counts items in the inventory and takes `material`/`item` plus optional `amount`.
+- **Logic**: `core:and`/`core:or` take `conditions`, `core:not` takes a single `condition` map.
+- **Other**: `core:always_true`, `core:has`, `core:regex`, `core:looking_at`, `core:looking_at_water`.
 
-### 3.2. Combat Tracker & Cooldowns
-- **`core:in_combat`**: True if player took or inflicted damage within $N$ seconds.
-- **`core:not_in_combat`**: True if player is safe.
-- **`core:on_cooldown`**: Player currently has an active cooldown for `key: "name"`.
-- **`core:not_on_cooldown`**: Cooldown has elapsed or was never applied.
+## 4. Actions
 
-### 3.3. LuckPerms Permissions & Groups (Soft-Dependency)
-- **`core:permission`**: Checks permission node (`permission: "custom.perm"`).
-- **`core:in_group`**: Checks LuckPerms group inheritance (`group: "admin"`).
-- **`core:not_in_group`**: Checks lack of group membership.
+- **Timers**: `core:delay` (`ticks`/`seconds`), `core:repeat` (`times`, `interval` in ticks, `delay`, exposes `{iteration}`), `core:schedule` (`id`, `delay`), `core:cancel_schedule` (`id`), `core:set_cooldown` (`key`, `duration` in seconds).
+- **GUI**: `core:open_gui` (`gui`), `core:close_gui`.
+- **Machines**: `core:cryo_freeze`, `core:magma_smelt`, `core:alchemical_distill` — server-specific mechanics that require an open AAT GUI with a `progress_bar`. Their slot numbers are configurable but default to fixed values.
+- **Combat**: `core:tag_combat` (`seconds`), `core:untag_combat`.
+- **Feedback and control**: `core:command` (`command`, `as_console`), `core:message` (`text`, `type` = `chat`/`actionbar`/`title`, `subtitle`), `core:sound` (`sound`, `volume`, `pitch`), `core:cancel_event`.
+- **Player and world**: `core:give_item` (`material`/`item`, `amount`, `if_absent`), `core:damage` (`amount`), `core:kill`, `core:potion_effect` (`effect`, `duration` in ticks, `amplifier`, `particles`), `core:teleport` (`x`, `y`, `z`, `yaw`, `pitch`, `world`), `core:push` (`x`, `y`, `z`, `add`), `core:spawn_entity` (`entity`, `x`, `y`, `z`), `core:grant_advancement` (`advancement`).
+- **Visuals**: `core:particle` (`particle`, `count`, `dx`/`dy`/`dz` as offsets, `spread_x`/`spread_y`/`spread_z`, `speed`), `core:firework` (`power` only).
+- **LuckPerms**: `core:add_permission`, `core:remove_permission`, `core:set_group`.
 
-### 3.4. String & Numeric Comparisons
-- **`core:match`**: Pattern matching (`template: "{item_in_hand_id}", value: "oraxen:astral_atlas"`).
-- **`core:in`**: Collection membership (`template: "{world}", list: ["world", "world_nether"]`).
-- **`core:numeric`**: Numeric comparisons (`template: "{player.health}", op: "<=", value: 6.0`). Operators: `==`, `!=`, `>`, `>=`, `<`, `<=`.
+Two parameters are read once when the script is parsed, not on every execution: `core:command#as_console` and `core:message#type`. They cannot depend on the context.
 
----
+## 5. Practical examples
 
-## 4. Complete Reference: Core Actions
+### 5.1. Blink staff with combat and cooldown guards
 
-### 4.1. Timers, Delays & Loops
-- **`core:delay`**: Executes nested actions after a specified delay with isolated context.
-  ```yaml
-  - action: "core:delay"
-    seconds: 3
-    actions:
-      - action: "core:message"
-        text: "<green>Recharge complete!</green>"
-  ```
-- **`core:repeat`**: Repeating loop $N$ times with tick interval.
-  ```yaml
-  - action: "core:repeat"
-    times: 5
-    interval: 10   # every 0.5s
-    actions:
-      - action: "core:sound"
-        sound: "block.note_block.harp"
-      - action: "core:message"
-        type: "actionbar"
-        text: "<yellow>Pulse {iteration}/5</yellow>"
-  ```
-- **`core:schedule`** & **`core:cancel_schedule`**: Identifiable scheduled task execution and cancellation.
-- **`core:set_cooldown`**: Applies player ability cooldown (`key: "ability", duration: 10`).
-
-### 4.2. LuckPerms Permission Management
-- **`core:add_permission`**: Grants permission (`permission: "essentials.fly"`).
-- **`core:remove_permission`**: Revokes permission.
-- **`core:set_group`**: Sets primary group (`group: "vip"`).
-
-### 4.3. In-Game Actions
-- **`core:open_gui`**: Opens container interface (`gui: "ice_fabricator_gui"`).
-- **`core:close_gui`**: Closes container.
-- **`core:message`**: Sends formatted feedback (`type: chat/actionbar/title`, `text: "..."`, `subtitle: "..."`).
-- **`core:sound`**: Plays audio effects (`sound: "...", volume: 1.0, pitch: 1.0`).
-- **`core:command`**: Dispatches command (`command: "...", as_console: true`).
-- **`core:particle`**: Spawns visual particles (`particle: "FLAME", count: 20, speed: 0.1`).
-- **`core:teleport`**: Teleports player (`world: "lobby", x: 0.5, y: 100, z: 0.5`).
-- **`core:cancel_event`**: Cancels the underlying Bukkit event.
-
----
-
-## 5. Practical Production Examples
-
-### Example 1: Blink Staff with Combat & Cooldown Protection
 ```yaml
 triggers:
   - trigger: "core:player_interact"
@@ -142,13 +93,35 @@ triggers:
         particle: "PORTAL"
         count: 50
       - action: "core:push"
-        dy: 0.5
+        x: 0.0
+        y: 0.5
+        z: 0.0
       - action: "core:message"
         type: "actionbar"
-        text: "<purple>⚡ Blinked forward!</purple>"
+        text: "<purple>⚡ Blinked!</purple>"
 ```
 
-### Example 2: Ambient Heartbeat Generator (`core:interval`)
+`core:push` reads `x`/`y`/`z`, not `dx`/`dy`/`dz`.
+
+### 5.2. Cooldown feedback
+
+```yaml
+triggers:
+  - trigger: "core:player_interact"
+    conditions:
+      - type: "core:match"
+        template: "{item_in_hand_id}"
+        value: "oraxen:blink_staff"
+      - type: "core:on_cooldown"
+        key: "blink"
+    actions:
+      - action: "core:message"
+        type: "actionbar"
+        text: "<gray>Recharging...</gray>"
+```
+
+### 5.3. Heartbeat generator
+
 ```yaml
 triggers:
   - trigger: "core:interval"
@@ -160,3 +133,36 @@ triggers:
         dy: 0.5
         dz: 0.2
 ```
+
+The heartbeat has no player in the context. Any action that requires `{player}` (`core:message`, `core:particle`, `core:push`, …) returns `false` and does nothing.
+
+### 5.4. Block interaction with a full block ID
+
+```yaml
+triggers:
+  - trigger: "core:player_interact"
+    conditions:
+      - type: "core:has"
+        key: "block"
+      - type: "core:match"
+        template: "{clicked_block_id}"
+        value: "minecraft:blue_ice"
+      - type: "core:not_in_combat"
+    actions:
+      - action: "core:open_gui"
+        gui: "ice_fabricator_gui"
+```
+
+`core:player_interact` provides `{clicked_block_id}` (not `{block_id}`) and `{block_material}`. The material form yields `BLUE_ICE`, the id form yields `minecraft:blue_ice`; `core:check_block` would need `context_key: "clicked_block_id"` because its default is `block_id`. Use one style consistently.
+
+## 6. Placeholder behaviour you must know
+
+- Unknown tokens are erased, not preserved. A typo such as `{block_type}` becomes an empty string, so the condition may silently never pass.
+- `{player}` is the player name; `{player.name}`, `{player.uuid}`, `{player.health}`, `{player.combat_remaining}`, `{player.group}`, `{player.prefix}` are supported.
+- `{location.x}`/`y`/`z` and `{location.world}` work for location keys; `{item.type}`/`{item.amount}` for item keys.
+- PAPI `%placeholder%` syntax works in action text when PlaceholderAPI is installed. Bracket syntax `{placeholder}` is attempted through PAPI only if AAT has no context key with that name, and unresolved brackets stay as-is.
+- `core:repeat` sets `{iteration}`; `core:interval` sets `{tick}`.
+
+## 7. Reloading
+
+`/aat reload` re-reads `triggers/` and `guis/`, reloads the language file and unsubscribes all AAT scripts first. Actions, filters and providers are registered once at startup and are not re-scanned, so a newly added custom action requires a restart.

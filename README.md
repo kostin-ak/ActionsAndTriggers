@@ -3,7 +3,7 @@
 <div align="center">
 
 [![Java](https://img.shields.io/badge/Java-21+-orange.svg?style=flat-square&logo=openjdk)](https://openjdk.org/)
-[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.4%20--%2026.2-brightgreen.svg?style=flat-square)](https://papermc.io/)
+[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.4%20--%2026.3-brightgreen.svg?style=flat-square)](https://papermc.io/)
 [![Platform](https://img.shields.io/badge/Platform-Paper%20%2F%20Purpur-blue.svg?style=flat-square)](https://purpurmc.org/)
 [![License](https://img.shields.io/badge/License-PolyForm%20Noncommercial-yellow.svg?style=flat-square)](LICENSE)
 
@@ -22,8 +22,8 @@
 ### Key Capabilities
 - **Event-Driven Triggers**: Execute actions on player interactions, block breaks, damage, advancements, crafting, and server timers.
 - **Task Scheduling & Cooldowns**: Built-in chains with delays (`core:delay`), loops with counters (`core:repeat`), identifiable scheduled tasks (`core:schedule`), and player cooldowns.
-- **Mask-Based GUI Menus**: Configure menus visually using character masks. Supports input/output slots, progress indicators, fluid bars, tabs, and multi-page lists.
-- **Item Safety**: Input items are tracked per-player. Closing menus, taking damage, or restarting the server returns items directly to the player or drops them safely on the ground.
+- **Mask-Based GUI Menus**: Configure menus visually using character masks, with input/output slots and animated progress indicators. Tabs and paged lists are available from the Java API.
+- **Item Safety**: Closing a menu returns items from input/output slots to the player or drops them safely on the ground. There is no shutdown hook, so this guarantee does not cover server restarts.
 - **Soft Integrations**: Native support for **Oraxen**, **ItemsAdder**, **PlaceholderAPI**, and **LuckPerms** when present.
 - **Localization**: All messages and interfaces are externalized into YAML language bundles (`messages_en.yml`, `messages_ru.yml`).
 
@@ -33,10 +33,18 @@
 
 | Component | Requirement | Notes |
 | :--- | :--- | :--- |
-| **Minecraft Version** | **1.21.4 — 26.2** | Verified on Paper and Purpur releases |
+| **Minecraft Version** | **1.21.4 – 26.3** | Built against the `1.21.4-R0.1-SNAPSHOT` Paper API. Runtime-verified on Paper 1.21.4, 1.21.11 and 26.3 |
 | **Server Software** | **Paper**, **Purpur** | Required for modern Adventure Component and async event pipelines |
-| **Java Runtime** | **Java 21+** | Java 25+ recommended for 26.2 servers |
+| **Java Runtime** | **Java 21+** | 1.21.x servers run on Java 21; 26.x servers require Java 25 |
 | **Optional Plugins** | **PlaceholderAPI**, **LuckPerms**, **Oraxen**, **ItemsAdder** | Loaded automatically if present |
+
+### Verified compatibility (0.1.0-beta)
+
+- **Minimum:** Paper 1.21.4 (`api-version: '1.21'`).
+- **Maximum verified:** Paper 26.3 (build 253).
+- **Runtime smoke tests:** Paper 1.21.4 build 232, 1.21.11 build 132, 26.3 build 253. The plugin enabled and `/aat list` reported 29 actions, 21 triggers and 27 filters on all three.
+- **Compile checks:** Paper API 1.21.4, 1.21.5, 1.21.8, 1.21.11.
+- **Not verified:** Purpur and other forks (same Bukkit/Paper API, expected to work), and versions below 1.21.4.
 
 ---
 
@@ -136,39 +144,47 @@ mask:
 External plugins can interact with AAT directly through the lightweight `:aat-api` module:
 
 ```java
+// imports omitted for brevity
+ButtonWidget close = new ButtonWidget(0, 0);
+close.setMaterialStr("minecraft:barrier");
+close.setName("<red>Close</red>");
+close.setActions(List.of(context -> {
+    context.get(CoreKeys.PLAYER).closeInventory();
+    return true;
+}));
+
+Map<Character, Widget> components = Map.of(
+        '#', new SlotCoverWidget(0, 0),
+        'X', close
+);
+MaskWidget mask = new MaskWidget(
+        List.of("#########", "####X####", "#########"),
+        components
+);
+
 AATGui.builder("navigator")
-    .title(MiniMessage.miniMessage().deserialize("<gradient:#70E1F5:#FFD194>World Navigator</gradient>"))
-    .rows(3)
-    .mask(Widgets.mask()
-        .pattern(
-            "#########",
-            "#.S.L.C.#",
-            "####X####"
-        )
-        .filler('#', Material.GRAY_STAINED_GLASS_PANE)
-        .button('S', Material.SPRUCE_SAPLING, b -> b
-            .name(Component.text("Wilderness", NamedTextColor.GREEN))
-            .onClick(ctx -> ctx.getPlayer().performCommand("mv tp world"))
-        )
-        .button('X', Material.BARRIER, b -> b
-            .name(Component.text("Close", NamedTextColor.RED))
-            .onClick(ctx -> ctx.getPlayer().closeInventory())
-        )
-    )
-    .open(player);
+        .title("<gradient:#70E1F5:#FFD194>World Navigator</gradient>")
+        .rows(3)
+        .mask(mask)
+        .open(player);
 ```
+
+Custom actions, filters and triggers are registered through
+`ActionTriggerAPI.getRegistrar()` with `@ConfigAction` / `@ConfigFilter` factories and
+`BukkitEventTrigger` subclasses. See the [API Guide](docs/en/API_GUIDE.md) for compiling examples.
 
 ---
 
 ## 📚 Documentation & Examples
 
-- [Examples Catalog](docs/examples/README.md) — 6 complete scenarios covering navigators, weapons, machines, timers, and permissions.
+- [Examples Catalog](docs/examples/README.md) — 6 scenarios covering navigators, weapons, machines, timers, and permissions, annotated with current limitations.
 - [Architecture Guide](docs/en/ARCHITECTURE.md) — Plugin structure and lifecycle overview.
 - [GUI Engine Guide](docs/en/GUI_ENGINE.md) — Widget types, masks, and safe inventory handling.
 - [GUI Creation Tutorial](docs/en/CONFIG_GUI_TUTORIAL.md) — Step-by-step YAML menu tutorial.
 - [Triggers, Filters & Actions](docs/en/TRIGGERS_AND_ACTIONS.md) — Full list of built-in components and parameters.
 - [Trigger Scripting Tutorial](docs/en/CONFIG_SCRIPTS_TUTORIAL.md) — Guide to writing custom mechanics in YAML.
 - [Developer API Guide](docs/en/API_GUIDE.md) — Details on registering custom triggers and actions.
+- [Known Issues & Roadmap](docs/en/POTENTIAL_ISSUES.md) — Documented gaps between the code, the YAML surface, and the docs.
 
 ---
 

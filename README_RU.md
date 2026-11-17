@@ -3,7 +3,7 @@
 <div align="center">
 
 [![Java](https://img.shields.io/badge/Java-21+-orange.svg?style=flat-square&logo=openjdk)](https://openjdk.org/)
-[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.4%20--%2026.2-brightgreen.svg?style=flat-square)](https://papermc.io/)
+[![Minecraft](https://img.shields.io/badge/Minecraft-1.21.4%20--%2026.3-brightgreen.svg?style=flat-square)](https://papermc.io/)
 [![Platform](https://img.shields.io/badge/Платформа-Paper%20%2F%20Purpur-blue.svg?style=flat-square)](https://purpurmc.org/)
 [![License](https://img.shields.io/badge/Лицензия-PolyForm%20Noncommercial-yellow.svg?style=flat-square)](LICENSE)
 
@@ -22,8 +22,8 @@
 ### Основные возможности
 - **Событийные триггеры**: запуск действий по клику, поломке блока, получению урона, крафту, достижениям и таймерам.
 - **Планировщик и перезарядки**: задержки (`core:delay`), циклы со счетчиком (`core:repeat`), отложенные задачи (`core:schedule`) и персональные кулдауны игроков.
-- **Интерфейсы по маске**: визуальная разметка меню символами. Поддержка входных/выходных слотов, шкал прогресса, индикаторов жидкостей, вкладок и постраничных списков.
-- **Безопасность предметов**: все ресурсы во входных слотах привязаны к игроку. При закрытии меню, получении урона или перезагрузке сервера предметы возвращаются в инвентарь или сбрасываются под ноги, исключая дюпы и пропажу.
+- **Интерфейсы по маске**: визуальная разметка меню символами, входные/выходные слоты и анимированные шкалы прогресса. Вкладки и постраничные списки доступны из Java API.
+- **Безопасность предметов**: при закрытии меню предметы из слотов ввода/выдачи возвращаются в инвентарь или сбрасываются под ноги. Обработчика остановки сервера нет, поэтому на перезапуск эта гарантия не распространяется.
 - **Мягкие интеграции**: поддержка кастомных блоков и предметов из **Oraxen** и **ItemsAdder**, интеграция с **PlaceholderAPI** и **LuckPerms**.
 - **Локализация**: все сообщения и названия элементов вынесены в языковые файлы (`messages_ru.yml`, `messages_en.yml`).
 
@@ -33,10 +33,18 @@
 
 | Компонент | Требование | Примечание |
 | :--- | :--- | :--- |
-| **Версия Minecraft** | **1.21.4 — 26.2** | Протестировано на стабильных релизах Paper и Purpur |
+| **Версия Minecraft** | **1.21.4 – 26.3** | Сборка против Paper API `1.21.4-R0.1-SNAPSHOT`. Проверено запуском на Paper 1.21.4, 1.21.11 и 26.3 |
 | **Ядро сервера** | **Paper**, **Purpur** | Необходимы для работы современной системы компонентов Adventure и асинхронных событий |
-| **Среда Java** | **Java 21+** | Для серверов 26.2 рекомендуется Java 25+ |
+| **Среда Java** | **Java 21+** | Серверы 1.21.x работают на Java 21; серверы 26.x требуют Java 25 |
 | **Опциональные плагины** | **PlaceholderAPI**, **LuckPerms**, **Oraxen**, **ItemsAdder** | Подключаются автоматически при наличии на сервере |
+
+### Проверенная совместимость (0.1.0-beta)
+
+- **Минимум:** Paper 1.21.4 (`api-version: '1.21'`).
+- **Максимум проверенного:** Paper 26.3 (build 253).
+- **Запуски:** Paper 1.21.4 build 232, 1.21.11 build 132, 26.3 build 253. Плагин включился, `/aat list` показал 29 действий, 21 триггер и 27 фильтров на всех трёх.
+- **Проверка компиляции:** Paper API 1.21.4, 1.21.5, 1.21.8, 1.21.11.
+- **Не проверено:** Purpur и другие форки (тот же Bukkit/Paper API, ожидаемо работают) и версии ниже 1.21.4.
 
 ---
 
@@ -136,39 +144,48 @@ mask:
 Сторонние плагины могут взаимодействовать с AAT через публичный модуль `:aat-api`:
 
 ```java
+// импорты опущены для краткости
+ButtonWidget close = new ButtonWidget(0, 0);
+close.setMaterialStr("minecraft:barrier");
+close.setName("<red>Закрыть</red>");
+close.setActions(List.of(context -> {
+    context.get(CoreKeys.PLAYER).closeInventory();
+    return true;
+}));
+
+Map<Character, Widget> components = Map.of(
+        '#', new SlotCoverWidget(0, 0),
+        'X', close
+);
+MaskWidget mask = new MaskWidget(
+        List.of("#########", "####X####", "#########"),
+        components
+);
+
 AATGui.builder("navigator")
-    .title(MiniMessage.miniMessage().deserialize("<gradient:#70E1F5:#FFD194>Навигатор миров</gradient>"))
-    .rows(3)
-    .mask(Widgets.mask()
-        .pattern(
-            "#########",
-            "#.S.L.C.#",
-            "####X####"
-        )
-        .filler('#', Material.GRAY_STAINED_GLASS_PANE)
-        .button('S', Material.SPRUCE_SAPLING, b -> b
-            .name(Component.text("Дикий мир", NamedTextColor.GREEN))
-            .onClick(ctx -> ctx.getPlayer().performCommand("mv tp world"))
-        )
-        .button('X', Material.BARRIER, b -> b
-            .name(Component.text("Закрыть", NamedTextColor.RED))
-            .onClick(ctx -> ctx.getPlayer().closeInventory())
-        )
-    )
-    .open(player);
+        .title("<gradient:#70E1F5:#FFD194>Навигатор миров</gradient>")
+        .rows(3)
+        .mask(mask)
+        .open(player);
 ```
+
+Кастомные действия, фильтры и триггеры регистрируются через
+`ActionTriggerAPI.getRegistrar()` фабриками `@ConfigAction` / `@ConfigFilter`
+и наследниками `BukkitEventTrigger`. Компилируемые примеры — в
+[руководстве по API](docs/ru/API_GUIDE.md).
 
 ---
 
 ## 📚 Документация и примеры
 
-- [Каталог готовых примеров](docs/examples/README.md) — 6 рабочих сценариев (навигация, легендарное оружие, генераторы ресурсов, прогрессия).
+- [Каталог примеров](docs/examples/README.md) — 6 сценариев (навигация, легендарное оружие, станки, генераторы, прогрессия) с пометками об актуальных ограничениях.
 - [Архитектура плагина](docs/ru/ARCHITECTURE.md) — обзор подсистем и жизненного цикла.
 - [Руководство по GUI-движку](docs/ru/GUI_ENGINE.md) — виды виджетов, маски и возврат предметов.
 - [Создание GUI в YAML](docs/ru/CONFIG_GUI_TUTORIAL.md) — пошаговое руководство по настройке меню.
 - [Реестр триггеров и действий](docs/ru/TRIGGERS_AND_ACTIONS.md) — полный список встроенных компонентов и параметров.
 - [Скриптинг триггеров в YAML](docs/ru/CONFIG_SCRIPTS_TUTORIAL.md) — руководство по написанию механик.
 - [Руководство по API](docs/ru/API_GUIDE.md) — регистрация кастомных действий и триггеров из кода.
+- [Известные проблемы](docs/ru/POTENTIAL_ISSUES.md) — зафиксированные расхождения между кодом, YAML и документацией.
 
 ---
 

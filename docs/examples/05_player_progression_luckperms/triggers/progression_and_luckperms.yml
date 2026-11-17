@@ -15,10 +15,10 @@ triggers:
         if_absent: true
 
   # 2. АВТОПОВЫШЕНИЕ ПРИ ВЫПОЛНЕНИИ ДОСТИЖЕНИЯ
-  - trigger: "core:player_advancement_done"
+  - trigger: "core:advancement_done"
     conditions:
       - type: "core:match"
-        template: "{advancement}"
+        template: "{advancement_key}"
         value: "minecraft:story/shiny_gear"   # Алмазная броня
       - type: "core:not_in_group"
         group: "veteran"
@@ -32,8 +32,6 @@ triggers:
       # Эффекты праздника
       - action: "core:firework"
         power: 2
-        type: "BALL_LARGE"
-        colors: ["#74B9FF", "#FDCB6E", "#00CEC9"]
       - action: "core:sound"
         sound: "ui.toast.challenge_complete"
         volume: 1.0

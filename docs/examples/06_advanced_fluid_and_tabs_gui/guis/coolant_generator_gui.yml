@@ -1,8 +1,6 @@
 id: coolant_generator_gui
 title: "<gradient:#00CEC9:#0984E3>⚙ Генератор Охлаждения ⚙</gradient>"
 rows: 4
-allow_combat: false
-close_on_damage: true
 
 mask:
   pattern:
@@ -18,28 +16,25 @@ mask:
 
     "T":
       type: fluid_tank
-      level_key: "coolant_percentage"
+      level_key: "coolant_level"
       max_level: 100
       filled_material: "minecraft:cyan_stained_glass_pane"
       empty_material: "minecraft:light_gray_stained_glass_pane"
-      title: "<aqua>Хладагент: {level}%</aqua>"
+      title: "<aqua>Хладагент</aqua>"
 
     "F":
       type: cycle_button
-      session_key: "coolant_percentage"
+      session_key: "coolant_mode"
       states:
-        - id: "25"
-          material: "minecraft:water_bucket"
-          name: "<aqua>Уровень: 25% (Нажмите для долива)</aqua>"
-        - id: "50"
-          material: "minecraft:water_bucket"
-          name: "<aqua>Уровень: 50% (Нажмите для долива)</aqua>"
-        - id: "75"
-          material: "minecraft:water_bucket"
-          name: "<aqua>Уровень: 75% (Нажмите для долива)</aqua>"
-        - id: "100"
-          material: "minecraft:water_bucket"
-          name: "<aqua>Уровень: 100% (БАК ПОЛОН)</aqua>"
+        - id: "eco"
+          material: "minecraft:lime_dye"
+          name: "<green>Режим: ЭКОНОМНЫЙ</green>"
+        - id: "normal"
+          material: "minecraft:yellow_dye"
+          name: "<yellow>Режим: СТАНДАРТ</yellow>"
+        - id: "turbo"
+          material: "minecraft:red_dye"
+          name: "<red>Режим: ТУРБО</red>"
 
     "P":
       type: button

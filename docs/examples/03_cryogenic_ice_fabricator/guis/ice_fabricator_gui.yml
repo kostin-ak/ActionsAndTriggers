@@ -1,8 +1,6 @@
 id: ice_fabricator_gui
 title: "<gradient:#74B9FF:#0984E3>❄ Криогенный Фабрикатор ❄</gradient>"
 rows: 3
-allow_combat: false
-close_on_damage: true
 
 mask:
   pattern:

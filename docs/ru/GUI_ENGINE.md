@@ -1,161 +1,110 @@
-# 🖥️ AAT Widget-Oriented GUI Engine
+# 🖥️ Виджетный GUI-движок AAT
 
 ## 1. Архитектурная концепция
-Движок GUI в **ActionsAndTriggers** реализован на базе паттерна **Компоновщик (Composite Pattern)**. Вместо низкоуровневого хардкода номеров слотов от 0 до 53 интерфейс конфигурируется в виде **дерева виджетов** и наглядных **масок-шаблонов**.
 
-### Ключевые возможности:
-- **Координатная сетка 9xN**: Виджеты оперируют координатами `x (0..8)` и `y (0..5)`, абсолютный слот рассчитывается автоматически.
-- **Поддержка Oraxen и ItemsAdder**: В полях материалов можно указывать `oraxen:item_id` или `itemsadder:item_id`.
-- **Поддержка кастомных глифов фона**: Заголовок `title` поддерживает сдвиги шрифта (`<shift:-8><glyph:my_gui_bg><shift:-164>`) для отрисовки бесшовных кастомных интерфейсов.
-- **Бесцветные/прозрачные заглушки (`transparent_slot`)**: Физически пустые слоты без текстур стекла и бликов, сквозь которые виден идеальный кастомный фон.
-- **Интерактивные призрачные образцы (`ghost placeholders`)**: Пустые слоты отображают визуальные подсказки, защищенные системным тегом PDC (`actionstriggers:gui_placeholder`).
-- **Синхронизация состояния (Data Binding)**: Автоматическое сохранение режимов в `session_state` интерфейса или в PDC блоков мира.
-- **Гарантированная защита от потери ресурсов**: Слоты масок корректно распаковываются. При закрытии меню, уроне, перезагрузке или выходе с сервера реальные ресурсы игрока возвращаются в инвентарь или выбрасываются на землю, если инвентарь переполнен.
+GUI-движок — это дерево составных виджетов, которое рендерится в инвентарь Bukkit. Вместо ручного хардкода номеров слотов раскладка задаётся символьной маской 9×N.
 
----
+- **Сетка**: виджеты используют `x` (0..8) и `y` (0..rows-1); абсолютный слот — `y * 9 + x`. Виджет можно разместить и одним полем `slot`.
+- **Маска**: `mask.pattern` — список строк по 9 символов, `mask.components` сопоставляет символ с описанием виджета. `MaskWidget` разворачивает маску в карту «слот → виджет», которая используется для кликов и для возврата предметов при закрытии.
+- **Рендеринг**: при открытии окна (и при `GuiContext#refreshGui`) каждый виджет пишет предметы в `Map<Integer, ItemStack>`, затем реестр переносит эту матрицу в инвентарь. Автоматически выполняются только действия `on_open`; действия `on_close` парсятся, но `GuiListener` их никогда не вызывает.
+- **Материалы**: любое поле `material`/`item` принимает `minecraft:<id>`, `oraxen:<id>` или `itemsadder:<id>` и разрешается через `ItemRegistry`. Неизвестный ID заменяется ванильным запасным материалом.
 
-## 2. Структура YAML-конфигурации (`guis/*.yml`)
-
-Каждый файл в каталоге `plugins/ActionsAndTriggers/guis/` представляет собой отдельный интерфейс:
+## 2. Структура YAML (`guis/*.yml`)
 
 ```yaml
-id: ice_fabricator_gui
-title: "<shift:-8><glyph:ice_fabricator_bg><shift:-164><gradient:#74B9FF:#0984E3>❄ Криогенный Ледогенератор ❄</gradient>"
-rows: 3  # Количество рядов (от 1 до 6)
+id: custom_bench          # используется в core:open_gui
+title: "<gradient:#FFA07A:#FF6347>Верстак Инженера</gradient>"
+rows: 3                   # ограничивается диапазоном 1..6
+# target_block: "some_block_id"   # парсится и хранится, но рантайм это поле не читает
+
+on_open:                  # опционально: выполняется сразу после открытия инвентаря
+  - action: "core:sound"
+    sound: "block.anvil.use"
+on_close:                 # опционально: ПАРСИТСЯ, но НЕ выполняется (см. раздел 6)
+  - action: "core:message"
+    text: "closed"
 
 mask:
   pattern:
     - "#########"
-    - "#W#C#>#O#"
-    - "##M#S#U#X"
+    - "#I#+#C#=#"
+    - "####X####"
   components:
     "#":
-      type: transparent_slot
-
-    "W":
-      type: input_slot
-      allowed_items:
-        - "minecraft:water_bucket"
-      placeholder_material: "minecraft:bucket"
-      placeholder_name: "<aqua>💧 Слот Сырья (Вода)</aqua>"
-
-    "C":
-      type: input_slot
-      allowed_items:
-        - "oraxen:frost_crystal"
-        - "minecraft:amethyst_shard"
-      placeholder_material: "minecraft:amethyst_shard"
-      placeholder_name: "<gradient:#E0C3FC:#8EC5FC>❄ Катализатор</gradient>"
-
-    ">":
-      type: progress_bar
-      idle_material: "minecraft:spectral_arrow"
-      idle_name: "<aqua>⚡ Запустить Крио-Заморозку</aqua>"
-      running_material: "minecraft:clock"
-      running_name: "<gradient:#74B9FF:#0984E3>❄ Заморозка: {percent}%</gradient>"
-      bar_length: 10
-      filled_color: "#74B9FF"
-      empty_color: "#636E72"
-      on_click:
-        - action: "core:cryo_freeze"
-          water_slot: 10
-          crystal_slot: 12
-          output_slot: 16
-          upgrade_slot: 24
-
-    "O":
-      type: output_slot
-
-    "M":
-      type: cycle_button
-      session_key: "fabricator_mode"
-      states:
-        - id: "blue_ice"
-          material: "minecraft:blue_ice"
-          name: "<gradient:#74B9FF:#0984E3>Режим: Синий Лёд</gradient>"
-        - id: "packed_ice"
-          material: "minecraft:packed_ice"
-          name: "<gradient:#A0E7E5:#B4F8C8>Режим: Плотный Лёд</gradient>"
-        - id: "ice"
-          material: "minecraft:ice"
-          name: "<aqua>Режим: Обычный Лёд</aqua>"
-
-    "S":
-      type: button
-      material: "oraxen:frost_crystal"
-      name: "<gradient:#E0C3FC:#8EC5FC>Криостат: АКТИВЕН</gradient>"
-
-    "U":
-      type: input_slot
-      allowed_items:
-        - "oraxen:cryo_accelerator_t1"
-        - "oraxen:cryo_accelerator_t2"
-        - "oraxen:cryo_accelerator_t3"
-        - "minecraft:copper_ingot"
-        - "minecraft:iron_ingot"
-        - "minecraft:gold_ingot"
-        - "minecraft:emerald"
-        - "minecraft:diamond"
-        - "minecraft:netherite_ingot"
-      placeholder_material: "minecraft:redstone_torch"
-      placeholder_name: "<gradient:#FFA07A:#FF6347>⚡ Модуль Ускорения</gradient>"
-
+      type: slot_cover
+      material: "minecraft:gray_stained_glass_pane"
     "X":
       type: button
       material: "minecraft:barrier"
-      name: "<red>Закрыть панель</red>"
+      name: "<red>Закрыть</red>"
       on_click:
         - action: "core:close_gui"
+
+# Альтернатива маске: плоский список виджетов с явными координатами.
+items:                    # "widgets" принимается как алиас
+  close_button:
+    type: button
+    slot: 22
+    material: "minecraft:barrier"
+    name: "<red>Закрыть</red>"
+    on_click:
+      - action: "core:close_gui"
 ```
 
----
+`allow_combat` и `close_on_damage` существуют как поля `GuiDefinition`, но `YamlGuiLoader` их не читает, и ни одна проверка в рантайме их не использует. Полагаться на них нельзя; подробности — в `POTENTIAL_ISSUES.md`.
 
-## 3. Полный реестр виджетов
+## 3. Виджеты, настраиваемые из YAML
 
-### 3.1. Заполнители и заглушки
-1. **`transparent_slot`** (или `invisible_slot`):
-   - Слот остается физически пустым (`Material.AIR`).
-   - Идеален при использовании фоновых текстур ресурспаков: скрывает стандартную сетку сундука.
-   - Любые клики и перемещения предметов блокируются.
-2. **`slot_cover`** (или `cover`, `blank`):
-   - Декоративная физическая панель (например, `minecraft:gray_stained_glass_pane`).
-   - Очищает имя и лор, отменяет любые взаимодействия.
+| Значение `type` | Поля, которые читает `YamlGuiLoader` | Поведение |
+| :--- | :--- | :--- |
+| `slot_cover`, `cover`, `blank`, `transparent_slot`, `invisible_slot` | `material`/`item`, `fallback`, `transparent` | Декоративные, некликабельные. `transparent_slot` не рендерит ничего (слот остаётся пустым). Без `material`/`item` берётся серая стеклянная панель; затем проверяются необязательные ключи `gui.slot_cover.*` в `config.yml`. |
+| `filler` | `material`/`item`, `name`, `slots`, `x`/`y` | Кладёт один и тот же предмет в перечисленные слоты (или в один слот по `x`/`y`). |
+| `button` и любой неизвестный `type` | `material`/`item`, `name`, `lore`, `amount`, `custom_model_data`, `actions`/`on_click` | Обычная кнопка. Неизвестный `type` молча становится кнопкой. |
+| `input_slot` | `allowed_items`, `placeholder_material`, `placeholder_name`, `placeholder_lore`, `on_insert`, `on_extract` | Принимает только перечисленные предметы (пустой список — любые). Рисует плейсхолдер с PDC-тегом `actionstriggers:gui_placeholder`, который нельзя забрать. |
+| `output_slot` | `placeholder_material`, `placeholder_name`, `placeholder_lore`, `on_take` | Только извлечение. Вставка и забирание плейсхолдера блокируются. |
+| `progress_bar` | `idle_material`/`material`, `idle_name`/`name`, `idle_lore`/`lore`, `running_material`, `running_name`, `running_lore`, `bar_length`, `filled_color`, `empty_color`, `on_click` | Двухсостоянийный индикатор. Состояние «выполняется» включает `ProgressBarWidget#startProcess`, который вызывают встроенные станочные действия. Поддерживает `{percent}`, `{bar}`, `{stage}`, `{temp}`, `{status}` и PAPI. |
+| `toggle` | `persistent_key`, `session_key`, `default`, `on_state` (`material`, `name`, `lore`), `off_state` (`material`, `name`, `lore`), `on_change` | Булев переключатель: хранится в PDC блока (`persistent_key`, нужен привязанный tile-блок) или в сессии GUI (`session_key`). |
+| `cycle_button` | `persistent_key`, `session_key`, `states` (`id`, `material`/`item`, `name`, `lore`, `actions`) | Перебирает состояния по клику. Состояние хранится как **строка** — id состояния. |
+| `fluid_tank` | `height`, `level_key`, `max_level`, `filled_material`, `empty_material`, `title` | Вертикальная шкала, заполняется снизу вверх. Читает **числовое** значение только из сессии GUI; `title` рендерится как есть (подстановки `{level}` нет). |
+| `paged_list` | `width`, `height`, `prev_slot`, `next_slot`, `session_key` | Рамка пагинации. У `YamlGuiLoader` нет способа передать предметы, поэтому объявленный в YAML список всегда пуст. |
 
-### 3.2. Производственные слоты
-1. **`input_slot` (Слот сырья и компонентов)**:
-   - Разрешает помещение только предметов из `allowed_items`.
-   - В пустом состоянии выводит призрачный образец с подсказкой (`placeholder_material`, `placeholder_name`, `placeholder_lore`).
-   - Помечен PDC-тегом `actionstriggers:gui_placeholder` для исключения дюпов.
-2. **`output_slot` (Слот готовой продукции)**:
-   - Доступен **только для извлечения**. Помещение предметов заблокировано.
-   - Поддерживает хук `on_take` (звуки, эффекты, статистика).
+Общие поля любого виджета: `x`, `y` или `slot`, а также `condition`/`conditions` (дерево фильтров, вычисляемое от игрока и привязанного блока).
 
-### 3.3. Динамические индикаторы и шкалы
-1. **`progress_bar` (Анимированный прогресс-бар)**:
-   - 10 FPS плавная анимация процессов с поддержкой стадий.
-   - Переменные: `{percent}`, `{bar}`, `{stage}`, `{temp}`, `{status}`.
-2. **`fluid_tank` (Вертикальный резервуар жидкостей)**:
-   - Отображает уровень жидкости или хладагента в виде столбца слотов снизу вверх.
-   - Параметры: `level_key` (ключ сессии/PDC), `max_level`, `filled_material`, `empty_material`, `title`.
+## 4. Виджеты, доступные только из Java
 
-### 3.4. Навигация и контейнеры
-1. **`paged_list` (Постраничный список)**:
-   - Автоматическая разбивка коллекции предметов на страницы.
-   - Кнопки навигации `prev_slot` и `next_slot`.
-2. **`tab_container` (Контейнер вкладок)**:
-   - Переключение между несколькими экранами/вкладками без закрытия инвентаря.
-   - Сохраняет активную вкладку в `active_tab`.
-3. **`cycle_button` (Циклический переключатель)**:
-   - Переключение состояний (`states`) по клику с записью в `session_key` или `persistent_key`.
+`TabContainerWidget` полностью реализован, но ветки `tab_container` в `YamlGuiLoader` нет. Запись `type: tab_container` в YAML провалится в `button`. Вкладки, как и источники предметов для `PagedListWidget`, собираются в коде:
 
----
+```java
+TabContainerWidget tabs = new TabContainerWidget();
+tabs.addTab("general", 0, iconA, List.of(widgetA));
+tabs.addTab("upgrades", 1, iconB, List.of(widgetB));
+```
 
-## 4. Безопасность и Боевой режим (Combat Interruption)
+## 5. Состояние сессии и данные блока
 
-1. **Гарантия сохранности предметов**:
-   - При закрытии окна все реальные предметы из слотов ввода/вывода возвращаются в инвентарь игрока.
-   - Если инвентарь заполнен, предметы гарантированно сбрасываются под ноги игроку (`dropItemNaturally`).
-2. **Боевой режим (Combat Mode)**:
-   - Получение урона из любого источника (падение, огонь, лава, мобы, стрелы, PvP) накладывает комбат-тег.
-   - Любое окно с запретом работы в бою или флагом закрытия при уроне **мгновенно закрывается**.
-   - Попытка открыть запрещенный интерфейс в бою блокируется с выводом кулдауна оставшихся секунд.
+- Каждый открытый инвентарь получает `AATGuiHolder` с картой `sessionState` и картой `slotWidgets`.
+- `GuiContext` предоставляет типизированные помощники сессии (`getState`/`setState`) и помощники PDC блока (`getPdcString/Int/Boolean` и сеттеры).
+- Помощники PDC работают, только если GUI открыт с привязанным блоком и состояние этого блока — `TileState` (сундук, печь, бочка и т.п.). Иначе это молчаливые no-op.
+- `GuiContext#refreshGui` просит `GuiRegistry` перерисовать весь инвентарь; такие виджеты, как `CycleButtonWidget` и `ToggleWidget`, дополнительно перерисовывают свой слот сразу после клика.
+
+## 6. Клики, драги и сохранность предметов
+
+`GuiListener` обрабатывает `InventoryClickEvent`, `InventoryDragEvent` и `InventoryCloseEvent` с приоритетом `HIGHEST`.
+
+- Клики по слотам, которые не заняты видимым виджетом, отменяются.
+- Драги, затрагивающие верхний инвентарь, отменяются.
+- Shift-клики из инвентаря игрока отменяются всегда, поэтому shift-вставка в `input_slot` невозможна.
+- При закрытии предметы из `input_slot` и `output_slot`, не являющиеся плейсхолдерами, переносятся в инвентарь игрока; остаток выбрасывается через `dropItemNaturally`.
+- Возврат предметов реализован **только** для `InventoryCloseEvent`. Обработчиков выключения плагина, остановки сервера и `close_on_damage` нет: предметы, оставленные в станке на момент рестарта, AAT не восстанавливает.
+- Действия `on_close` в описании GUI парсятся, но не выполняются.
+
+## 7. Текст и плейсхолдеры
+
+- `ButtonWidget` заменяет `{player}`, известные ключи прогресса и **все ключи сессии** (`{<sessionKey>}`), затем вызывает PlaceholderAPI.
+- `CycleButtonWidget`, `InputSlotWidget`, `OutputSlotWidget` и `ProgressBarWidget` вызывают PlaceholderAPI, но не подставляют ключи сессии (кроме собственных переменных шаблона).
+- `ToggleWidget` и `FluidTankWidget` PlaceholderAPI не вызывают вовсе.
+- Шаблоны прогресс-бара поддерживают `{percent}`, `{bar}`, `{stage}`, `{temp}`, `{status}`; по умолчанию используются встроенные крио-стадии, если кастомные не добавлены из Java.
+
+## 8. Известные ограничения
+
+Сейчас GUI-движок поддерживает из YAML меньше, чем обещала прежняя документация: нет вкладок из YAML, нет источника предметов для постраничных списков, нет рабочего числового резервуара из YAML, нет флагов боя, не выполняются `on_close`, нет восстановления предметов при остановке сервера. Детали, последствия и варианты исправления собраны в `docs/ru/POTENTIAL_ISSUES.md`.

@@ -39,9 +39,9 @@ triggers:
             type: "actionbar"
             text: "<gradient:#A29BFE:#6C5CE7>⚡ Фокусировка маны: Фаза {iteration}/8</gradient>"
 
-      # Отложенное завершение ритуала через 45 тиков
+      # Отложенное завершение ритуала через 60 тиков (3 секунды)
       - action: "core:delay"
-        ticks: 45
+        ticks: 60
         actions:
           - action: "core:sound"
             sound: "entity.player.levelup"
@@ -49,17 +49,17 @@ triggers:
             pitch: 0.8
           - action: "core:potion_effect"
             effect: "REGENERATION"
-            duration: 10
+            duration: 200
             amplifier: 1
           - action: "core:message"
             type: "title"
             text: "<gradient:#00CEC9:#81ECEC>✦ Ритуал Завершен ✦</gradient>"
             subtitle: "<gray>Вы получили благословение регенерации</gray>"
 
-      # Именованная задача на снятие баффа через 200 тиков (10 секунд)
+      # Именованная задача на снятие баффа через 600 тиков (30 секунд)
       - action: "core:schedule"
         id: "mana_shield_task"
-        delay: 200
+        delay: 600
         actions:
           - action: "core:message"
             text: "<gray>Действие защитного барьера иссякло.</gray>"

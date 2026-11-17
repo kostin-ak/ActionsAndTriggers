@@ -198,11 +198,15 @@ AATGui.builder("navigator")
 ```bash
 # Сборка публичного API jar
 ./gradlew apiJar
-# Результат: build/libs/ActionsAndTriggers-1.0-SNAPSHOT-api.jar
+# Результат: build/libs/ActionsAndTriggers-0.1.0-beta-api.jar
 
 # Сборка готового плагина для сервера
 ./gradlew shadowJar
-# Результат: build/libs/ActionsAndTriggers-1.0-SNAPSHOT-all.jar
+# Результат: build/libs/ActionsAndTriggers-0.1.0-beta-all.jar
+
+# Переопределение версий и опциональный деплой в локальный сервер
+./gradlew shadowJar -PaatVersion=0.1.0-beta -PpaperVersion=1.21.4-R0.1-SNAPSHOT
+./gradlew deployToPlugins -PdeployDir=/path/to/server/plugins
 ```
 
 ---

@@ -197,11 +197,15 @@ The project uses Gradle with two modules:
 ```bash
 # Build standalone public API jar
 ./gradlew apiJar
-# Output: build/libs/ActionsAndTriggers-1.0-SNAPSHOT-api.jar
+# Output: build/libs/ActionsAndTriggers-0.1.0-beta-api.jar
 
 # Build runtime plugin jar (shaded)
 ./gradlew shadowJar
-# Output: build/libs/ActionsAndTriggers-1.0-SNAPSHOT-all.jar
+# Output: build/libs/ActionsAndTriggers-0.1.0-beta-all.jar
+
+# Override versions and deploy into a local server (deployment is opt-in)
+./gradlew shadowJar -PaatVersion=0.1.0-beta -PpaperVersion=1.21.4-R0.1-SNAPSHOT
+./gradlew deployToPlugins -PdeployDir=/path/to/server/plugins
 ```
 
 ---

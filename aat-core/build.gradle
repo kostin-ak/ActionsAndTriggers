@@ -4,13 +4,13 @@ plugins {
     id 'jacoco'
 }
 
-def paperVersion = project.findProperty('paperVersion') ?: '1.21.5-R0.1-SNAPSHOT'
+def paperVersion = project.findProperty('paperVersion') ?: '1.21.4-R0.1-SNAPSHOT'
 
 dependencies {
     // Внутренняя зависимость от модуля API
     implementation project(':aat-api')
 
-    // Paper API (динамическая версия для тестирования совместимости 1.21.4 - 26.2)
+    // Paper API (динамическая версия: релиз собирается против минимальной поддерживаемой — 1.21.4)
     compileOnly("io.papermc.paper:paper-api:${paperVersion}")
     testImplementation("io.papermc.paper:paper-api:${paperVersion}")
 

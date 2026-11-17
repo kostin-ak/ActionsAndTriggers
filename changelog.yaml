@@ -1,0 +1,29 @@
+releases:
+  - version: "0.1.0-beta"
+    codename: "First Light"
+    summary: >
+      First public beta. Documentation is now generated from the actual source tree,
+      the build is versioned, and both the shaded plugin and the standalone API jar
+      are produced by CI. This is a beta: the known-issues list is part of the release.
+    changes:
+      breaking:
+        - "None relative to previous snapshots; this is the first tagged build."
+      features:
+        - "Release pipeline: pushing a v* tag builds the shaded plugin and the API jar and publishes both."
+        - "Nightly pipeline: scheduled builds publish/update the nightly prerelease."
+        - "Compile matrix against Paper API 1.21.4, 1.21.5, 1.21.8 and 1.21.11."
+        - "Runtime smoke tests on Paper 1.21.4, 1.21.11 and 26.3."
+        - "Version-aware Gradle build (aatVersion/paperVersion properties), opt-in deploy task."
+        - "Documentation rewritten to match the code: exact trigger/filter/action registry, GUI widget surface, real Java API."
+        - "New known-issues and gap-analysis document (EN/RU) with 48 tracked items."
+      fixes:
+        - "Placeholder formatter selection is now deterministic and prefers the most specific type (Player over Entity), which fixes {player.combat_remaining} and similar properties for subclasses and proxies."
+        - "Removed broken documentation examples: legacy trigger IDs, {block_type}, dx/dy/dz on core:push, percent on core:chance, firework colors, GUI combat flags."
+        - "Example configurations now use valid IDs, context keys and tick-based durations."
+    compatibility:
+      - "**Minecraft:** Paper/Purpur 1.21.4 – 26.3 (built against the 1.21.4 API; `api-version: '1.21'`)."
+      - "**Runtime smoke tests:** Paper 1.21.4 build 232, 1.21.11 build 132, 26.3 build 253 — plugin enabled, `/aat list` reported 29 actions, 21 triggers, 27 filters."
+      - "**Compile checks:** Paper API 1.21.4, 1.21.5, 1.21.8, 1.21.11."
+      - "**Java:** 21+ for 1.21.x servers, 25+ for 26.x servers (server requirement; the plugin itself targets Java 21 bytecode)."
+      - "**Not verified:** Purpur and other forks (same Bukkit/Paper API, expected to work) and versions below 1.21.4."
+      - "**Beta limitations:** see docs/en/POTENTIAL_ISSUES.md (S1 data-loss items are not yet fixed)."

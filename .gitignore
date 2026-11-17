@@ -47,3 +47,6 @@ $RECYCLE.BIN/
 # Server test runs
 run/
 runs/
+
+# Generated release notes
+release_body.md

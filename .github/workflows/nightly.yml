@@ -126,6 +126,15 @@ jobs:
           fi
           echo "nightly now points at $GITHUB_SHA"
 
+      - name: Remove previous nightly assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view nightly --json assets --jq '.assets[].name' 2>/dev/null \
+            | while read -r asset; do
+                [ -n "$asset" ] && gh release delete-asset nightly "$asset" -y
+              done || true
+
       - name: Publish nightly
         uses: softprops/action-gh-release@v2
         with:
